@@ -88,11 +88,13 @@ List<MediaItem> browseChildren(
 ) {
   if (parentId == browseRootId) return browseRoot(playlists);
 
-  if (parentId == browseAllStationsId) {
-    final sorted = List<Station>.from(stations)
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+  // 20260922 gjw Library order, NOT alphabetical. The user arranges the
+  // Stations screen by dragging, and that arrangement is the point — the
+  // stations they reach for most go at the top, which is exactly what a
+  // driver wants first in the car. Re-sorting here would throw that away.
 
-    return [for (final s in sorted) stationMediaItem(s, parentId)];
+  if (parentId == browseAllStationsId) {
+    return [for (final s in stations) stationMediaItem(s, parentId)];
   }
 
   if (!parentId.startsWith(browsePlaylistPrefix)) return [];

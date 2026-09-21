@@ -27,11 +27,55 @@ AppProvider _provider({
 
 void main() {
   group('stations', () {
-    test('stationsByName sorts case-insensitively', () {
-      expect(_provider().stationsByName.map((s) => s.name), [
-        'Alpha FM',
-        'Zulu FM',
-      ]);
+    test('stations keep library order rather than being sorted', () {
+      expect(_provider().stations.map((s) => s.name), ['Zulu FM', 'Alpha FM']);
+    });
+
+    test('reorderStation moves a station down', () async {
+      final p = _provider();
+      await p.reorderStation(0, 1);
+
+      expect(p.stations.map((s) => s.name), ['Alpha FM', 'Zulu FM']);
+    });
+
+    test('reorderStation moves a station up', () async {
+      final p = _provider();
+      await p.reorderStation(1, 0);
+
+      expect(p.stations.map((s) => s.name), ['Alpha FM', 'Zulu FM']);
+    });
+
+    test('reorderStation uses onReorderItem indices, with no extra -1', () {
+      // onReorderItem has already adjusted newIndex for the removed item, so
+      // moving the first of three to index 2 must land it last. Subtracting
+      // one again here — the old onReorder convention — would leave it in
+      // the middle, which is the classic off-by-one in a drag-reorder.
+
+      const c = Station(id: 's3', name: 'Mike FM', url: 'https://x.example/m');
+      final p = _provider(stations: const [_a, _b, c]);
+      p.reorderStation(0, 2);
+
+      expect(p.stations.map((s) => s.name), ['Alpha FM', 'Mike FM', 'Zulu FM']);
+    });
+
+    test('reordering to the same position changes nothing', () async {
+      final p = _provider();
+      await p.reorderStation(1, 1);
+
+      expect(p.stations.map((s) => s.name), ['Zulu FM', 'Alpha FM']);
+    });
+
+    test('a reordered library survives a round trip through JSON', () async {
+      final p = _provider();
+      await p.reorderStation(0, 1);
+
+      // The order IS the storage — there is no sort field — so decoding the
+      // saved list has to give back the same arrangement.
+
+      final encoded = [for (final s in p.stations) s.toJson()];
+      final back = [for (final j in encoded) Station.fromJson(j)];
+
+      expect(back.map((s) => s.name), ['Alpha FM', 'Zulu FM']);
     });
 
     test('addStation refuses a duplicate stream URL', () async {

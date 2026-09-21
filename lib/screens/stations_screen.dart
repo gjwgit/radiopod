@@ -26,7 +26,13 @@ import 'package:radiopod/widgets/error_dialog.dart';
 import 'package:radiopod/widgets/startup_overlay.dart';
 import 'package:radiopod/widgets/station_tile.dart';
 
-/// Every saved station, alphabetically, with a filter box for long libraries.
+/// Every saved station, in the order the user put them in, with a filter box
+/// for long libraries.
+///
+/// The list is NOT alphabetical. Stations are shown in library order and can
+/// be dragged into any order the user likes; that order is saved and is what
+/// the car and an export see too. Dragging is offered only when the filter
+/// box is empty — see [_list] for why.
 ///
 /// Tapping a station starts it with the whole visible list as its queue, so
 /// Next and Previous walk the same list the user is looking at.
@@ -52,7 +58,7 @@ class _StationsScreenState extends State<StationsScreen> {
     final provider = context.watch<AppProvider>();
     final query = _filter.text.trim().toLowerCase();
     final visible = [
-      for (final s in provider.stationsByName)
+      for (final s in provider.stations)
         if (query.isEmpty || s.name.toLowerCase().contains(query)) s,
     ];
 
@@ -84,7 +90,7 @@ class _StationsScreenState extends State<StationsScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : visible.isEmpty
                 ? StationEmptyState(filtered: query.isNotEmpty)
-                : _list(provider, visible),
+                : _list(provider, visible, reorderable: query.isEmpty),
           ),
         ],
       ),
@@ -93,29 +99,83 @@ class _StationsScreenState extends State<StationsScreen> {
 
   /// The station list, rebuilt as the media session changes so the station
   /// currently on air is highlighted wherever it was started from.
+  ///
+  /// Dragging is offered only when [reorderable] — that is, when the filter
+  /// box is empty. A filtered list shows some stations and hides others, so
+  /// a position in it does not say where the station belongs in the library:
+  /// dropping between two visible rows would be ambiguous about every hidden
+  /// station in the gap. Rather than guess and silently scramble the order,
+  /// the handles simply are not there while filtering, and the Stations menu
+  /// tooltip says so.
 
-  Widget _list(AppProvider provider, List<Station> visible) {
+  Widget _list(
+    AppProvider provider,
+    List<Station> visible, {
+    required bool reorderable,
+  }) {
     return StreamBuilder<MediaItem?>(
       stream: Player.handler.mediaItem,
       builder: (context, snapshot) {
         final playingId = snapshot.data?.extras?['stationId'] as String?;
 
-        return ListView.builder(
-          itemCount: visible.length,
-          itemBuilder: (context, i) {
-            final station = visible[i];
+        Widget row(int i) {
+          final station = visible[i];
 
-            return StationTile(
-              station: station,
-              selected: station.id == playingId,
-              onTap: () => _play(provider, station, visible),
-              trailing: _menu(provider, station),
-            );
-          },
+          return StationTile(
+            key: ValueKey(station.id),
+            station: station,
+            selected: station.id == playingId,
+            onTap: () => _play(provider, station, visible),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _menu(provider, station),
+                if (reorderable) _dragHandle(i),
+              ],
+            ),
+          );
+        }
+
+        if (!reorderable) {
+          return ListView.builder(
+            itemCount: visible.length,
+            itemBuilder: (context, i) => row(i),
+          );
+        }
+
+        return ReorderableListView.builder(
+          // 20260922 gjw Handles are supplied explicitly below rather than
+          // by the list, so that the rest of the row keeps its normal tap
+          // behaviour: with the default handles a long press anywhere on
+          // mobile starts a drag, which fights with tapping to play.
+          buildDefaultDragHandles: false,
+          itemCount: visible.length,
+          itemBuilder: (context, i) => row(i),
+          onReorderItem: (oldIndex, newIndex) =>
+              provider.reorderStation(oldIndex, newIndex),
         );
       },
     );
   }
+
+  /// The grip used to drag a row.
+  ///
+  /// DELIBERATELY WITHOUT A TOOLTIP. A tooltip is an OverlayPortal, and
+  /// reordering re-parents the dragged row; reactivating a portal that is
+  /// currently showing asserts with "A _RenderLayoutBuilder was mutated in
+  /// _RenderLayoutBuilder.performLayout". The handle is the widget under the
+  /// pointer for the whole drag, so its tooltip is the live one. Wrapping it
+  /// conditionally is worse still — changing a reorderable row's widget
+  /// structure mid-drag unmounts the element and silently cancels the drag.
+  /// Drag-to-reorder is documented in the Stations menu tooltip instead.
+
+  Widget _dragHandle(int index) => ReorderableDragStartListener(
+    index: index,
+    child: const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 8),
+      child: Icon(Icons.drag_handle),
+    ),
+  );
 
   Widget _menu(AppProvider provider, Station station) => MarkdownTooltip(
     message: '''

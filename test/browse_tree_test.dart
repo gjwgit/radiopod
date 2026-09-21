@@ -74,14 +74,18 @@ void main() {
       );
     });
 
-    test('All Stations is sorted by name', () {
+    test('All Stations keeps library order, not alphabetical', () {
       final children = browseChildren(
         browseAllStationsId,
         _stations,
         _playlists,
       );
 
-      expect(children.map((m) => m.title), ['Alpha FM', 'Bravo FM', 'Zulu FM']);
+      // _stations is deliberately not in alphabetical order, so this would
+      // fail if the browse tree re-sorted and threw away the arrangement
+      // the user made by dragging on the Stations screen.
+
+      expect(children.map((m) => m.title), ['Zulu FM', 'Alpha FM', 'Bravo FM']);
       expect(children.every((m) => m.playable == true), isTrue);
     });
 

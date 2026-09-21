@@ -162,7 +162,11 @@ class _AppScaffoldState extends State<AppScaffold> {
             icon: Icons.radio,
             tooltip:
                 '**Stations**\n\n'
-                'Every station you have saved. Tap one to start listening.',
+                'Every station you have saved. Tap one to start listening.\n\n'
+                'Drag a station by the grip on the right to put the list in '
+                'the order you want. That order is saved, and is the order '
+                'the car and an export see. Dragging is unavailable while '
+                'the filter box has something in it.',
             child: StationsScreen(),
           ),
           const SolidMenuItem(

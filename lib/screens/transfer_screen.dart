@@ -211,7 +211,7 @@ class _TransferScreenState extends State<TransferScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => ExportChoiceSheet(
-        allStations: provider.stationsByName,
+        allStations: provider.stations,
         playlists: provider.playlists,
         stationsOf: provider.stationsOf,
       ),

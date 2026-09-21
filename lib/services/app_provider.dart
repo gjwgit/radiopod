@@ -119,11 +119,33 @@ class AppProvider extends ChangeNotifier {
     ];
   }
 
-  /// The library sorted by name, which is how the Stations screen lists it.
+  /// Move a station within the library.
+  ///
+  /// THE LIST ORDER IS THE USER'S ORDER. There is no separate sort field and
+  /// no alphabetical default: `_stations` is stored, and reloaded, in the
+  /// order it is shown, so dragging a station to the top keeps it at the top
+  /// on the next launch, on the other devices sharing the Pod, and in the
+  /// car.
+  ///
+  /// Indices are positions in the whole library, which is why the Stations
+  /// screen only offers dragging when its filter box is empty — with a
+  /// filter applied the visible positions say nothing about where the hidden
+  /// stations sit.
+  ///
+  /// [newIndex] is taken from `onReorderItem`, which has already adjusted for
+  /// the removed item, so it is used as-is. The older `onReorder` callback
+  /// needs a further -1 and is deprecated; do not switch back to it.
 
-  List<Station> get stationsByName =>
-      List<Station>.from(_stations)
-        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+  Future<String?> reorderStation(int oldIndex, int newIndex) {
+    if (oldIndex == newIndex) return Future.value();
+
+    final list = List<Station>.from(_stations);
+    final moved = list.removeAt(oldIndex);
+    list.insert(newIndex.clamp(0, list.length), moved);
+    _stations = list;
+
+    return _commit();
+  }
 
   void setStartupPhase(StartupPhase phase) {
     _startupPhase = phase;
