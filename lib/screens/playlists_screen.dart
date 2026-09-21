@@ -101,11 +101,7 @@ class PlaylistsScreen extends StatelessWidget {
     );
   }
 
-  Widget _tile(
-    BuildContext context,
-    AppProvider provider,
-    Playlist playlist,
-  ) {
+  Widget _tile(BuildContext context, AppProvider provider, Playlist playlist) {
     final stations = provider.stationsOf(playlist);
     final n = stations.length;
 
@@ -144,7 +140,8 @@ class PlaylistsScreen extends StatelessWidget {
               station: s,
               onTap: () => _play(context, provider, s, stations),
               trailing: MarkdownTooltip(
-                message: '''
+                message:
+                    '''
 
                 **Remove from playlist**
 

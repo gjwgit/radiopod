@@ -113,17 +113,24 @@ List<MediaItem> browseChildren(
 }
 
 /// One playable station, as reached through the folder [parentId].
+///
+/// [track] is the song currently on air, as announced by the stream's ICY
+/// metadata. When it is known it takes the subtitle slot, because what is
+/// playing right now is more use to a listener than the station's codec and
+/// bitrate; the station details stand in whenever it is not. The track is
+/// also carried in extras so the UI can tell the two apart.
 
-MediaItem stationMediaItem(Station station, String parentId) => MediaItem(
-  id: stationMediaId(parentId, station.id),
-  title: station.name,
-  artist: station.subtitle.isEmpty ? null : station.subtitle,
-  album: appName,
-  artUri: _artUri(station.favicon),
-  playable: true,
-  isLive: true,
-  extras: {'stationId': station.id},
-);
+MediaItem stationMediaItem(Station station, String parentId, {String? track}) =>
+    MediaItem(
+      id: stationMediaId(parentId, station.id),
+      title: station.name,
+      artist: track ?? (station.subtitle.isEmpty ? null : station.subtitle),
+      album: appName,
+      artUri: _artUri(station.favicon),
+      playable: true,
+      isLive: true,
+      extras: {'stationId': station.id, 'track': ?track},
+    );
 
 /// A station logo URL as a [Uri], or null when there is none or it will not
 /// parse. Only http(s) is accepted — a head unit will not fetch anything

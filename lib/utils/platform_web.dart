@@ -12,6 +12,13 @@
 
 library;
 
+/// False on web. The browser audio element reports no ICY metadata, but
+/// reading the stream separately is not an option either: a station's server
+/// will not send CORS headers, so the fetch is blocked. Web shows the
+/// station's own details instead of a track title.
+
+bool get needsIcyPolling => false;
+
 /// No-op on web: just_audio plays through the browser's own audio element,
 /// and the libmpv LC_NUMERIC workaround applies to native Linux only.
 ///

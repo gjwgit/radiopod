@@ -46,7 +46,10 @@ void main() {
 
   group('nameFromUrl', () {
     test('uses the host', () {
-      expect(nameFromUrl('https://live.example.org/stream'), 'live.example.org');
+      expect(
+        nameFromUrl('https://live.example.org/stream'),
+        'live.example.org',
+      );
     });
 
     test('falls back to the whole string when there is no host', () {

@@ -58,7 +58,6 @@ class App extends StatelessWidget {
         // This is the neutral fallback for a SnackBar built directly; the
         // helper in lib/widgets/app_snack_bar.dart overrides the background
         // with a soft green bar.
-
         snackBarTheme: const SnackBarThemeData(
           backgroundColor: snackBarSurface,
           contentTextStyle: TextStyle(color: snackBarNeutral, fontSize: 14),
@@ -73,7 +72,6 @@ class App extends StatelessWidget {
       // 20260921 gjw Login is NOT required to reach the app. Playback of an
       // already-cached station must work in the car without a login prompt,
       // and the library only needs the Pod when it is read or written.
-
       home: SolidLogin(
         required: false,
         appDirectory: appDirectory,

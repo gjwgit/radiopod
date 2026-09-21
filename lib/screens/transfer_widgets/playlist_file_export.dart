@@ -31,10 +31,9 @@ Future<String?> savePlaylistFile({
   required String name,
   required PlaylistFormat format,
 }) async {
-  final content = writePlaylist(
-    [for (final s in stations) (name: s.name, url: s.url)],
-    format,
-  );
+  final content = writePlaylist([
+    for (final s in stations) (name: s.name, url: s.url),
+  ], format);
 
   final fileUri = await FilePicker.saveFile(
     dialogTitle: 'Save ${format.label} playlist',

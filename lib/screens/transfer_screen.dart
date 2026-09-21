@@ -97,7 +97,6 @@ class _TransferScreenState extends State<TransferScreen> {
           ),
 
           // ── Export ──────────────────────────────────────────────────
-
           const Gap(32),
           Text('Export', style: Theme.of(context).textTheme.titleLarge),
           const Gap(8),
@@ -159,10 +158,7 @@ class _TransferScreenState extends State<TransferScreen> {
       // throwing on a stray byte and losing the whole import.
 
       final content = utf8.decode(bytes, allowMalformed: true);
-      final entries = parsePlaylist(
-        content,
-        detectFormat(file.name, content),
-      );
+      final entries = parsePlaylist(content, detectFormat(file.name, content));
       if (entries.isEmpty) {
         _setImportMsg('No stations found in "${file.name}".', error: true);
 

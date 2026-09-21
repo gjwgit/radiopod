@@ -93,8 +93,17 @@ class PlayerBar extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: failed ? cs.error : cs.onSurfaceVariant,
+                        color: failed
+                            ? cs.error
+                            : _showingTrack(item, playing: playing)
+                            ? cs.primary
+                            : cs.onSurfaceVariant,
                         fontSize: 12,
+                        // The song on air is the live part of this bar, so it
+                        // is set apart from the station's static details.
+                        fontWeight: _showingTrack(item, playing: playing)
+                            ? FontWeight.w500
+                            : FontWeight.w400,
                       ),
                     ),
                   ],
@@ -155,8 +164,12 @@ class PlayerBar extends StatelessWidget {
     );
   }
 
-  /// The second line: what is happening, falling back to the station's own
-  /// country and codec summary once it is simply playing.
+  /// The second line: the song on air when the stream announces one.
+  ///
+  /// Otherwise it reports what is happening, and once playing falls back to
+  /// the station's own country, codec and bitrate. Many streams send no ICY
+  /// metadata, and none of them do on Linux or Windows desktop, so the
+  /// fallback is the common case rather than an edge case.
 
   String _status(
     MediaItem item, {
@@ -170,4 +183,12 @@ class PlayerBar extends StatelessWidget {
 
     return item.artist ?? 'Playing';
   }
+
+  /// True when the second line is a live track rather than station details.
+  ///
+  /// The handler puts the track in extras as well as in the artist slot
+  /// precisely so the two can be told apart here.
+
+  bool _showingTrack(MediaItem item, {required bool playing}) =>
+      playing && item.extras?['track'] != null;
 }

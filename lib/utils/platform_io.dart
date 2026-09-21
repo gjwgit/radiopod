@@ -48,6 +48,16 @@ void initNativeAudioBackend() {
   JustAudioMediaKit.ensureInitialized(linux: true, windows: true);
 }
 
+/// True where just_audio reports no ICY metadata, so RadioPod has to read the
+/// song on air out of the stream itself.
+///
+/// just_audio_media_kit hardcodes `icyMetadata: null`, so Linux and Windows
+/// would otherwise never show a track title. Android, iOS and macOS get it
+/// from the player and must NOT poll — a second connection there would waste
+/// mobile data for nothing. See [IcyReader].
+
+bool get needsIcyPolling => Platform.isLinux || Platform.isWindows;
+
 /// Force the C locale for numeric formatting on Linux.
 ///
 /// libmpv aborts the process with "Non-C locale detected" when LC_NUMERIC is

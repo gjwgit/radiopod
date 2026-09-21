@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 0.0 Initial App
 
++ Display title of playing track [0.0.9 20260921 gjw]
 + Privacy page naming exactly what leaves the device [0.0.8 20260921 gjw]
 + libmpv playback backend for GNU/Linux and Windows [0.0.7 20260921 gjw]
 + Background playback with notification and headset controls [0.0.6 20260921 gjw]

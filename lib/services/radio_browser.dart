@@ -58,7 +58,8 @@ class RadioBrowser {
 
   /// Endpoint listing the currently available API mirrors.
 
-  static const _discoveryUrl = 'https://all.api.radio-browser.info/json/servers';
+  static const _discoveryUrl =
+      'https://all.api.radio-browser.info/json/servers';
 
   /// Mirror used when discovery fails, e.g. on a restricted network.
 

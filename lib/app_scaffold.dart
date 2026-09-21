@@ -195,7 +195,6 @@ class _AppScaffoldState extends State<AppScaffold> {
         // Search must not hide what is playing or take away the Stop button.
         // PlayerBar collapses to nothing when there is no current station, so
         // the slot costs no space when idle.
-
         bottomSheet: const PlayerBar(),
         statusBar: SolidStatusBarConfig(
           loginStatus: const SolidLoginStatus(),

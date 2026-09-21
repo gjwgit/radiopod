@@ -28,16 +28,20 @@ AppProvider _provider({
 void main() {
   group('stations', () {
     test('stationsByName sorts case-insensitively', () {
-      expect(
-        _provider().stationsByName.map((s) => s.name),
-        ['Alpha FM', 'Zulu FM'],
-      );
+      expect(_provider().stationsByName.map((s) => s.name), [
+        'Alpha FM',
+        'Zulu FM',
+      ]);
     });
 
     test('addStation refuses a duplicate stream URL', () async {
       final p = _provider();
       await p.addStation(
-        const Station(id: 's9', name: 'Zulu again', url: 'https://live.example/z'),
+        const Station(
+          id: 's9',
+          name: 'Zulu again',
+          url: 'https://live.example/z',
+        ),
       );
 
       expect(p.stations, hasLength(2));
@@ -82,15 +86,17 @@ void main() {
         ],
       );
 
-      expect(
-        p.stationsOf(p.playlists.single).map((s) => s.name),
-        ['Alpha FM', 'Zulu FM'],
-      );
+      expect(p.stationsOf(p.playlists.single).map((s) => s.name), [
+        'Alpha FM',
+        'Zulu FM',
+      ]);
     });
 
     test('addToPlaylist ignores a station already in the list', () async {
       final p = _provider(
-        playlists: const [Playlist(id: 'p1', name: 'One', stationIds: ['s1'])],
+        playlists: const [
+          Playlist(id: 'p1', name: 'One', stationIds: ['s1']),
+        ],
       );
       await p.addToPlaylist('p1', 's1');
 
@@ -99,7 +105,9 @@ void main() {
 
     test('removeFromPlaylist leaves the station in the library', () async {
       final p = _provider(
-        playlists: const [Playlist(id: 'p1', name: 'One', stationIds: ['s1'])],
+        playlists: const [
+          Playlist(id: 'p1', name: 'One', stationIds: ['s1']),
+        ],
       );
       await p.removeFromPlaylist('p1', 's1');
 
@@ -109,7 +117,9 @@ void main() {
 
     test('deleting a playlist keeps its stations', () async {
       final p = _provider(
-        playlists: const [Playlist(id: 'p1', name: 'One', stationIds: ['s1'])],
+        playlists: const [
+          Playlist(id: 'p1', name: 'One', stationIds: ['s1']),
+        ],
       );
       await p.deletePlaylist('p1');
 
@@ -119,7 +129,9 @@ void main() {
 
     test('renamePlaylist changes only the name', () async {
       final p = _provider(
-        playlists: const [Playlist(id: 'p1', name: 'One', stationIds: ['s1'])],
+        playlists: const [
+          Playlist(id: 'p1', name: 'One', stationIds: ['s1']),
+        ],
       );
       await p.renamePlaylist('p1', 'Renamed');
 

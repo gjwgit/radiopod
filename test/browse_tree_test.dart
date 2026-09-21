@@ -137,6 +137,49 @@ void main() {
       expect(stationMediaItem(station, browseAllStationsId).artUri, isNull);
     });
 
+    test('the subtitle is the station details when no track is known', () {
+      const station = Station(
+        id: 's1',
+        name: 'Alpha FM',
+        url: 'https://live.example/a',
+        country: 'Australia',
+        codec: 'MP3',
+      );
+      final item = stationMediaItem(station, browseAllStationsId);
+
+      expect(item.artist, 'Australia · MP3');
+      expect(item.extras?['track'], isNull);
+    });
+
+    test('a known track takes the subtitle slot', () {
+      const station = Station(
+        id: 's1',
+        name: 'Alpha FM',
+        url: 'https://live.example/a',
+        country: 'Australia',
+        codec: 'MP3',
+      );
+      final item = stationMediaItem(
+        station,
+        browseAllStationsId,
+        track: 'Nina Simone - Feeling Good',
+      );
+
+      expect(item.artist, 'Nina Simone - Feeling Good');
+      expect(item.extras?['track'], 'Nina Simone - Feeling Good');
+      expect(item.title, 'Alpha FM');
+    });
+
+    test('a track shows even for a station with no details', () {
+      final item = stationMediaItem(
+        _stations.first,
+        browseAllStationsId,
+        track: 'Some Song',
+      );
+
+      expect(item.artist, 'Some Song');
+    });
+
     test('accepts an https favicon', () {
       const station = Station(
         id: 's9',

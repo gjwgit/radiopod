@@ -62,9 +62,8 @@ class StartupOverlay extends StatelessWidget {
         if (_busy)
           Positioned.fill(
             child: ColoredBox(
-              color: Theme.of(
-                context,
-              ).colorScheme.surface.withValues(alpha: 0.85),
+              color: Theme.of(context).colorScheme.surface
+                  .withValues(alpha: 0.85),
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

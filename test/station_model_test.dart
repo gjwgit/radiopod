@@ -56,10 +56,7 @@ void main() {
 
     test('subtitle joins only the fields that are known', () {
       expect(full.subtitle, 'Australia · english · MP3 · 128 kbps');
-      expect(
-        const Station(id: 's', name: 'n', url: 'u').subtitle,
-        isEmpty,
-      );
+      expect(const Station(id: 's', name: 'n', url: 'u').subtitle, isEmpty);
     });
 
     test('subtitle omits a zero bitrate', () {

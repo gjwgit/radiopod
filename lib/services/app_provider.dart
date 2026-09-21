@@ -127,9 +127,7 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<String?> updateStation(Station updated) {
-    _stations = [
-      for (final s in _stations) s.id == updated.id ? updated : s,
-    ];
+    _stations = [for (final s in _stations) s.id == updated.id ? updated : s];
 
     return _commit();
   }
@@ -156,11 +154,7 @@ class AppProvider extends ChangeNotifier {
   Future<String?> addPlaylist(String name, {List<String>? stationIds}) {
     _playlists = [
       ..._playlists,
-      Playlist(
-        id: _uuid.v4(),
-        name: name,
-        stationIds: stationIds ?? const [],
-      ),
+      Playlist(id: _uuid.v4(), name: name, stationIds: stationIds ?? const []),
     ];
 
     return _commit();

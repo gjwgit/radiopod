@@ -15,9 +15,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/widgets/station_tile.dart';
 
-Future<void> _pump(WidgetTester tester, Widget child) => tester.pumpWidget(
-  MaterialApp(home: Scaffold(body: child)),
-);
+Future<void> _pump(WidgetTester tester, Widget child) =>
+    tester.pumpWidget(MaterialApp(home: Scaffold(body: child)));
 
 void main() {
   const plain = Station(
@@ -57,10 +56,7 @@ void main() {
 
   testWidgets('reports taps', (tester) async {
     var taps = 0;
-    await _pump(
-      tester,
-      StationTile(station: plain, onTap: () => taps++),
-    );
+    await _pump(tester, StationTile(station: plain, onTap: () => taps++));
     await tester.tap(find.text('Alpha FM'));
 
     expect(taps, 1);

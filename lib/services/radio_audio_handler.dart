@@ -10,6 +10,8 @@
 
 library;
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import 'package:audio_service/audio_service.dart';
@@ -20,6 +22,9 @@ import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/services/browse_tree.dart';
+import 'package:radiopod/services/icy_reader.dart';
+import 'package:radiopod/utils/platform_io.dart'
+    if (dart.library.js_interop) 'package:radiopod/utils/platform_web.dart';
 
 /// The single audio handler, shared by the Flutter UI, the system
 /// notification, the lock screen, headset buttons and Android Auto.
@@ -55,6 +60,19 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   String _queueParentId = browseAllStationsId;
 
+  /// The station on air, and the track it last announced.
+  ///
+  /// Both are needed to rebuild the published media item when ICY metadata
+  /// arrives: the station supplies the name and logo, the track the subtitle.
+
+  Station? _currentStation;
+  String? _currentTrack;
+
+  /// The desktop track reader for the current station, cancelled whenever
+  /// playback moves on so only one stream is ever being polled.
+
+  StreamSubscription<String?>? _trackSubscription;
+
   /// The folder ids a client has subscribed to, so a library change can tell
   /// each one to re-read its children.
 
@@ -76,6 +94,14 @@ class RadioAudioHandler extends BaseAudioHandler {
     // duplicate broadcast is harmless.
 
     _player.playingStream.listen((_) => _broadcastState(null));
+
+    // 20260921 gjw Shoutcast and Icecast streams announce the song on air in
+    // band, as ICY metadata, and just_audio surfaces it here. Republishing
+    // the media item on each announcement is what puts the track under the
+    // station name in the app, in the notification, and on the car's
+    // now-playing screen.
+
+    _player.icyMetadataStream.listen(_broadcastTrack);
 
     // 20260921 gjw A dropped stream surfaces here rather than as a thrown
     // error, because setUrl has already returned by the time the connection
@@ -127,6 +153,14 @@ class RadioAudioHandler extends BaseAudioHandler {
       _queueIndex = 0;
     }
 
+    // Forget the previous station's track before the new stream announces
+    // its own, so a switch never leaves the old song showing under the new
+    // station's name.
+
+    _currentStation = station;
+    _currentTrack = null;
+    _watchTrack(station);
+
     this.queue.add([
       for (final s in _queueStations) stationMediaItem(s, parentId),
     ]);
@@ -156,6 +190,12 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   @override
   Future<void> stop() async {
+    // Stop polling the stream the moment playback stops, so a stopped app is
+    // not quietly still fetching from a station in the background.
+
+    await _trackSubscription?.cancel();
+    _trackSubscription = null;
+
     await _player.stop();
     playbackState.add(
       playbackState.value.copyWith(
@@ -164,6 +204,72 @@ class RadioAudioHandler extends BaseAudioHandler {
       ),
     );
     await super.stop();
+  }
+
+  /// Republish the current media item with the track [icy] announces.
+  ///
+  /// NOT AVAILABLE ON EVERY PLATFORM. just_audio_media_kit reports
+  /// `icyMetadata: null` unconditionally, so on Linux and Windows desktop
+  /// this never fires and the subtitle stays on the station's own details.
+  /// Plenty of streams on the supported platforms send nothing either, or
+  /// send their own station name rather than a song, so the UI must always
+  /// read as correct with no track at all.
+
+  void _broadcastTrack(IcyMetadata? icy) => _setTrack(icy?.info?.title);
+
+  /// Publish [title] as the song on air, ignoring a repeat of what is already
+  /// showing so the media session is not churned on every poll.
+
+  void _setTrack(String? title) {
+    final station = _currentStation;
+    if (station == null) return;
+
+    final track = _cleanTrack(title);
+    if (track == _currentTrack) return;
+
+    _currentTrack = track;
+    mediaItem.add(stationMediaItem(station, _queueParentId, track: track));
+  }
+
+  /// Start (or restart) reading the song on air for [station].
+  ///
+  /// Only runs where the player itself reports nothing — GNU/Linux and
+  /// Windows, where just_audio_media_kit hardcodes `icyMetadata: null`.
+  /// Everywhere else [_broadcastTrack] is already being fed by the player on
+  /// the connection it has open, and polling would be pure waste.
+
+  void _watchTrack(Station station) {
+    _trackSubscription?.cancel();
+    _trackSubscription = null;
+    if (!needsIcyPolling) return;
+
+    _trackSubscription = IcyReader.watch(station.url).listen(
+      (title) {
+        // Ignore a late result for a station the user has already left.
+
+        if (_currentStation?.id == station.id) _setTrack(title);
+      },
+      onError: (Object e) {
+        debugPrint('[RadioAudioHandler] track reader error: $e');
+      },
+    );
+  }
+
+  /// Tidy an ICY title, mapping anything useless to null.
+  ///
+  /// Stations pad titles with whitespace, and a good number send the station
+  /// name or a placeholder when nothing is playing. Echoing the station name
+  /// back under itself looks broken, so that case falls through to the
+  /// station details instead.
+
+  String? _cleanTrack(String? title) {
+    final t = title?.trim();
+    if (t == null || t.isEmpty) return null;
+    if (t.toLowerCase() == _currentStation?.name.trim().toLowerCase()) {
+      return null;
+    }
+
+    return t;
   }
 
   @override
@@ -197,9 +303,7 @@ class RadioAudioHandler extends BaseAudioHandler {
     final parts = splitStationMediaId(mediaId);
     if (parts == null) return;
 
-    final station = _stations
-        .where((s) => s.id == parts.stationId)
-        .firstOrNull;
+    final station = _stations.where((s) => s.id == parts.stationId).firstOrNull;
     if (station == null) return;
 
     // Rebuild the folder the driver was browsing so Next and Previous stay
@@ -238,13 +342,9 @@ class RadioAudioHandler extends BaseAudioHandler {
   Future<MediaItem?> getMediaItem(String mediaId) async {
     final parts = splitStationMediaId(mediaId);
     if (parts == null) return null;
-    final station = _stations
-        .where((s) => s.id == parts.stationId)
-        .firstOrNull;
+    final station = _stations.where((s) => s.id == parts.stationId).firstOrNull;
 
-    return station == null
-        ? null
-        : stationMediaItem(station, parts.parentId);
+    return station == null ? null : stationMediaItem(station, parts.parentId);
   }
 
   // ── State broadcast ───────────────────────────────────────────────────────
@@ -271,9 +371,7 @@ class RadioAudioHandler extends BaseAudioHandler {
           if (hasQueue) MediaControl.skipToNext,
         ],
         systemActions: const {MediaAction.play, MediaAction.stop},
-        androidCompactActionIndices: hasQueue
-            ? const [0, 1, 2]
-            : const [0],
+        androidCompactActionIndices: hasQueue ? const [0, 1, 2] : const [0],
         processingState: _processingState[_player.processingState]!,
         playing: playing,
         queueIndex: _queueIndex < 0 ? null : _queueIndex,

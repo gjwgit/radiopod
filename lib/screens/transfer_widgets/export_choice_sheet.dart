@@ -75,8 +75,7 @@ class _ExportChoiceSheetState extends State<ExportChoiceSheet> {
                       ButtonSegment(value: f, label: Text(f.label)),
                   ],
                   selected: {_format},
-                  onSelectionChanged: (s) =>
-                      setState(() => _format = s.first),
+                  onSelectionChanged: (s) => setState(() => _format = s.first),
                 ),
               ],
             ),
@@ -124,11 +123,8 @@ class _ExportChoiceSheetState extends State<ExportChoiceSheet> {
       title: Text(label),
       subtitle: Text('$n station${n == 1 ? '' : 's'}'),
       enabled: n > 0,
-      onTap: () => Navigator.of(context).pop<ExportChoice>((
-        stations: stations,
-        name: name,
-        format: _format,
-      )),
+      onTap: () => Navigator.of(context)
+          .pop<ExportChoice>((stations: stations, name: name, format: _format)),
     );
   }
 }

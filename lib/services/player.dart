@@ -66,12 +66,10 @@ class Player {
         // also keeps the notification on screen while stopped, which is why
         // androidNotificationOngoing is left alone — audio_service asserts
         // that the two are not both set.
-
         androidStopForegroundOnPause: false,
 
         // 20260920 gjw Tells Android Auto to draw the browse tree as a grid
         // of station logos rather than a plain list.
-
         androidBrowsableRootExtras: {
           'android.media.browse.CONTENT_STYLE_SUPPORTED': true,
           'android.media.browse.CONTENT_STYLE_BROWSABLE_HINT': 2,
