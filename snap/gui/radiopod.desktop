@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=RadioPod
+Comment=Simple, Private, Secure Internet Radio with your Solid Pod
+Exec=radiopod
+Icon=${SNAP}/meta/gui/icon.png
+Terminal=false
+Type=Application
+Categories=AudioVideo;Audio;Player;Network;
+Keywords=radio;internet radio;streaming;shoutcast;icecast;solid;pod;

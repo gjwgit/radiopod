@@ -21,14 +21,16 @@ mkdir -p ${APP}_${VER}_amd64/usr/share/icons/hicolor/512x512/apps
 cat > ${APP}_${VER}_amd64/DEBIAN/control << EOL
 Package: ${APP}
 Version: ${VER}
-Section: utils
+Section: sound
 Priority: optional
 Architecture: amd64
-Depends: libgtk-3-0, libblkid1, liblzma5
+Depends: libgtk-3-0, libblkid1, liblzma5, libmpv2
 Maintainer: Graham Williams <graham.williams@togaware.com>
-Description: Manage your address books
- With ${APP} your contact data can be stored and encrypted, in your Pod.
- The app also provides basic management and sharing of your contacts.
+Description: Privacy preserving internet radio player
+ With ${APP} you can find internet radio stations in the community-run
+ Radio-Browser database, group them into playlists, and listen. Your
+ station library is stored encrypted in your Pod, so nobody can see
+ what you listen to. Playlists import and export as M3U and PLS.
 EOL
 
 # Create desktop entry.
