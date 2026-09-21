@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Declares which Android Auto capability this app provides. "media" tells
+     the head unit to list RadioPod among its audio apps and to bind to the
+     MediaBrowserService declared in AndroidManifest.xml. -->
+<automotiveApp>
+    <uses name="media"/>
+</automotiveApp>

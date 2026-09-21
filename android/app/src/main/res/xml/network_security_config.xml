@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Plain HTTP is permitted because a large share of long-standing internet
+     radio stations still stream over http:// and have no https:// equivalent.
+     Blocking cleartext would silently make those stations unplayable. This
+     relaxes transport security for the STREAM only in the sense that RadioPod
+     never sends anything on these connections: it issues a GET and reads
+     audio. Everything that carries the user's own data — the Solid Pod and
+     Radio-Browser — is https and is unaffected. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

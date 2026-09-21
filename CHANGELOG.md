@@ -1,0 +1,47 @@
+# RadioPod Change Log
+
+Noted below are the high level changes for the app. Each update
+includes a short user-oriented description, version number, date, and
+developer.
+
+You can run the app in your
+[**browser**](https://radiopod.solidcommunity.au) or else download and
+install locally the latest version from the [Solid Community
+AU](https://solidcommunity.au) or directly:
+
++ **Android** as
+[apk](https://solidcommunity.au/installers/radiopod.apk) or
+[aab](https://solidcommunity.au/installers/radiopod.aab);
++ **GNU/Linux** as
+[deb](https://solidcommunity.au/installers/radiopod_amd64.deb) or
+[snap](https://solidcommunity.au/installers/radiopod_amd64.snap) or
+[zip](https://solidcommunity.au/installers/radiopod-linux.zip);
++ **macOS** as
+[dmg](https://solidcommunity.au/installers/radiopod-macos.dmg) or
+[zip](https://solidcommunity.au/installers/radiopod-macos.zip);
++ **Windows** as
+[exe](https://solidcommunity.au/installers/radiopod-windows-inno.exe)
+or [zip](https://solidcommunity.au/installers/radiopod-windows.zip).
+
+Contributions are welcome. Visit
+[github](https://github.com/gjwgit/radiopod) to submit an issue or,
+even better, fork the repository yourself, update the code, and submit
+a Pull Request.
+
+We make this project available for free so if you appreciate the app
+then please show some ❤️ and tap on the star at
+[GitHub](https://github.com/gjwgit/radiopod) to support our work.
+
+This app is authored by [Graham
+Williams](https://togaware.com/Graham.Williams.html).
+
+## 0.0 Initial App
+
++ Privacy page naming exactly what leaves the device [0.0.8 20260921 gjw]
++ libmpv playback backend for GNU/Linux and Windows [0.0.7 20260921 gjw]
++ Background playback with notification and headset controls [0.0.6 20260921 gjw]
++ Android Auto browse tree of playlists and all stations [0.0.5 20260921 gjw]
++ Import and export M3U, M3U8 and PLS playlist files [0.0.4 20260921 gjw]
++ Search the Radio-Browser database by station name or genre [0.0.3 20260921 gjw]
++ Station library and playlists stored encrypted on the Pod [0.0.2 20260921 gjw]
++ Initial app skeleton from the todopod solidui template [0.0.1 20260920 gjw]

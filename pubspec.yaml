@@ -1,0 +1,104 @@
+name: radiopod
+description: "Radio Pod - Internet Radio with Secure and Private Storage"
+publish_to: 'none'
+version: 0.0.8+1
+
+environment:
+  sdk: ^3.13.4
+
+# 20260920 gjw To automatically upgrade package dependencies:
+#
+#   flutter pub upgrade --major-versions
+#
+# To see which dependencies have newer versions available:
+#
+#   flutter pub outdated
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # 20260920 gjw Playback stack. Android Auto needs a MediaBrowserService, and
+  # audio_service is the only Flutter package that provides one. just_audio
+  # renders the stream; just_audio_media_kit backs it with libmpv on Linux and
+  # Windows, where just_audio has no native implementation. Deliberately NOT
+  # the video_player/audioplayers approach used by geopod and innerpod — those
+  # play foreground clips inside a widget and cannot drive Android Auto.
+
+  audio_service: ^0.18.19
+  audio_session: ^0.2.4
+  just_audio: ^0.10.6
+  just_audio_media_kit: ^2.1.0
+  media_kit_libs_linux: ^1.2.1
+  media_kit_libs_windows_audio: ^1.0.9
+
+  # 20260920 gjw Only the Linux and Windows media_kit native libs are pulled
+  # in. Android, iOS and macOS use just_audio's own native players, so adding
+  # media_kit_libs_audio (which covers every platform) would bloat the APK for
+  # a backend that is never initialised there.
+
+  ffi: ^2.1.4
+  file_picker: ^12.3.0
+  gap: ^3.0.1
+  http: ^1.6.0
+  markdown_tooltip: ^0.0.10
+  provider: ^6.1.5+1
+
+  # 20260920 gjw audio_service does not re-export rxdart, but its
+  # `subscribeToChildren` returns a ValueStream and the Android Auto browse
+  # tree publishes through a BehaviorSubject, so rxdart is a direct
+  # dependency here rather than an implicit one.
+
+  rxdart: ^0.28.0
+  shared_preferences: ^2.5.5
+  solidpod: ^1.0.22
+  solidui: ^1.0.46
+  uuid: ^4.6.0
+  window_manager: ^0.5.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+
+  # The "flutter_lints" package below contains a set of recommended lints to
+  # encourage good coding practices. The lint set provided by the package is
+  # activated in the `analysis_options.yaml` file located at the root of your
+  # package. See that file for information about deactivating specific lint
+  # rules and activating additional ones.
+
+  flutter_lints: ^6.0.0
+
+  # Generates the platform launcher icons from assets/images/app_icon.png.
+  # Re-run after changing the icon: dart run flutter_launcher_icons
+
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  assets:
+    - assets/images/app_icon.png
+    - assets/images/app_image.jpg
+  uses-material-design: true
+
+# 20260920 gjw Define launcher icons for all platforms (except Linux)
+# so icons for the apps can be automatically updated using:
+#
+# `dart run flutter_launcher_icons`
+
+flutter_launcher_icons:
+  image_path: "assets/images/app_icon.png"
+  android: true
+  min_sdk_android: 21
+  ios: true
+  remove_alpha_ios: true
+  background_color_ios: "#ffffff"
+  macos:
+    generate: true
+  web:
+    generate: true
+    background_color: "#ffffff"
+    theme_color: "#ffffff"
+  windows:
+    generate: true
+    icon_size: 48 # min:48, max:256, default: 48

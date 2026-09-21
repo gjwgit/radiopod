@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Keeps audio_service's notification icons from being stripped by R8 in a
+     release build, which would leave the media notification and the Android
+     Auto transport controls without artwork. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+  tools:keep="@drawable/*" />
