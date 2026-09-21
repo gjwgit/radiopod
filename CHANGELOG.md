@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.0 Functional App
 
++ Generated all icons [1.0.2 20260921 gjw]
 + Add snapcraft config to build a snap [1.0.1 20260921 gjw]
 + Save data locally if not logged in [1.0.0 20260921 gjw]
 
