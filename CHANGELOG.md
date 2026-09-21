@@ -35,6 +35,10 @@ then please show some ❤️ and tap on the star at
 This app is authored by [Graham
 Williams](https://togaware.com/Graham.Williams.html).
 
+## 1.0 Functional App
+
++ Save data locally if not logged in [1.0.0 20260921 gjw]
+
 ## 0.0 Initial App
 
 + Display title of playing track [0.0.9 20260921 gjw]

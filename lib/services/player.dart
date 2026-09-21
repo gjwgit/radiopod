@@ -16,7 +16,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 
 import 'package:radiopod/constants/app.dart';
-import 'package:radiopod/services/library_cache.dart';
+import 'package:radiopod/services/local_store.dart';
 import 'package:radiopod/services/radio_audio_handler.dart';
 import 'package:radiopod/utils/platform_io.dart'
     if (dart.library.js_interop) 'package:radiopod/utils/platform_web.dart';
@@ -90,7 +90,7 @@ class Player {
       debugPrint('[Player] audio session configuration failed: $e');
     }
 
-    final (stations, playlists) = await LibraryCache.load();
+    final (stations, playlists) = await LocalStore.load();
     _handler!.setLibrary(stations, playlists);
   }
 }

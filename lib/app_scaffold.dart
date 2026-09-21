@@ -62,13 +62,24 @@ class _AppScaffoldState extends State<AppScaffold> {
     final provider = context.read<AppProvider>();
     provider.setStartupPhase(StartupPhase.unlocking);
     try {
+      // 20260921 gjw No WebID means the user tapped Continue at the login
+      // screen. That is a supported way to run RadioPod, not a failure, so
+      // skip the security key — there is nothing to decrypt — and load the
+      // library straight from the device. Returning early here, as this did
+      // before, left someone who chose Continue with a permanently empty
+      // Stations list and no way to tell why.
+
       final webId = await getWebId();
-      if (webId == null || webId.isEmpty) return;
-      if (!mounted) return;
-      await getKeyFromUserIfRequired(context, widget);
-      if (!mounted) return;
+      final loggedIn = webId != null && webId.isNotEmpty;
+
+      if (loggedIn) {
+        if (!mounted) return;
+        await getKeyFromUserIfRequired(context, widget);
+        if (!mounted) return;
+      }
+
       provider.setStartupPhase(StartupPhase.loading);
-      await provider.loadFromPod();
+      await provider.load();
     } on Exception catch (e) {
       debugPrint('[AppScaffold] key/load error: $e');
     } finally {
@@ -213,7 +224,7 @@ class _AppScaffoldState extends State<AppScaffold> {
               final wasKeySaved = provider.isKeySaved;
               provider.setKeySaved(hasKey);
               if (hasKey && !wasKeySaved) {
-                provider.loadFromPod();
+                provider.load();
               }
             },
           ),

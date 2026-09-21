@@ -1,7 +1,7 @@
 name: radiopod
 description: "Radio Pod - Internet Radio with Secure and Private Storage"
 publish_to: 'none'
-version: 0.0.9+1
+version: 1.0.0+1
 
 environment:
   sdk: ^3.13.4
@@ -51,8 +51,8 @@ dependencies:
 
   rxdart: ^0.28.0
   shared_preferences: ^2.5.5
-  solidpod: ^1.0.22
-  solidui: ^1.0.46
+  solidpod: ^1.0.24
+  solidui: ^1.0.50
   uuid: ^4.6.0
   window_manager: ^0.5.2
 
