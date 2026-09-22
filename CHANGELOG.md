@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.0 Functional App
 
++ macOS: unsandbox the Release entitlements [1.0.7 20260922 gjw]
 + Mark HLS streams and show one Search result per stream [1.0.6 20260922 gjw]
 + Move to the next station when a stream ends, or reconnect [1.0.5 20260922 gjw]
 + Drag stations into your own order on the Stations screen [1.0.4 20260922 gjw]
