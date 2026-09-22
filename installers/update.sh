@@ -163,8 +163,8 @@ if [[ "${status}" == "completed" ]]; then
 
     echo '******************** UPLOAD MACOS DMG NOTARIZED'
 
-    # 20260920 gjw Because I now also have various -macos-dmg in the
-    # pattern I renamed this to be -notarized-macos-dmg and same for
+    # 20260920 gjw Because I now have various targets that finish with 
+    # -macos-dmg I renamed the endswith to be -notarized-macos-dmg and same for
     # zip. This will be the default installer so it is called
     # <app>-macos.dmg on the installer repository, noting the renaming
     # of the file to remove the -notarized as below for notarized-dmg
@@ -215,7 +215,7 @@ if [[ "${status}" == "completed" ]]; then
 	rsync -avzh ${fname} ${DEST}
 	ssh ${HOST} "cd ${FLDR}; chmod 0644 ${fname}"
 	echo  "Archive as installers/ARCHIVE/${APP}_${version}_notarized_macos.zip"
-	mv ${APP}-notarized-macos.zip ARCHIVE/${APP}_${version}_notarized_macos.zip
+	mv ${fname} ARCHIVE/${APP}_${version}_notarized_macos.zip
     fi
 
     echo ""
