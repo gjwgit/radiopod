@@ -72,6 +72,16 @@ class _AppScaffoldState extends State<AppScaffold> {
       final webId = await getWebId();
       final loggedIn = webId != null && webId.isNotEmpty;
 
+      // 20260922 gjw Tell the provider what we just found out rather than
+      // letting it ask solidpod again. `isUserLoggedIn` starts by probing the
+      // keychain with a real write and delete; on a macOS Developer ID build
+      // with no embedded provisioning profile that probe lands in the legacy
+      // login keychain and macOS demands the keychain password. Asking twice
+      // meant two prompts before the app had drawn anything, which is what
+      // made RadioPod unusable on macOS while todopod only prompted at login.
+
+      provider.setLoggedIn(loggedIn);
+
       if (loggedIn) {
         if (!mounted) return;
         await getKeyFromUserIfRequired(context, widget);
@@ -228,7 +238,13 @@ class _AppScaffoldState extends State<AppScaffold> {
               final wasKeySaved = provider.isKeySaved;
               provider.setKeySaved(hasKey);
               if (hasKey && !wasKeySaved) {
-                provider.load();
+                // A key appearing means the user has just logged in and
+                // unlocked, so the library may have moved from the device to
+                // the Pod. This is the one place re-asking solidpod is worth
+                // its keychain access, because the answer has genuinely
+                // changed and the user is already in a login flow.
+
+                provider.resolveSource().then((_) => provider.load());
               }
             },
           ),

@@ -333,6 +333,24 @@ class AppProvider extends ChangeNotifier {
   /// while the app is running: the user can log in from the profile menu
   /// long after tapping Continue, and can log out again.
 
+  /// Record a login state the caller already knows, WITHOUT asking solidpod.
+  ///
+  /// EVERY CALL TO [resolveSource] COSTS KEYCHAIN ACCESS. On macOS
+  /// `isUserLoggedIn` begins with solidpod's `chooseSecureStorageOptions`,
+  /// which probes the keychain with a real write and delete, and then reads
+  /// the WebID and the access token. Until a Developer ID build carries an
+  /// embedded provisioning profile those calls land in the legacy login
+  /// keychain, and macOS asks for the keychain password EACH TIME.
+  ///
+  /// So a caller that already knows the answer — AppScaffold has just called
+  /// `getWebId()` — says so here instead of making solidpod work it out
+  /// again. Someone who tapped Continue never reaches the keychain at all.
+
+  void setLoggedIn(bool loggedIn) {
+    _source = loggedIn ? LibrarySource.pod : LibrarySource.local;
+    notifyListeners();
+  }
+
   Future<LibrarySource> resolveSource() async {
     if (_testMode) return _source;
 
@@ -364,7 +382,15 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      if (await resolveSource() == LibrarySource.pod) {
+      // 20260922 gjw Uses the source ALREADY resolved, and does not ask
+      // solidpod again. load() runs at startup, on the refresh button and
+      // after every login change; re-resolving here meant a keychain probe
+      // each time, which on a macOS build with no provisioning profile is a
+      // keychain password prompt each time. The login state is settled once,
+      // by AppScaffold, and changes only through setLoggedIn or an explicit
+      // resolveSource.
+
+      if (_source == LibrarySource.pod) {
         _stations = _decode(
           await PodService.load(stationsFileName),
           Station.fromJson,
