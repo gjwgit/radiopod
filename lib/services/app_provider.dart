@@ -200,6 +200,21 @@ class AppProvider extends ChangeNotifier {
     return _commit();
   }
 
+  /// Set whether a station is reconnected when its stream ends.
+  ///
+  /// See [Station.reconnectOnEnd]: on for a continuous station whose
+  /// connection drops between programmes, off for one that genuinely
+  /// finishes and should hand over to the next station.
+
+  Future<String?> setReconnectOnEnd(String id, bool value) {
+    _stations = [
+      for (final s in _stations)
+        s.id == id ? s.copyWith(reconnectOnEnd: value) : s,
+    ];
+
+    return _commit();
+  }
+
   /// True when [url] is already in the library, so Search can show a station
   /// as saved rather than offering to save it twice.
 

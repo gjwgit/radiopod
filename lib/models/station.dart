@@ -31,6 +31,44 @@ class Station {
   final List<String> tags;
   final String? stationUuid;
 
+  /// True when the stream is HLS — an .m3u8 playlist of short segments
+  /// rather than one continuous connection.
+  ///
+  /// WORTH AVOIDING ON THE DESKTOP. A live HLS playlist lists only a sliding
+  /// window of segments, and the player is meant to re-read it as the window
+  /// moves. libmpv, which is how RadioPod plays audio on GNU/Linux and
+  /// Windows, reads the window once and then reports the stream as finished.
+  /// ABC News Radio publishes six ten-second segments, so it dies after
+  /// about fifty seconds, every time, whatever the network is doing.
+  ///
+  /// Many broadcasters publish the same station BOTH ways. ABC News Radio is
+  /// on HLS at mediaserviceslive.akamaized.net and on plain Icecast at
+  /// abc.streamguys1.com; the Icecast one plays for hours without a break.
+  /// So Search marks HLS results, and the remedy is usually to pick the
+  /// other entry for the same station rather than to work around the
+  /// dropouts with [reconnectOnEnd].
+
+  final bool isHls;
+
+  /// What to do when this station's stream ends.
+  ///
+  /// Streams end for two reasons that look identical to the player, and the
+  /// right response is opposite in each case, so the station says which.
+  ///
+  /// FALSE (the default) suits a programme that genuinely finishes. NPR's
+  /// news bulletin closes the connection when the bulletin is over, and
+  /// reconnecting simply replays the same news; the queue should move on.
+  ///
+  /// TRUE suits a continuous station whose connection drops mid-broadcast.
+  /// ABC News Radio does this between bulletins and is still on air a moment
+  /// later, so reconnecting picks the broadcast back up — often replaying a
+  /// few seconds, which is Icecast handing a new listener its buffer.
+  ///
+  /// Nothing in the stream itself reveals which kind it is, so this is the
+  /// listener's call, made once per station from the Stations screen.
+
+  final bool reconnectOnEnd;
+
   const Station({
     required this.id,
     required this.name,
@@ -43,6 +81,8 @@ class Station {
     this.bitrate,
     this.tags = const [],
     this.stationUuid,
+    this.reconnectOnEnd = false,
+    this.isHls = false,
   });
 
   // ── Derived properties ────────────────────────────────────────────────────
@@ -58,6 +98,7 @@ class Station {
     if (language != null && language!.isNotEmpty) language,
     if (codec != null && codec!.isNotEmpty) codec,
     if (bitrate != null && bitrate! > 0) '$bitrate kbps',
+    if (isHls) 'HLS',
   ].join(' · ');
 
   // ── Serialisation ─────────────────────────────────────────────────────────
@@ -74,6 +115,8 @@ class Station {
     if (bitrate != null) 'bitrate': bitrate,
     if (tags.isNotEmpty) 'tags': tags,
     if (stationUuid != null) 'stationUuid': stationUuid,
+    if (reconnectOnEnd) 'reconnectOnEnd': true,
+    if (isHls) 'isHls': true,
   };
 
   factory Station.fromJson(Map<String, dynamic> j) => Station(
@@ -88,6 +131,8 @@ class Station {
     bitrate: (j['bitrate'] as num?)?.toInt(),
     tags: (j['tags'] as List?)?.cast<String>() ?? const [],
     stationUuid: j['stationUuid'] as String?,
+    reconnectOnEnd: j['reconnectOnEnd'] as bool? ?? false,
+    isHls: j['isHls'] as bool? ?? false,
   );
 
   Station copyWith({
@@ -102,6 +147,8 @@ class Station {
     Object? bitrate = _sentinel,
     List<String>? tags,
     Object? stationUuid = _sentinel,
+    bool? reconnectOnEnd,
+    bool? isHls,
   }) => Station(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -116,6 +163,8 @@ class Station {
     stationUuid: stationUuid == _sentinel
         ? this.stationUuid
         : stationUuid as String?,
+    reconnectOnEnd: reconnectOnEnd ?? this.reconnectOnEnd,
+    isHls: isHls ?? this.isHls,
   );
 }
 

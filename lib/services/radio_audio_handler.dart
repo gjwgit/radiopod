@@ -23,6 +23,7 @@ import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/services/browse_tree.dart';
 import 'package:radiopod/services/icy_reader.dart';
+import 'package:radiopod/services/stream_end_policy.dart';
 import 'package:radiopod/utils/platform_io.dart'
     if (dart.library.js_interop) 'package:radiopod/utils/platform_web.dart';
 
@@ -65,6 +66,19 @@ class RadioAudioHandler extends BaseAudioHandler {
   /// Both are needed to rebuild the published media item when ICY metadata
   /// arrives: the station supplies the name and logo, the track the subtitle.
 
+  /// When the current station started, and how many stations in a row have
+  /// ended too quickly to have really played. Together these stop
+  /// auto-advance from becoming a loop over a queue of dead stations.
+
+  DateTime? _startedAt;
+  int _failedAdvances = 0;
+
+  /// Runs while we wait to see whether a stream that ended comes back by
+  /// itself. Non-null means an advance is pending and can still be called
+  /// off. See [_onStreamEnded].
+
+  Timer? _endTimer;
+
   Station? _currentStation;
   String? _currentTrack;
 
@@ -103,14 +117,159 @@ class RadioAudioHandler extends BaseAudioHandler {
 
     _player.icyMetadataStream.listen(_broadcastTrack);
 
-    // 20260921 gjw A dropped stream surfaces here rather than as a thrown
-    // error, because setUrl has already returned by the time the connection
-    // fails. Report it as an error state so the notification and the car stop
-    // claiming to be playing.
+    // 20260922 gjw Most internet radio is an endless stream, but not all of
+    // it: NPR and other bulletin feeds genuinely END when the bulletin is
+    // over, and a dropped connection arrives here the same way, because
+    // setUrl has long since returned by the time it fails. Either way,
+    // sitting on a finished stream is the wrong thing — move to the next
+    // station, as Transistor does.
 
     _player.playerStateStream.listen((s) {
-      if (s.processingState == ProcessingState.completed) stop();
+      if (s.processingState == ProcessingState.completed) {
+        _onStreamEnded();
+      } else if (_resumed) {
+        // The stream picked itself back up. Call off any pending advance.
+
+        _cancelPendingAdvance();
+      }
     });
+  }
+
+  /// True when the player is actually producing audio again.
+  ///
+  /// Note that `playing` alone is NOT enough: just_audio leaves `playing`
+  /// true when a source runs out, and only moves `processingState` to
+  /// completed. Both have to be checked.
+
+  bool get _resumed =>
+      _player.playing &&
+      _player.processingState != ProcessingState.completed &&
+      _player.processingState != ProcessingState.idle;
+
+  void _cancelPendingAdvance() {
+    _endTimer?.cancel();
+    _endTimer = null;
+  }
+
+  /// A stream has run out. Reconnect, move on, or stop.
+  ///
+  /// A STATION THAT WAS PLAYING PROPERLY IS RECONNECTED, NOT ABANDONED. ABC
+  /// News Radio closes the connection at the end of each bulletin and is
+  /// still on air immediately afterwards; the player does NOT pick it up by
+  /// itself, so RadioPod has to open it again. Waiting instead of
+  /// reconnecting, as an earlier version did, just produced a long silence
+  /// and then the wrong station.
+  ///
+  /// [decideStreamEnd] holds the rule that separates that case from a
+  /// station that has genuinely finished.
+
+  void _onStreamEnded() {
+    if (_currentStation == null) return;
+
+    // A stream can report completed more than once. The first report starts
+    // the clock; later ones must not restart it.
+
+    if (_endTimer != null) return;
+
+    final played = _startedAt == null
+        ? Duration.zero
+        : DateTime.now().difference(_startedAt!);
+
+    // Read the flag from the library rather than from _currentStation, which
+    // is a snapshot taken when playback started. Otherwise turning the
+    // setting on for the station playing right now would not take effect
+    // until it was started again.
+
+    final station = _stations
+        .where((s) => s.id == _currentStation!.id)
+        .firstOrNull;
+    final reconnectOnEnd =
+        station?.reconnectOnEnd ?? _currentStation!.reconnectOnEnd;
+
+    final decision = decideStreamEnd(
+      queueLength: _queueStations.length,
+      failedAdvances: _failedAdvances,
+      played: played,
+      reconnectOnEnd: reconnectOnEnd,
+    );
+    _failedAdvances = decision.failedAdvances;
+
+    debugPrint(
+      '[RadioAudioHandler] ${_currentStation?.name} ended after '
+      '${played.inSeconds}s (reconnectOnEnd: $reconnectOnEnd) '
+      '-> ${decision.action.name}',
+    );
+
+    // A reconnect happens AT ONCE. This is a station that was playing
+    // happily a moment ago, so every extra second is an audible hole where
+    // there used to be well under one.
+
+    if (decision.action == StreamEndAction.reconnect) {
+      unawaited(_reconnectCurrent());
+
+      return;
+    }
+
+    // The other two paths do pause first, in case the player picks the
+    // stream back up by itself and saves us the trouble. The decision is
+    // carried through rather than recomputed, so time spent waiting can
+    // never be mistaken for time spent playing.
+
+    _endTimer = Timer(resumeGrace, () => _carryOut(decision.action));
+  }
+
+  /// Open the current station again after a break in transmission.
+  ///
+  /// [_startedAt] is reset BEFORE the attempt, so that a connection which
+  /// also ends immediately scores as a failure and the queue moves on,
+  /// rather than inheriting the long healthy run that earned the reconnect.
+  /// That is what stops a station which ends over and over from being
+  /// reconnected for ever.
+
+  Future<void> _reconnectCurrent() async {
+    final station = _currentStation;
+    if (station == null) return;
+
+    _startedAt = DateTime.now();
+    try {
+      await _player.setUrl(station.url);
+      await _player.play();
+    } catch (e) {
+      debugPrint('[RadioAudioHandler] reconnect to ${station.name} failed: $e');
+
+      // The station really has gone. Decide again, now scoring as a failure.
+
+      _onStreamEnded();
+    }
+  }
+
+  /// Carry out an advance or a stop, unless the stream came back meanwhile.
+
+  void _carryOut(StreamEndAction action) {
+    _cancelPendingAdvance();
+    if (_currentStation == null || _resumed) return;
+
+    if (action == StreamEndAction.stop) {
+      stop();
+
+      return;
+    }
+
+    // Nothing awaits this, and playStation rethrows when a stream will not
+    // open at all. Such a station never reaches `completed`, so without
+    // catching it here the chain would stop dead on the first bad URL — and
+    // the throw would surface as an unhandled async error.
+    //
+    // Straight back to _carryOut rather than through _onStreamEnded: a
+    // stream that refused to open has nothing to come back from, so waiting
+    // out another grace period would only add silence between dead stations.
+
+    unawaited(
+      skipToNext().catchError((Object e) {
+        debugPrint('[RadioAudioHandler] auto-advance could not start: $e');
+        _carryOut(StreamEndAction.advance);
+      }),
+    );
   }
 
   // ── Library ───────────────────────────────────────────────────────────────
@@ -159,6 +318,12 @@ class RadioAudioHandler extends BaseAudioHandler {
 
     _currentStation = station;
     _currentTrack = null;
+    _startedAt = DateTime.now();
+
+    // Any advance still pending for the station we are leaving belongs to
+    // that station, not this one.
+
+    _cancelPendingAdvance();
     _watchTrack(station);
 
     this.queue.add([
@@ -195,6 +360,18 @@ class RadioAudioHandler extends BaseAudioHandler {
 
     await _trackSubscription?.cancel();
     _trackSubscription = null;
+
+    // A stop ends the current run, so the next thing the user starts gets a
+    // full set of auto-advance attempts rather than inheriting the tally
+    // from a queue of stations that would not play.
+
+    _failedAdvances = 0;
+    _startedAt = null;
+
+    // A deliberate stop must not be followed moments later by an advance
+    // that was already in flight.
+
+    _cancelPendingAdvance();
 
     await _player.stop();
     playbackState.add(
@@ -241,7 +418,7 @@ class RadioAudioHandler extends BaseAudioHandler {
   void _watchTrack(Station station) {
     _trackSubscription?.cancel();
     _trackSubscription = null;
-    if (!needsIcyPolling) return;
+    if (!needsIcyPolling || !icyPollingEnabled) return;
 
     _trackSubscription = IcyReader.watch(station.url).listen(
       (title) {

@@ -165,8 +165,8 @@ unlinked_spec.ds
 # If you're building an application, you may want to check-in the
 # pubspec.lock. Libraries should not include pubspec.lock, per
 # https://dart.dev/guides/libraries/private-files#pubspeclock.
-# 
-# Out generic .gitignore ignores the file and an app will override it
+#
+# Our generic .gitignore ignores the file and an app will override it
 # with a `git add -f`. This seems the simplest approach.
 
 /pubspec.lock

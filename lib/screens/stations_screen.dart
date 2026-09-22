@@ -182,17 +182,35 @@ class _StationsScreenState extends State<StationsScreen> {
 
     **Station actions**
 
-    Add this station to one of your playlists, or remove it from your
-    library altogether.
+    Add this station to one of your playlists, say what should happen when
+    its stream ends, or remove it from your library altogether.
 
     ''',
     child: PopupMenuButton<String>(
-      onSelected: (value) => value == 'playlists'
-          ? _choosePlaylists(station)
-          : _confirmDelete(provider, station),
-      itemBuilder: (context) => const [
-        PopupMenuItem(value: 'playlists', child: Text('Add to playlist…')),
-        PopupMenuItem(value: 'delete', child: Text('Delete station')),
+      onSelected: (value) => switch (value) {
+        'playlists' => _choosePlaylists(station),
+        'reconnect' => provider.setReconnectOnEnd(
+          station.id,
+          !station.reconnectOnEnd,
+        ),
+        _ => _confirmDelete(provider, station),
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'playlists',
+          child: Text('Add to playlist…'),
+        ),
+
+        // 20260922 gjw Streams end for two opposite reasons and the player
+        // cannot tell them apart, so the listener marks which this station
+        // is. Off by default: a programme that finishes should hand over to
+        // the next station.
+        CheckedPopupMenuItem(
+          value: 'reconnect',
+          checked: station.reconnectOnEnd,
+          child: const Text('Reconnect when the stream ends'),
+        ),
+        const PopupMenuItem(value: 'delete', child: Text('Delete station')),
       ],
     ),
   );

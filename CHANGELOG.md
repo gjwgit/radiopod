@@ -37,6 +37,8 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.0 Functional App
 
++ Mark HLS streams and show one Search result per stream [1.0.6 20260922 gjw]
++ Move to the next station when a stream ends, or reconnect [1.0.5 20260922 gjw]
 + Drag stations into your own order on the Stations screen [1.0.4 20260922 gjw]
 + Add support for macOS installer builds [1.0.3 20260922 gjw]
 + Generated all icons [1.0.2 20260921 gjw]

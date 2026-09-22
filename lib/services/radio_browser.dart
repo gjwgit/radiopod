@@ -54,7 +54,7 @@ class RadioBrowser {
   /// Identifies the app to Radio-Browser, as their terms of use require.
 
   static const _userAgent =
-      'RadioPod/0.0.8 (+https://github.com/gjwgit/radiopod)';
+      'RadioPod/1.0.6 (+https://github.com/gjwgit/radiopod)';
 
   /// Endpoint listing the currently available API mirrors.
 
@@ -137,11 +137,25 @@ class RadioBrowser {
       );
     }
 
-    return (jsonDecode(utf8.decode(res.bodyBytes)) as List)
+    final stations = (jsonDecode(utf8.decode(res.bodyBytes)) as List)
         .cast<Map<String, dynamic>>()
         .map(_toStation)
         .whereType<Station>()
         .toList();
+
+    // 20260922 gjw Put continuous streams above HLS ones, keeping
+    // Radio-Browser's popularity order within each group. Broadcasters often
+    // publish a station both ways and the HLS entry can easily be the more
+    // popular — ABC News Radio's is — yet it is the one that dies after a
+    // minute on the desktop. Offering the workable entry first saves the
+    // user diagnosing a station that was never going to play properly.
+
+    return uniqueByUrl([
+      for (final s in stations)
+        if (!s.isHls) s,
+      for (final s in stations)
+        if (s.isHls) s,
+    ]);
   }
 
   /// Convert one Radio-Browser record to a [Station], or null if unusable.
@@ -169,8 +183,18 @@ class RadioBrowser {
       bitrate: (j['bitrate'] as num?)?.toInt(),
       tags: _str(j['tags'])?.split(',').map((t) => t.trim()).toList() ?? [],
       stationUuid: _str(j['stationuuid']),
+
+      // Radio-Browser reports 1 for a playlist-of-segments stream. See
+      // Station.isHls for why that matters on the desktop.
+      isHls: (j['hls'] as num?)?.toInt() == 1 || _looksLikeHls(url),
     );
   }
+
+  /// A fallback for records whose `hls` flag is not set but whose URL gives
+  /// it away, which happens with hand-entered Radio-Browser entries.
+
+  static bool _looksLikeHls(String url) =>
+      Uri.tryParse(url)?.path.toLowerCase().endsWith('.m3u8') ?? false;
 
   /// Trim a JSON string field, mapping empty and non-string values to null.
 
@@ -180,4 +204,30 @@ class RadioBrowser {
 
     return s.isEmpty ? null : s;
   }
+}
+
+/// Collapse records that point at the same stream.
+///
+/// Radio-Browser holds a separate record per submission, so one station can
+/// appear many times over — a search for ABC News Radio returns four entries,
+/// with different names and logos, that all resolve to the same Icecast
+/// address. Listing them all was actively misleading: saving one made the
+/// other three show as saved too, because the library matches on stream URL
+/// and they ARE the same station. One row per stream is the honest display.
+///
+/// The key is the exact URL, deliberately the same key the library uses to
+/// decide what is already saved. If those two ever diverged the duplicate
+/// ticks would come straight back.
+///
+/// The first record of each stream wins, which after the ordering in
+/// [RadioBrowser.search] is the most listened-to continuous one — the entry
+/// with the best chance of carrying sensible metadata.
+
+List<Station> uniqueByUrl(List<Station> stations) {
+  final seen = <String>{};
+
+  return [
+    for (final s in stations)
+      if (seen.add(s.url)) s,
+  ];
 }
