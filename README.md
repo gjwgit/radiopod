@@ -90,11 +90,13 @@ Android Auto sees RadioPod as a media app through a
 browse tree the head unit shows is two levels deep, which is what
 Android's media app guidelines ask for:
 
-    RadioPod
-    ├── <each of your playlists>
-    │   └── the stations in it, in playlist order
-    └── All Stations
-        └── every saved station, alphabetically
+```text
+RadioPod
+├── <each of your playlists>
+│   └── the stations in it, in playlist order
+└── All Stations
+    └── every saved station, alphabetically
+```
 
 Choosing a station sets the surrounding folder as the queue, so Next
 and Previous on the steering wheel move through the list that was
