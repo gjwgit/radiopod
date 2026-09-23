@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.1 Feature Tuning
 
++ Snap: allow the keyring access a Pod login needs [1.1.6 20260924 gjw]
 + Snap: play audio again, by finding libmpv's blas and lapack [1.1.5 20260924 gjw]
 + A stopped station shows its icon again, not a play button [1.1.4 20260923 gjw]
 + Station icons no longer flicker while a stream plays [1.1.3 20260923 gjw]

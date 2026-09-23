@@ -143,6 +143,21 @@ implementation there. On Debian and Ubuntu:
 sudo apt install libmpv-dev mpv
 ```
 
+### Snap
+
+The snap bundles libmpv, so the prerequisite above does not apply to
+it. It does need one interface connected by hand, because
+`password-manager-service` is not connected automatically:
+
+```bash
+sudo snap connect radiopod:password-manager-service
+```
+
+Without that the app starts but a Pod login stops with **Cannot access
+secure storage**, since the security key is held in your keyring and
+strict confinement blocks the app from reaching it. Tapping Continue
+to run without a Pod is unaffected.
+
 ## Playlist formats
 
 RadioPod reads and writes the two formats internet radio has always

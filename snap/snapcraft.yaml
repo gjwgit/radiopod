@@ -1,4 +1,5 @@
 name: radiopod
+version: 1.1.6
 summary: Privacy preserving internet radio player.
 description: |
   RadioPod plays internet radio. Find stations in the community-run
@@ -41,6 +42,24 @@ apps:
       - home
       - network
       - opengl
+
+      # 20260924 gjw solidpod keeps the security key through
+      # flutter_secure_storage, which on GNU/Linux is libsecret talking to
+      # gnome-keyring over the org.freedesktop.Secret.Service D-Bus name.
+      # Without this plug AppArmor blocks that call and login stops at
+      # "Cannot access secure storage ... An AppArmor policy prevents this
+      # sender from sending this message to this recipient".
+      #
+      # NOT AUTO-CONNECTED. Unlike the other plugs here this one needs
+      # either a snap declaration granted by the store reviewers or, for a
+      # locally installed snap, an explicit
+      #
+      #     snap connect radiopod:password-manager-service
+      #
+      # so declaring it is necessary but on its own not sufficient.
+      # innerpod and the snapapp template carry it too.
+      - password-manager-service
+
       - wayland
       - x11
 
@@ -89,13 +108,6 @@ parts:
     source: .
     plugin: flutter
     flutter-target: lib/main.dart
-
-    # Take the snap version from pubspec.yaml, dropping the build number
-    # after the `+` which snapd does not want.
-
-    override-pull: |
-      craftctl default
-      craftctl set version="$(grep '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1)"
 
     build-packages:
       - binutils
