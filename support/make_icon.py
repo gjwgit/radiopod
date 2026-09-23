@@ -19,7 +19,7 @@ anti-aliased; supersampling is what makes the curves clean.
 import math
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 S = 1024          # final size
 SS = 4            # supersample factor
@@ -251,7 +251,51 @@ img = Image.alpha_composite(
     img, rgba(np.zeros((N, N, 3), dtype=np.float32), vig)
 )
 
-img.convert('RGB').resize((S, S), Image.LANCZOS).save(
-    '/home/gjw/git/github/gjwgit/radiopod/assets/images/app_icon.png'
-)
-print('wrote assets/images/app_icon.png')
+ASSETS = '/home/gjw/git/github/gjwgit/radiopod/assets/images/'
+
+# ── Output 1: full bleed, opaque ───────────────────────────────────────────
+# For iOS, Android, web and Windows. Those platforms mask the icon to their
+# own shape, and iOS REJECTS an alpha channel outright, so the square must
+# reach every edge.
+
+img.convert('RGB').resize((S, S), Image.LANCZOS).save(ASSETS + 'app_icon.png')
+print('wrote app_icon.png          (full bleed, for iOS/Android/web/Windows)')
+
+# ── Output 2: shaped, transparent ──────────────────────────────────────────
+# For macOS and Linux, NEITHER OF WHICH MASKS THE ICON. Handed the full
+# bleed square they draw a hard-edged square, which looks wrong beside every
+# other app on the system. So the rounded shape and the surrounding
+# transparency have to be baked in here.
+#
+# Geometry follows Apple's macOS grid: an 824pt body on a 1024pt canvas,
+# leaving a 100pt margin for the shadow to occupy. The body is a
+# SUPERELLIPSE rather than a rounded rectangle — that is the "squircle"
+# Apple actually uses, and its continuous curvature is visibly smoother at
+# the corners than an arc spliced onto a straight edge.
+
+BODY, PAD_X, PAD_Y, EXP = 824, 100, 88, 5.0
+
+body_px = BODY * SS
+art = img.convert('RGBA').resize((body_px, body_px), Image.LANCZOS)
+
+canvas = Image.new('RGBA', (N, N), (0, 0, 0, 0))
+canvas.paste(art, (PAD_X * SS, PAD_Y * SS))
+
+bcx = (PAD_X + BODY / 2) * SS
+bcy = (PAD_Y + BODY / 2) * SS
+a = body_px / 2
+se = (np.abs((x - bcx) / a) ** EXP) + (np.abs((y - bcy) / a) ** EXP)
+mask = Image.fromarray(((se <= 1.0) * 255).astype(np.uint8), 'L')
+canvas.putalpha(mask)
+
+# Drop shadow, offset down into the margin the grid reserves for it.
+
+shadow = Image.composite(
+    Image.new('RGBA', (N, N), (0, 0, 0, 132)),
+    Image.new('RGBA', (N, N), (0, 0, 0, 0)),
+    ImageChops.offset(mask, 0, int(16 * SS)),
+).filter(ImageFilter.GaussianBlur(radius=SS * 14))
+
+shaped = Image.alpha_composite(shadow, canvas).resize((S, S), Image.LANCZOS)
+shaped.save(ASSETS + 'app_icon_shaped.png')
+print('wrote app_icon_shaped.png   (squircle + alpha, for macOS/Linux)')

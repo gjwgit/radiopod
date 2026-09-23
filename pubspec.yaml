@@ -1,7 +1,7 @@
 name: radiopod
 description: "Radio Pod - Internet Radio with Secure and Private Storage"
 publish_to: 'none'
-version: 1.0.12+1
+version: 1.0.13+1
 
 environment:
   sdk: ^3.13.4
@@ -93,8 +93,14 @@ flutter_launcher_icons:
   ios: true
   remove_alpha_ios: true
   background_color_ios: "#ffffff"
+  # 20260923 gjw macOS gets the SHAPED variant. Unlike iOS, macOS does not
+  # mask the icon — it draws exactly what it is given — so a full bleed
+  # square appears as a hard-edged square beside every other Mac app. The
+  # shaped file carries the squircle, its transparent surround and the
+  # drop shadow, on Apple's 824-in-1024 grid.
   macos:
     generate: true
+    image_path: "assets/images/app_icon_shaped.png"
   web:
     generate: true
     background_color: "#ffffff"

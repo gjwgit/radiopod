@@ -65,7 +65,7 @@ class IcyReader {
   static const _byteBudget = 96 * 1024;
 
   static const _userAgent =
-      'RadioPod/1.0.12 (+https://github.com/gjwgit/radiopod)';
+      'RadioPod/1.0.13 (+https://github.com/gjwgit/radiopod)';
 
   /// Emit the song on air for [url], repeatedly, until the subscription is
   /// cancelled.
