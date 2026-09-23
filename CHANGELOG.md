@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.1 Feature Tuning
 
++ Station icons no longer flicker while a stream plays [1.1.3 20260923 gjw]
 + Station Properties: rename, set an icon, reconnect option [1.1.2 20260923 gjw]
 + Stations saved from Search go to the top of the list [1.1.1 20260923 gjw]
 + The playing row is the player, replacing the overlapping card [1.1.0 20260923 gjw]

@@ -174,7 +174,9 @@ class StationTile extends StatelessWidget {
 
     final stored = decodeStationIcon(station.icon);
     if (stored != null) {
-      return _framed(Image.memory(stored, fit: BoxFit.cover));
+      return _framed(
+        Image.memory(stored, fit: BoxFit.cover, gaplessPlayback: true),
+      );
     }
 
     final favicon = station.favicon;

@@ -13,6 +13,7 @@ library;
 import 'package:flutter/material.dart';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:rxdart/rxdart.dart';
 
 import 'package:radiopod/services/player.dart';
 
@@ -42,6 +43,24 @@ class NowPlaying {
   /// True when [id] is the station the session is currently on.
 
   bool isCurrent(String id) => stationId != null && stationId == id;
+
+  // 20260923 gjw Value equality exists so the stream below can be made
+  // `distinct`. Without it the whole station list rebuilt on every playback
+  // event — several a second while buffering — for a snapshot that had not
+  // actually changed.
+
+  @override
+  bool operator ==(Object other) =>
+      other is NowPlaying &&
+      other.stationId == stationId &&
+      other.track == track &&
+      other.playing == playing &&
+      other.connecting == connecting &&
+      other.failed == failed;
+
+  @override
+  int get hashCode =>
+      Object.hash(stationId, track, playing, connecting, failed);
 }
 
 /// Rebuilds [builder] whenever the media session changes.
@@ -57,34 +76,36 @@ class NowPlayingBuilder extends StatelessWidget {
 
   const NowPlayingBuilder({super.key, required this.builder});
 
+  /// One stream of exactly what a row needs, and no more.
+  ///
+  /// Combining the two sources here rather than nesting two StreamBuilders
+  /// lets the result be made `distinct`, so a rebuild happens only when
+  /// something a row actually draws has changed.
+
+  static Stream<NowPlaying> get _stream => Rx.combineLatest2(
+    Player.handler.mediaItem,
+    Player.handler.playbackState,
+    (MediaItem? item, PlaybackState state) {
+      final processing = state.processingState;
+
+      return NowPlaying(
+        stationId: item?.extras?['stationId'] as String?,
+        track: item?.extras?['track'] as String?,
+        playing: state.playing,
+        connecting:
+            processing == AudioProcessingState.loading ||
+            processing == AudioProcessingState.buffering,
+        failed: processing == AudioProcessingState.error,
+      );
+    },
+  ).distinct();
+
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<MediaItem?>(
-      stream: Player.handler.mediaItem,
-      builder: (context, itemSnapshot) {
-        final item = itemSnapshot.data;
-
-        return StreamBuilder<PlaybackState>(
-          stream: Player.handler.playbackState,
-          builder: (context, stateSnapshot) {
-            final state = stateSnapshot.data;
-            final processing = state?.processingState;
-
-            return builder(
-              context,
-              NowPlaying(
-                stationId: item?.extras?['stationId'] as String?,
-                track: item?.extras?['track'] as String?,
-                playing: state?.playing ?? false,
-                connecting:
-                    processing == AudioProcessingState.loading ||
-                    processing == AudioProcessingState.buffering,
-                failed: processing == AudioProcessingState.error,
-              ),
-            );
-          },
-        );
-      },
+    return StreamBuilder<NowPlaying>(
+      stream: _stream,
+      builder: (context, snapshot) =>
+          builder(context, snapshot.data ?? const NowPlaying()),
     );
   }
 }

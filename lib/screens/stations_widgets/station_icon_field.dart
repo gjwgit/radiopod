@@ -139,7 +139,7 @@ class StationIconField extends StatelessWidget {
         ),
       );
     } else if (stored != null) {
-      inner = Image.memory(stored, fit: BoxFit.cover);
+      inner = Image.memory(stored, fit: BoxFit.cover, gaplessPlayback: true);
     } else if (station.favicon != null && station.favicon!.isNotEmpty) {
       inner = Image.network(
         station.favicon!,

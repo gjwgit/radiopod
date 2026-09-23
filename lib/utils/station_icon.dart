@@ -101,11 +101,37 @@ Future<String?> encodeStationIcon(Uint8List bytes) async {
 
 Uint8List? decodeStationIcon(String? icon) {
   if (icon == null || icon.isEmpty) return null;
+
+  final cached = _decoded[icon];
+  if (cached != null) return cached;
+
   try {
-    return base64Decode(icon);
+    final bytes = base64Decode(icon);
+
+    // Drop the lot rather than evict cleverly. Stations are few and icons
+    // change rarely, so this only guards against a long editing session
+    // holding on to every superseded icon.
+
+    if (_decoded.length >= _maxDecodedIcons) _decoded.clear();
+    _decoded[icon] = bytes;
+
+    return bytes;
   } catch (e) {
     debugPrint('[StationIcon] discarding unreadable icon: $e');
 
     return null;
   }
 }
+
+/// Decoded icons, held so that repeated builds get back the SAME list.
+///
+/// THIS IS WHAT STOPS THE ICONS FLASHING. `MemoryImage` compares its bytes
+/// with `==`, and `Uint8List` does not override that, so the comparison is
+/// by IDENTITY. Decoding afresh on each build handed `Image.memory` a new
+/// instance every time, which missed Flutter's image cache and re-decoded
+/// the picture — visible as a constant flicker, because the station list
+/// rebuilds on every playback event while a stream is running.
+
+final _decoded = <String, Uint8List>{};
+
+const _maxDecodedIcons = 128;

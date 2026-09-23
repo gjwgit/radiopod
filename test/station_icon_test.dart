@@ -78,6 +78,27 @@ void main() {
       expect(decodeStationIcon(encoded), isNotNull);
     });
 
+    test('gives back the SAME list each time, so icons do not flash', () {
+      // MemoryImage compares its bytes by identity, so a fresh Uint8List on
+      // every build misses Flutter's image cache and re-decodes the picture.
+      // That showed up as station icons flickering continuously while a
+      // stream played, because the list rebuilds on each playback event.
+
+      const encoded = 'aGVsbG8gd29ybGQ=';
+
+      expect(
+        identical(decodeStationIcon(encoded), decodeStationIcon(encoded)),
+        isTrue,
+      );
+    });
+
+    test('different icons stay distinct', () {
+      final a = decodeStationIcon('aGVsbG8gd29ybGQ=');
+      final b = decodeStationIcon('Z29vZGJ5ZSB3b3JsZA==');
+
+      expect(identical(a, b), isFalse);
+    });
+
     test('a station with no icon decodes to null', () {
       expect(decodeStationIcon(null), isNull);
       expect(decodeStationIcon(''), isNull);
