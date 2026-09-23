@@ -171,13 +171,23 @@ class AppProvider extends ChangeNotifier {
   /// Add [station] to the library, or return null unchanged if a station
   /// with the same stream URL is already saved.
   ///
+  /// GOES TO THE TOP, not the end. A station saved from Search has just been
+  /// chosen deliberately, and the list is the user's own order, so it lands
+  /// where it can be seen and dragged into place rather than at the bottom
+  /// of a library that may need scrolling to reach. It is also the first
+  /// thing Android Auto's All Stations list opens on.
+  ///
+  /// [importEntries] deliberately still appends: a playlist file brings in
+  /// stations wholesale, and putting fifty of them above a curated top would
+  /// bury it.
+  ///
   /// Matching on URL rather than name is what stops the same station being
   /// saved twice from two different Radio-Browser entries, which is common
   /// for popular stations.
 
   Future<String?> addStation(Station station) {
     if (_stations.any((s) => s.url == station.url)) return Future.value();
-    _stations = [..._stations, station];
+    _stations = [station, ..._stations];
 
     return _commit();
   }

@@ -230,6 +230,9 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _save(AppProvider provider, Station station) async {
     await provider.addStation(station);
     if (!mounted) return;
-    showPositiveSnackBar(context, 'Saved ${station.name}.');
+    showPositiveSnackBar(
+      context,
+      'Saved ${station.name} to the top of your stations.',
+    );
   }
 }

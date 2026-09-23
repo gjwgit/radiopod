@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.1 Feature Tuning
 
++ Stations saved from Search go to the top of the list [1.1.1 20260923 gjw]
 + The playing row is the player, replacing the overlapping card [1.1.0 20260923 gjw]
 
 ## 1.0 Functional App

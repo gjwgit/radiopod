@@ -65,16 +65,16 @@ const browseRootId = 'root';
 const browseAllStationsId = 'all_stations';
 const browsePlaylistPrefix = 'playlist:';
 
-/// How Android Auto should draw a level of the browse tree.
+/// How Android Auto should draw a level of the browse tree: one station per
+/// row, with its name in full, scrolling.
 ///
-/// A LIST puts one station per row with its name in full and scrolls; a GRID
-/// shows tiles of station logos. RadioPod asks for a list, because most
-/// stations have no logo at all — Radio-Browser's favicon field is empty or
-/// dead for a good share of them — so a grid becomes rows of identical
-/// placeholder tiles with the names truncated underneath.
+/// The alternative the API offers is 2, a grid of station logo tiles.
+/// RadioPod does not use it: most stations have no logo at all, because
+/// Radio-Browser's favicon field is empty or dead for a good share of them,
+/// so a grid becomes tiles of identical placeholders with the names
+/// truncated underneath.
 
 const autoStyleList = 1;
-const autoStyleGrid = 2;
 
 /// SnackBar colours.
 ///

@@ -100,6 +100,31 @@ void main() {
       expect(p.stations, hasLength(3));
     });
 
+    test('a saved station goes to the TOP, ready to be dragged', () async {
+      // Saved from Search, so it has just been chosen deliberately. Landing
+      // at the bottom of a long library would mean scrolling to find it
+      // before it could be moved anywhere.
+
+      final p = _provider();
+      await p.addStation(
+        const Station(id: 's3', name: 'New', url: 'https://live.example/n'),
+      );
+
+      expect(p.stations.first.name, 'New');
+      expect(p.stations.map((s) => s.name), ['New', 'Zulu FM', 'Alpha FM']);
+    });
+
+    test('an import still appends, so it cannot bury the top', () async {
+      final p = _provider();
+      await p.importEntries(const [
+        (name: 'Bulk One', url: 'https://live.example/b1'),
+        (name: 'Bulk Two', url: 'https://live.example/b2'),
+      ]);
+
+      expect(p.stations.first.name, 'Zulu FM');
+      expect(p.stations.last.name, 'Bulk Two');
+    });
+
     test('isSaved matches on URL, not name', () {
       final p = _provider();
 
