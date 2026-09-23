@@ -13,6 +13,7 @@ library;
 import 'package:flutter/material.dart';
 
 import 'package:radiopod/models/station.dart';
+import 'package:radiopod/utils/station_icon.dart';
 
 /// A station row, used by the Stations list, a playlist's contents, and the
 /// Search results.
@@ -166,22 +167,31 @@ class StationTile extends StatelessWidget {
   /// takes over silently.
 
   Widget _logo(ColorScheme cs) {
-    final favicon = station.favicon;
     final fallback = Icon(Icons.radio, color: cs.primary);
 
+    // A stored icon wins: it was chosen or downloaded deliberately, it
+    // cannot rot the way the advertised URL does, and it needs no network.
+
+    final stored = decodeStationIcon(station.icon);
+    if (stored != null) {
+      return _framed(Image.memory(stored, fit: BoxFit.cover));
+    }
+
+    final favicon = station.favicon;
     if (favicon == null || favicon.isEmpty) return fallback;
 
-    return SizedBox(
-      width: 40,
-      height: 40,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(6),
-        child: Image.network(
-          favicon,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => fallback,
-        ),
+    return _framed(
+      Image.network(
+        favicon,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => fallback,
       ),
     );
   }
+
+  Widget _framed(Widget child) => SizedBox(
+    width: 40,
+    height: 40,
+    child: ClipRRect(borderRadius: BorderRadius.circular(6), child: child),
+  );
 }

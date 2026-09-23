@@ -69,6 +69,20 @@ class Station {
 
   final bool reconnectOnEnd;
 
+  /// The station's artwork, as a base64 PNG, when one has been stored.
+  ///
+  /// Takes precedence over [favicon]. That field is only a URL, and
+  /// Radio-Browser's copy of it is dead for a good share of stations, so
+  /// Properties offers to download it once and keep the bytes — after which
+  /// the icon survives the link rotting, works offline, and can be replaced
+  /// with a picture of the user's own choosing.
+  ///
+  /// Scaled to [stationIconWidth] before storing, because the whole station
+  /// list is rewritten to the Pod on every edit and each icon is carried
+  /// along every time.
+
+  final String? icon;
+
   const Station({
     required this.id,
     required this.name,
@@ -83,6 +97,7 @@ class Station {
     this.stationUuid,
     this.reconnectOnEnd = false,
     this.isHls = false,
+    this.icon,
   });
 
   // ── Derived properties ────────────────────────────────────────────────────
@@ -117,6 +132,7 @@ class Station {
     if (stationUuid != null) 'stationUuid': stationUuid,
     if (reconnectOnEnd) 'reconnectOnEnd': true,
     if (isHls) 'isHls': true,
+    if (icon != null) 'icon': icon,
   };
 
   factory Station.fromJson(Map<String, dynamic> j) => Station(
@@ -133,6 +149,7 @@ class Station {
     stationUuid: j['stationUuid'] as String?,
     reconnectOnEnd: j['reconnectOnEnd'] as bool? ?? false,
     isHls: j['isHls'] as bool? ?? false,
+    icon: j['icon'] as String?,
   );
 
   Station copyWith({
@@ -149,6 +166,7 @@ class Station {
     Object? stationUuid = _sentinel,
     bool? reconnectOnEnd,
     bool? isHls,
+    Object? icon = _sentinel,
   }) => Station(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -165,6 +183,7 @@ class Station {
         : stationUuid as String?,
     reconnectOnEnd: reconnectOnEnd ?? this.reconnectOnEnd,
     isHls: isHls ?? this.isHls,
+    icon: icon == _sentinel ? this.icon : icon as String?,
   );
 }
 

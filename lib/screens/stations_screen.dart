@@ -18,6 +18,7 @@ import 'package:provider/provider.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/stations_widgets/add_to_playlist_sheet.dart';
 import 'package:radiopod/screens/stations_widgets/station_empty_state.dart';
+import 'package:radiopod/screens/stations_widgets/station_properties_dialog.dart';
 import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/services/player.dart';
 import 'package:radiopod/widgets/app_snack_bar.dart';
@@ -188,35 +189,20 @@ class _StationsScreenState extends State<StationsScreen> {
 
     **Station actions**
 
-    Add this station to one of your playlists, say what should happen when
-    its stream ends, or remove it from your library altogether.
+    Rename this station, give it an icon, say what should happen when its
+    stream ends, add it to a playlist, or remove it from your library.
 
     ''',
     child: PopupMenuButton<String>(
       onSelected: (value) => switch (value) {
+        'properties' => _editProperties(provider, station),
         'playlists' => _choosePlaylists(station),
-        'reconnect' => provider.setReconnectOnEnd(
-          station.id,
-          !station.reconnectOnEnd,
-        ),
         _ => _confirmDelete(provider, station),
       },
-      itemBuilder: (context) => [
-        const PopupMenuItem(
-          value: 'playlists',
-          child: Text('Add to playlist…'),
-        ),
-
-        // 20260922 gjw Streams end for two opposite reasons and the player
-        // cannot tell them apart, so the listener marks which this station
-        // is. Off by default: a programme that finishes should hand over to
-        // the next station.
-        CheckedPopupMenuItem(
-          value: 'reconnect',
-          checked: station.reconnectOnEnd,
-          child: const Text('Reconnect when the stream ends'),
-        ),
-        const PopupMenuItem(value: 'delete', child: Text('Delete station')),
+      itemBuilder: (context) => const [
+        PopupMenuItem(value: 'properties', child: Text('Properties…')),
+        PopupMenuItem(value: 'playlists', child: Text('Add to playlist…')),
+        PopupMenuItem(value: 'delete', child: Text('Delete station')),
       ],
     ),
   );
@@ -245,6 +231,17 @@ class _StationsScreenState extends State<StationsScreen> {
             'again in Search.\n\n$e',
       );
     }
+  }
+
+  /// Rename the station, set its icon, and choose what a stream end means.
+
+  Future<void> _editProperties(AppProvider provider, Station station) async {
+    final updated = await showStationPropertiesDialog(context, station);
+    if (updated == null || !mounted) return;
+
+    await provider.updateStation(updated);
+    if (!mounted) return;
+    showPositiveSnackBar(context, 'Updated ${updated.name}.');
   }
 
   Future<void> _choosePlaylists(Station station) => showModalBottomSheet<void>(
