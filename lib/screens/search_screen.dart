@@ -19,10 +19,12 @@ import 'package:provider/provider.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/search_widgets/search_intro.dart';
 import 'package:radiopod/services/app_provider.dart';
+import 'package:radiopod/services/player.dart';
 import 'package:radiopod/services/radio_browser.dart';
 import 'package:radiopod/services/view_prefs.dart';
 import 'package:radiopod/widgets/app_snack_bar.dart';
 import 'package:radiopod/widgets/error_dialog.dart';
+import 'package:radiopod/widgets/now_playing.dart';
 import 'package:radiopod/widgets/station_tile.dart';
 
 /// Search Radio-Browser by station name or by genre.
@@ -126,18 +128,26 @@ class _SearchScreenState extends State<SearchScreen> {
 
     final provider = context.watch<AppProvider>();
 
-    return ListView.builder(
-      itemCount: _results.length,
-      itemBuilder: (context, i) {
-        final station = _results[i];
-        final saved = provider.isSaved(station.url);
+    return NowPlayingBuilder(
+      builder: (context, now) => ListView.builder(
+        itemCount: _results.length,
+        itemBuilder: (context, i) {
+          final station = _results[i];
+          final saved = provider.isSaved(station.url);
 
-        return StationTile(
-          station: station,
-          onTap: () => _preview(station),
-          trailing: saved
-              ? const MarkdownTooltip(
-                  message: '''
+          return StationTile(
+            station: station,
+            current: now.isCurrent(station.id),
+            playing: now.playing,
+            connecting: now.connecting,
+            failed: now.failed,
+            track: now.track,
+            onTap: () => now.isCurrent(station.id)
+                ? (now.playing ? Player.handler.stop() : Player.handler.play())
+                : _preview(station),
+            trailing: saved
+                ? const MarkdownTooltip(
+                    message: '''
 
                   **Already saved**
 
@@ -145,10 +155,10 @@ class _SearchScreenState extends State<SearchScreen> {
                   screen to play it or add it to a playlist.
 
                   ''',
-                  child: Icon(Icons.check),
-                )
-              : MarkdownTooltip(
-                  message: '''
+                    child: Icon(Icons.check),
+                  )
+                : MarkdownTooltip(
+                    message: '''
 
                   **Save**
 
@@ -156,13 +166,14 @@ class _SearchScreenState extends State<SearchScreen> {
                   your Solid Pod.
 
                   ''',
-                  child: IconButton(
-                    icon: const Icon(Icons.add_circle_outline),
-                    onPressed: () => _save(provider, station),
+                    child: IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: () => _save(provider, station),
+                    ),
                   ),
-                ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

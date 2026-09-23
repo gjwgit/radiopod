@@ -20,8 +20,10 @@ import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/playlists_widgets/playlist_name_dialog.dart';
 import 'package:radiopod/services/app_provider.dart';
+import 'package:radiopod/services/player.dart';
 import 'package:radiopod/widgets/app_snack_bar.dart';
 import 'package:radiopod/widgets/error_dialog.dart';
+import 'package:radiopod/widgets/now_playing.dart';
 import 'package:radiopod/widgets/startup_overlay.dart';
 import 'package:radiopod/widgets/station_tile.dart';
 
@@ -46,12 +48,14 @@ class PlaylistsScreen extends StatelessWidget {
             ? const Center(child: CircularProgressIndicator())
             : provider.playlists.isEmpty
             ? _empty(context)
-            : ListView(
-                padding: const EdgeInsets.only(bottom: 88),
-                children: [
-                  for (final p in provider.playlists)
-                    _tile(context, provider, p),
-                ],
+            : NowPlayingBuilder(
+                builder: (context, now) => ListView(
+                  padding: const EdgeInsets.only(bottom: 88),
+                  children: [
+                    for (final p in provider.playlists)
+                      _tile(context, provider, p, now),
+                  ],
+                ),
               ),
         floatingActionButton: MarkdownTooltip(
           message: '''
@@ -101,7 +105,12 @@ class PlaylistsScreen extends StatelessWidget {
     );
   }
 
-  Widget _tile(BuildContext context, AppProvider provider, Playlist playlist) {
+  Widget _tile(
+    BuildContext context,
+    AppProvider provider,
+    Playlist playlist,
+    NowPlaying now,
+  ) {
     final stations = provider.stationsOf(playlist);
     final n = stations.length;
 
@@ -138,7 +147,14 @@ class PlaylistsScreen extends StatelessWidget {
           for (final s in stations)
             StationTile(
               station: s,
-              onTap: () => _play(context, provider, s, stations),
+              current: now.isCurrent(s.id),
+              playing: now.playing,
+              connecting: now.connecting,
+              failed: now.failed,
+              track: now.track,
+              onTap: () => now.isCurrent(s.id)
+                  ? _toggle(now)
+                  : _play(context, provider, s, stations),
               trailing: MarkdownTooltip(
                 message:
                     '''
@@ -227,6 +243,11 @@ class PlaylistsScreen extends StatelessWidget {
     if (stations.isEmpty) return;
     _play(context, provider, stations.first, stations);
   }
+
+  /// Stop the station on air, or start it again where it left off.
+
+  Future<void> _toggle(NowPlaying now) =>
+      now.playing ? Player.handler.stop() : Player.handler.play();
 
   Future<void> _play(
     BuildContext context,

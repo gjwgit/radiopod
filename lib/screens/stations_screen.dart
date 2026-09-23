@@ -12,7 +12,6 @@ library;
 
 import 'package:flutter/material.dart';
 
-import 'package:audio_service/audio_service.dart';
 import 'package:markdown_tooltip/markdown_tooltip.dart';
 import 'package:provider/provider.dart';
 
@@ -23,6 +22,7 @@ import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/services/player.dart';
 import 'package:radiopod/widgets/app_snack_bar.dart';
 import 'package:radiopod/widgets/error_dialog.dart';
+import 'package:radiopod/widgets/now_playing.dart';
 import 'package:radiopod/widgets/startup_overlay.dart';
 import 'package:radiopod/widgets/station_tile.dart';
 
@@ -113,19 +113,25 @@ class _StationsScreenState extends State<StationsScreen> {
     List<Station> visible, {
     required bool reorderable,
   }) {
-    return StreamBuilder<MediaItem?>(
-      stream: Player.handler.mediaItem,
-      builder: (context, snapshot) {
-        final playingId = snapshot.data?.extras?['stationId'] as String?;
-
+    return NowPlayingBuilder(
+      builder: (context, now) {
         Widget row(int i) {
           final station = visible[i];
+          final current = now.isCurrent(station.id);
 
           return StationTile(
             key: ValueKey(station.id),
             station: station,
-            selected: station.id == playingId,
-            onTap: () => _play(provider, station, visible),
+            current: current,
+            playing: now.playing,
+            connecting: now.connecting,
+            failed: now.failed,
+            track: now.track,
+
+            // Tapping the station on air toggles it; tapping any other row
+            // switches to that station.
+            onTap: () =>
+                current ? _toggle(now) : _play(provider, station, visible),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -214,6 +220,11 @@ class _StationsScreenState extends State<StationsScreen> {
       ],
     ),
   );
+
+  /// Stop the station on air, or start it again where it left off.
+
+  Future<void> _toggle(NowPlaying now) =>
+      now.playing ? Player.handler.stop() : Player.handler.play();
 
   Future<void> _play(
     AppProvider provider,

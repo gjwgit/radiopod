@@ -74,8 +74,61 @@ void main() {
     expect(find.byIcon(Icons.remove_circle_outline), findsOneWidget);
   });
 
-  testWidgets('marks the selected station in bold', (tester) async {
-    await _pump(tester, const StationTile(station: plain, selected: true));
+  testWidgets('the track replaces the station details while playing', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      const StationTile(
+        station: detailed,
+        current: true,
+        playing: true,
+        track: 'Pink Floyd - Wish You Were Here',
+      ),
+    );
+
+    expect(find.text('Pink Floyd - Wish You Were Here'), findsOneWidget);
+    expect(find.text('Australia · MP3 · 128 kbps'), findsNothing);
+  });
+
+  testWidgets('the row on air offers Stop, not the logo', (tester) async {
+    await _pump(
+      tester,
+      const StationTile(station: plain, current: true, playing: true),
+    );
+
+    expect(find.byIcon(Icons.stop_circle), findsOneWidget);
+    expect(find.byIcon(Icons.radio), findsNothing);
+  });
+
+  testWidgets('a stopped row offers Play and says so', (tester) async {
+    await _pump(tester, const StationTile(station: plain, current: true));
+
+    expect(find.byIcon(Icons.play_circle), findsOneWidget);
+    expect(find.text('Stopped'), findsOneWidget);
+  });
+
+  testWidgets('a connecting row shows progress', (tester) async {
+    await _pump(
+      tester,
+      const StationTile(station: plain, current: true, connecting: true),
+    );
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.text('Connecting…'), findsOneWidget);
+  });
+
+  testWidgets('rows that are not on air keep their logo and details', (
+    tester,
+  ) async {
+    await _pump(tester, const StationTile(station: detailed));
+
+    expect(find.byIcon(Icons.radio), findsOneWidget);
+    expect(find.text('Australia · MP3 · 128 kbps'), findsOneWidget);
+  });
+
+  testWidgets('marks the station on air in bold', (tester) async {
+    await _pump(tester, const StationTile(station: plain, current: true));
     final text = tester.widget<Text>(find.text('Alpha FM'));
 
     expect(text.style?.fontWeight, FontWeight.w600);

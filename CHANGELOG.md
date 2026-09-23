@@ -35,6 +35,10 @@ then please show some ❤️ and tap on the star at
 This app is authored by [Graham
 Williams](https://togaware.com/Graham.Williams.html).
 
+## 1.1 Feature Tuning
+
++ The playing row is the player, replacing the overlapping card [1.1.0 20260923 gjw]
+
 ## 1.0 Functional App
 
 + Stop no longer makes the station stop itself again [1.0.17 20260923 gjw]

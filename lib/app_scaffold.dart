@@ -39,7 +39,6 @@ import 'package:radiopod/screens/stations_screen.dart';
 import 'package:radiopod/screens/transfer_screen.dart';
 import 'package:radiopod/services/app_provider.dart'
     show AppProvider, StartupPhase;
-import 'package:radiopod/widgets/player_bar.dart';
 import 'package:radiopod/widgets/pod_refresh_action.dart';
 
 const appScaffold = AppScaffold();
@@ -215,12 +214,6 @@ class _AppScaffoldState extends State<AppScaffold> {
           ),
         ],
 
-        // 20260921 gjw The now-playing bar rides in the Scaffold's persistent
-        // bottomSheet slot so it is visible from every screen — switching to
-        // Search must not hide what is playing or take away the Stop button.
-        // PlayerBar collapses to nothing when there is no current station, so
-        // the slot costs no space when idle.
-        bottomSheet: const PlayerBar(),
         statusBar: SolidStatusBarConfig(
           loginStatus: const SolidLoginStatus(),
           serverInfo: const SolidServerInfo(

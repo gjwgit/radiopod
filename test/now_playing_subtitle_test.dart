@@ -1,8 +1,8 @@
-/// Widget tests for the now-playing bar's second line.
+/// Tests for the second line of a station row while it is on air.
 ///
-/// PlayerBar reads the live media session, which needs a running audio
-/// service, so these exercise the same MediaItem shape the handler
-/// publishes through the presentation logic rather than the whole widget.
+/// The media item is what carries that line to every surface — the station
+/// row, the Android notification and the car — so these exercise the shape
+/// the handler publishes rather than any one widget.
 ///
 // Time-stamp: <Sunday 2026-09-21 06:00:00 +1000 Graham Williams>
 ///
