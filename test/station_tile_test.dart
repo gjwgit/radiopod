@@ -101,10 +101,17 @@ void main() {
     expect(find.byIcon(Icons.radio), findsNothing);
   });
 
-  testWidgets('a stopped row offers Play and says so', (tester) async {
+  testWidgets('a stopped row gets its logo back and says so', (tester) async {
+    // Only a row that is doing something gives up its artwork. Stopped there
+    // is nothing to interrupt, so a Play button would cost the icon for no
+    // gain — tapping the row starts it again, and the 'Stopped' line still
+    // says which station it was.
+
     await _pump(tester, const StationTile(station: plain, current: true));
 
-    expect(find.byIcon(Icons.play_circle), findsOneWidget);
+    expect(find.byIcon(Icons.radio), findsOneWidget);
+    expect(find.byIcon(Icons.play_circle), findsNothing);
+    expect(find.byIcon(Icons.stop_circle), findsNothing);
     expect(find.text('Stopped'), findsOneWidget);
   });
 

@@ -124,6 +124,13 @@ class StationTile extends StatelessWidget {
   /// Swapping the logo for a Stop button is deliberate: it puts the control
   /// exactly where the eye already is for the highlighted row, and costs no
   /// extra width in a list that has to work on a phone.
+  ///
+  /// A STOPPED ROW GETS ITS LOGO BACK. Only a row that is doing something —
+  /// playing, connecting, or failed — gives up its artwork, because that is
+  /// when the state is worth more than the picture. Once stopped there is
+  /// nothing to interrupt, and a Play button would hide the icon for no
+  /// gain: tapping the row already starts it again, and the highlight and
+  /// the 'Stopped' line still say which station it was.
 
   Widget _leading(ColorScheme cs) {
     if (current) {
@@ -141,19 +148,17 @@ class StationTile extends StatelessWidget {
         );
       }
 
-      return SizedBox(
-        width: 40,
-        height: 40,
-        child: Icon(
-          failed
-              ? Icons.error_outline
-              : playing
-              ? Icons.stop_circle
-              : Icons.play_circle,
-          size: 34,
-          color: failed ? cs.error : cs.primary,
-        ),
-      );
+      if (failed || playing) {
+        return SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(
+            failed ? Icons.error_outline : Icons.stop_circle,
+            size: 34,
+            color: failed ? cs.error : cs.primary,
+          ),
+        );
+      }
     }
 
     return _logo(cs);
