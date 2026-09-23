@@ -42,7 +42,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 + Station icons no longer flicker while a stream plays [1.1.3 20260923 gjw]
 + Station Properties: rename, set an icon, reconnect option [1.1.2 20260923 gjw]
 + Stations saved from Search go to the top of the list [1.1.1 20260923 gjw]
-+ The playing row is the player, replacing the overlapping card [1.1.0 20260923 gjw]
++ Playing row is now player, replacing the overlapping card [1.1.0 20260923 gjw]
 
 ## 1.0 Functional App
 
@@ -52,7 +52,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 + Android Auto opens on a scrollable station list [1.0.14 20260923 gjw]
 + Rounded icon with transparency for Linux and macOS [1.0.13 20260923 gjw]
 + New app artwork: a tuner dial receiving a signal [1.0.12 20260923 gjw]
-+ macOS: ship the app icon instead of the default Flutter logo [1.0.11 20260923 gjw]
++ macOS: ship app icon instead of default Flutter logo [1.0.11 20260923 gjw]
 + macOS: allow the plain http streams most stations use [1.0.10 20260923 gjw]
 + macOS: stop asking the keychain before the login screen [1.0.9 20260922 gjw]
 + Avoid Impeller rendering for now [1.0.8 20260922 gjw]
