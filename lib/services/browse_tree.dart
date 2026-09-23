@@ -53,14 +53,27 @@ String stationMediaId(String parentId, String stationId) =>
   );
 }
 
-/// The top level: every playlist, then all stations.
+/// The top level: all stations, then every playlist.
 ///
-/// Playlists come first because they are the lists the user curated, and a
-/// long alphabetical dump of every station is rarely what is wanted while
-/// driving. Empty playlists are still listed — hiding them would make a
-/// playlist the user just created appear broken.
+/// ALL STATIONS COMES FIRST ON PURPOSE. Android Auto turns the root's
+/// browsable children into the tabs across the top of the screen and opens
+/// the first one, so putting the station list there means the driver lands
+/// straight on a scrollable list of stations instead of having to drill into
+/// a folder. The playlists become the remaining tabs.
+///
+/// This also reads better now the Stations screen is in the user's own
+/// dragged order rather than alphabetical: whatever they reach for most sits
+/// at the top of the list the car opens with.
+///
+/// Empty playlists are still listed — hiding them would make a playlist the
+/// user just created appear broken.
 
 List<MediaItem> browseRoot(List<Playlist> playlists) => [
+  const MediaItem(
+    id: browseAllStationsId,
+    title: 'All Stations',
+    playable: false,
+  ),
   for (final p in playlists)
     MediaItem(
       id: '$browsePlaylistPrefix${p.id}',
@@ -68,11 +81,6 @@ List<MediaItem> browseRoot(List<Playlist> playlists) => [
       playable: false,
       displaySubtitle: _stationCount(p.stationIds.length),
     ),
-  const MediaItem(
-    id: browseAllStationsId,
-    title: 'All Stations',
-    playable: false,
-  ),
 ];
 
 /// The stations inside the folder [parentId].

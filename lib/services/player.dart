@@ -68,12 +68,15 @@ class Player {
         // that the two are not both set.
         androidStopForegroundOnPause: false,
 
-        // 20260920 gjw Tells Android Auto to draw the browse tree as a grid
-        // of station logos rather than a plain list.
+        // 20260923 gjw Ask Android Auto for SCROLLABLE LISTS rather than
+        // grids of tiles. A list shows each station's full name, fits more
+        // rows on a head unit, and scrolls; a grid is only worth it when
+        // every item has distinctive artwork, which internet radio does not.
+        // See autoStyleList in constants/app.dart.
         androidBrowsableRootExtras: {
           'android.media.browse.CONTENT_STYLE_SUPPORTED': true,
-          'android.media.browse.CONTENT_STYLE_BROWSABLE_HINT': 2,
-          'android.media.browse.CONTENT_STYLE_PLAYABLE_HINT': 2,
+          'android.media.browse.CONTENT_STYLE_BROWSABLE_HINT': autoStyleList,
+          'android.media.browse.CONTENT_STYLE_PLAYABLE_HINT': autoStyleList,
         },
       ),
     );

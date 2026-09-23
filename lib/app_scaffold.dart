@@ -1,6 +1,6 @@
 /// RadioPod — application scaffold configuration.
 ///
-// Time-stamp: <Sunday 2026-09-21 06:00:00 +1000 Graham Williams>
+// Time-stamp: <Wednesday 2026-09-23 13:43:29 +1000 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -150,7 +150,7 @@ class _AppScaffoldState extends State<AppScaffold> {
           our [Australian Solid Community](https://solidcommunity.au) web site.
 
           ''',
-          readmeUrl: 'https://gjwgit.github.io/radiopod',
+          docsUrl: 'https://gjwgit.github.io/radiopod',
         ),
         themeToggle: const SolidThemeToggleConfig(enabled: true),
         appBar: SolidAppBarConfig(

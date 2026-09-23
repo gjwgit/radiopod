@@ -47,18 +47,22 @@ void main() {
   });
 
   group('browseRoot', () {
-    test('lists playlists first, then All Stations', () {
+    test('lists All Stations first, then the playlists', () {
+      // Android Auto turns these into tabs and opens the first, so All
+      // Stations leading means the driver lands on the station list rather
+      // than having to drill into a folder.
+
       final root = browseRoot(_playlists);
 
-      expect(root.map((m) => m.title), ['Drive', 'Empty', 'All Stations']);
+      expect(root.map((m) => m.title), ['All Stations', 'Drive', 'Empty']);
       expect(root.every((m) => m.playable == false), isTrue);
     });
 
     test('counts the stations in each playlist', () {
       final root = browseRoot(_playlists);
 
-      expect(root[0].displaySubtitle, '2 stations');
-      expect(root[1].displaySubtitle, '0 stations');
+      expect(root[1].displaySubtitle, '2 stations');
+      expect(root[2].displaySubtitle, '0 stations');
     });
 
     test('an empty library still offers All Stations', () {
