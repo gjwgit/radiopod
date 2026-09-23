@@ -1,7 +1,7 @@
 name: radiopod
 description: "Radio Pod - Internet Radio with Secure and Private Storage"
 publish_to: 'none'
-version: 1.0.14+1
+version: 1.0.15+1
 
 environment:
   sdk: ^3.13.4
@@ -90,6 +90,18 @@ flutter_launcher_icons:
   image_path: "assets/images/app_icon.png"
   android: true
   min_sdk_android: 21
+
+  # 20260923 gjw An ADAPTIVE icon, which is what Android 8 and later — and
+  # so Android Auto's app grid — actually want. Given only the legacy square
+  # PNGs, Android shrinks the whole icon onto a generated white plate, which
+  # is why RadioPod looked wrong beside the other media apps in the car.
+  #
+  # The foreground is the dial alone on transparency, scaled into the 66dp
+  # safe zone of the 108dp canvas so the circular mask cannot clip the signal
+  # arcs. The background is a flat colour sampled from the artwork itself.
+
+  adaptive_icon_background: "#6C391D"
+  adaptive_icon_foreground: "assets/images/app_icon_foreground.png"
   ios: true
   remove_alpha_ios: true
   background_color_ios: "#ffffff"

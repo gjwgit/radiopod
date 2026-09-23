@@ -96,7 +96,8 @@ for i in range(3):
     base = BG_LIT[i] + (BG_DARK[i] - BG_LIT[i]) * (lit ** 0.9)
     bg[..., i] = np.clip(base + pool * 34, 0, 255)
 
-img = Image.fromarray(bg.astype(np.uint8), 'RGB').convert('RGBA')
+bg_img = Image.fromarray(bg.astype(np.uint8), 'RGB').convert('RGBA')
+img = Image.new('RGBA', (N, N), (0, 0, 0, 0))
 
 # ── Drop shadow ────────────────────────────────────────────────────────────
 # Lifts the dial off the background. Offset down and right, away from the
@@ -241,6 +242,9 @@ for r, w, a in ((372, 19, 255), (420, 16, 190), (468, 13, 120)):
 
 img = Image.alpha_composite(img, signal)
 
+mark_only = img.copy()
+img = Image.alpha_composite(bg_img, img)
+
 # ── Corner shading ─────────────────────────────────────────────────────────
 # Slight darkening at the extreme corners so the square still has depth once
 # macOS rounds it.
@@ -252,6 +256,44 @@ img = Image.alpha_composite(
 )
 
 ASSETS = '/home/gjw/git/github/gjwgit/radiopod/assets/images/'
+
+# ── Output 3: Android adaptive foreground ──────────────────────────────────
+# Android 8 and later mask every launcher icon to the shape the device
+# chooses, and Android Auto's app grid does the same. Handed a legacy square
+# PNG it shrinks the whole thing onto a generated white plate, which is why
+# the icon looks wrong in the car.
+#
+# An adaptive icon avoids that by supplying the dial on its own, transparent,
+# with a flat colour behind it.
+#
+# MIND THE DOUBLE INSET. The canvas is 108dp but only the middle 66dp is
+# guaranteed to survive the mask, and flutter_launcher_icons ALREADY insets
+# this drawable by 16% in the ic_launcher.xml it writes — leaving it the
+# middle 68%. So the artwork here wants to be very nearly full bleed; a
+# generous safe-zone margin at this stage would be applied twice over and
+# leave a tiny dial adrift in empty space.
+#
+# So the mark is passed through at full size. Its own outermost element, the
+# faintest signal arc, reaches 0.92 of the half canvas, which after the 16%
+# inset sits at about 34dp — inside the 36dp radius of the circular mask
+# Android Auto uses, and only a shade over the 33dp that every mask shape
+# guarantees. Verified by rendering the drawable through a circular mask.
+
+SAFE = 1.0
+fg_px = int(S * SAFE)
+foreground = Image.new('RGBA', (S, S), (0, 0, 0, 0))
+foreground.paste(
+    mark_only.resize((fg_px, fg_px), Image.LANCZOS),
+    ((S - fg_px) // 2, (S - fg_px) // 2),
+)
+foreground.save(ASSETS + 'app_icon_foreground.png')
+print('wrote app_icon_foreground.png (safe-zone dial, for Android adaptive)')
+
+# The flat colour behind it, sampled from the artwork's own background just
+# outside the dial so the adaptive icon matches the other platforms.
+
+sample = bg_img.convert('RGB').getpixel((int(N * 0.5), int(N * 0.14)))
+print('  adaptive_icon_background: #%02X%02X%02X' % sample)
 
 # ── Output 1: full bleed, opaque ───────────────────────────────────────────
 # For iOS, Android, web and Windows. Those platforms mask the icon to their
