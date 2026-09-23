@@ -51,7 +51,23 @@ apps:
       # playback fails with "Cannot find libmpv at the usual places".
       # The gnome extension sets LD_LIBRARY_PATH for its own libraries;
       # this appends the staged arch directory holding libmpv.
-      LD_LIBRARY_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$LD_LIBRARY_PATH
+      #
+      # 20260924 gjw The blas and lapack directories are appended because
+      # libmpv depends on libblas.so.3 and liblapack.so.3, and on Ubuntu
+      # those two are chosen by update-alternatives: the real files live
+      # in the blas/ and lapack/ subdirectories and the names the loader
+      # looks for are symlinks in the parent, created by the alternatives
+      # system when the package is INSTALLED. A snap is unpacked, not
+      # installed, so those symlinks never exist and only the
+      # subdirectories are staged.
+      #
+      # The failure is thoroughly misleading. libmpv.so.2 is present and
+      # on the path, but dlopen fails to resolve its two dependencies, and
+      # media_kit reports its generic "Cannot find libmpv at the usual
+      # places — apt install libmpv-dev", which sends you looking for a
+      # missing package on a machine that already has one. `ldd` inside
+      # `snap run --shell radiopod` is what actually names the cause.
+      LD_LIBRARY_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/blas:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/lapack:$LD_LIBRARY_PATH
 
 # 20260921 gjw The `flutter_secure_storage` package (and maybe
 # `vault_storage`) is used by `solidpod/solidui` to save secrets
