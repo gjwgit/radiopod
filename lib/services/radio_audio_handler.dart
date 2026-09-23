@@ -79,6 +79,12 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   Timer? _endTimer;
 
+  /// True once [stop] has released the platform player, so [play] knows it
+  /// has to open the station again rather than try to resume a source that
+  /// is no longer loaded.
+
+  bool _stopped = false;
+
   Station? _currentStation;
   String? _currentTrack;
 
@@ -124,8 +130,15 @@ class RadioAudioHandler extends BaseAudioHandler {
     // sitting on a finished stream is the wrong thing — move to the next
     // station, as Transistor does.
 
+    // 20260923 gjw `s.playing` is part of the test, not decoration. When a
+    // live source genuinely runs out just_audio leaves playing TRUE and only
+    // moves the processing state to completed — see [_resumed]. A completed
+    // arriving with playing FALSE is therefore not a station ending; it is
+    // the player being torn down or swapped, and acting on it auto-stopped
+    // the station a few seconds after every manual Stop then Play.
+
     _player.playerStateStream.listen((s) {
-      if (s.processingState == ProcessingState.completed) {
+      if (s.processingState == ProcessingState.completed && s.playing) {
         _onStreamEnded();
       } else if (_resumed) {
         // The stream picked itself back up. Call off any pending advance.
@@ -165,6 +178,11 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   void _onStreamEnded() {
     if (_currentStation == null) return;
+
+    // A station the user stopped has not "ended", so it must not reconnect,
+    // advance to the next station, or count towards the failure tally.
+
+    if (_stopped) return;
 
     // A stream can report completed more than once. The first report starts
     // the clock; later ones must not restart it.
@@ -319,6 +337,7 @@ class RadioAudioHandler extends BaseAudioHandler {
     _currentStation = station;
     _currentTrack = null;
     _startedAt = DateTime.now();
+    _stopped = false;
 
     // Any advance still pending for the station we are leaving belongs to
     // that station, not this one.
@@ -347,14 +366,67 @@ class RadioAudioHandler extends BaseAudioHandler {
     }
   }
 
+  /// Start playing again after a stop.
+  ///
+  /// RE-OPENS THE STATION RATHER THAN RESUMING. just_audio's `stop()` tears
+  /// the platform player down, and its `play()` then brings a new one up and
+  /// reloads the source with the position the old one had reached:
+  ///
+  ///     initialSeekValues = (index: currentIndex, position: position)
+  ///
+  /// For a file that restores where you were. For LIVE RADIO there is
+  /// nothing to seek to, and libmpv refuses outright — "Cannot seek in this
+  /// stream" — leaving a player that reports itself as playing while no
+  /// audio arrives. Opening the URL afresh starts at the live edge, which is
+  /// the only thing a resumed radio station could sensibly mean anyway.
+
   @override
-  Future<void> play() => _player.play();
+  Future<void> play() async {
+    final station = _currentStation;
+    if (_stopped && station != null) {
+      await playStation(
+        station,
+        queue: _queueStations,
+        parentId: _queueParentId,
+      );
+
+      return;
+    }
+
+    await _player.play();
+  }
 
   @override
   Future<void> pause() => _player.pause();
 
   @override
   Future<void> stop() async {
+    // 20260923 gjw PAUSES RATHER THAN TEARING THE PLAYER DOWN, deliberately.
+    //
+    // just_audio's own stop() disposes the platform player, and bringing one
+    // back up reloads the source at the position the old one reached — which
+    // a live stream cannot seek to, so playback came back silent. Worse, the
+    // teardown itself emits a completed state that the stream-end listener
+    // above read as "the station finished", stopping it again seconds after
+    // every Stop then Play. On Linux the libmpv dispose is also slow enough
+    // to leave the button looking dead, and is a likely source of the crash
+    // on quit.
+    //
+    // Pausing sidesteps all of that: it silences immediately, and the next
+    // play calls setUrl, which REPLACES the media and so closes the old
+    // connection anyway. The only cost is that a stopped station holds an
+    // idle connection until the next play — mpv stops reading once its
+    // buffer is full, and the station's server times such clients out.
+
+    await _player.pause();
+    _stopped = true;
+    playbackState.add(
+      playbackState.value.copyWith(
+        processingState: AudioProcessingState.idle,
+        playing: false,
+      ),
+    );
+
     // Stop polling the stream the moment playback stops, so a stopped app is
     // not quietly still fetching from a station in the background.
 
@@ -373,13 +445,6 @@ class RadioAudioHandler extends BaseAudioHandler {
 
     _cancelPendingAdvance();
 
-    await _player.stop();
-    playbackState.add(
-      playbackState.value.copyWith(
-        processingState: AudioProcessingState.idle,
-        playing: false,
-      ),
-    );
     await super.stop();
   }
 

@@ -37,6 +37,8 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.0 Functional App
 
++ Stop no longer makes the station stop itself again [1.0.17 20260923 gjw]
++ Linux: Stop responds at once and Play restarts the stream [1.0.16 20260923 gjw]
 + Adaptive Android icon so it shows properly in Android Auto [1.0.15 20260923 gjw]
 + Android Auto opens on a scrollable station list [1.0.14 20260923 gjw]
 + Rounded icon with transparency for Linux and macOS [1.0.13 20260923 gjw]
