@@ -54,11 +54,11 @@ cp -r ../build/linux/x64/release/bundle/* ${APP}_${VER}_amd64/usr/lib/${APP}/
 
 (cd ${APP}_${VER}_amd64/usr/bin; ln -s ../lib/${APP}/${APP} ${APP})
 
-# Copy the app icon. The SHAPED variant is the right one here: GNOME, KDE
+# Copy the app icon. A SHAPED variant may be used here: GNOME, KDE
 # and the other desktops draw the icon exactly as given, with no masking, so
 # the full bleed app_icon.png would appear as a hard-edged square next to
-# every other application. app_icon_shaped.png carries the rounded squircle
-# and its transparent surround.
+# every other application. app_icon_shaped.png will carry the rounded squircle
+# and its transparent surround. Not all apps are supporting this yet. See radiopod.
 
 cp ../assets/images/app_icon_shaped.png ${APP}_${VER}_amd64/usr/share/icons/hicolor/512x512/apps/${APP}.png
 
