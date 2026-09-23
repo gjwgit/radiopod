@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.0 Functional App
 
++ macOS: ship the app icon instead of the default Flutter logo [1.0.11 20260923 gjw]
 + macOS: allow the plain http streams most stations use [1.0.10 20260923 gjw]
 + macOS: stop asking the keychain before the login screen [1.0.9 20260922 gjw]
 + Avoid Impeller rendering for now [1.0.8 20260922 gjw]
