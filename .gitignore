@@ -25,6 +25,14 @@ installers/*-linux.zip
 installers/*-macos.zip
 installers/*-windows.zip
 
+# 20260923 gjw The zip a CI run downloads to. The three patterns above name
+# the per-platform zips and so did not match it, and 17.7 MB of it reached a
+# public history before anyone noticed. Matched by name rather than by
+# widening the rules to installers/*.zip, which would also have swallowed
+# anything deliberately kept here.
+
+installers/artifact.zip
+
 .Rhistory
 
 # Puppeteer browser cache used in testing solidui apps
