@@ -63,69 +63,85 @@ class _TransferScreenState extends State<TransferScreen> {
     final stations = provider.stations.length;
     final playlists = provider.playlists.length;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Import ──────────────────────────────────────────────────
+    // 20260925 gjw MADE TO FILL THE VIEWPORT so the content stays at the
+    // top. This screen is shorter than the window, and something above it
+    // centres a child that does not fill the height — which left a wide band
+    // of empty space above "Import" while Settings, whose content overflows,
+    // sat correctly at the top. Giving the column a minimum height of the
+    // viewport leaves nothing to centre.
 
-          Text('Import', style: Theme.of(context).textTheme.titleLarge),
-          const Gap(8),
-          Text(
-            'Bring in a playlist you already have, in the M3U, M3U8 or PLS '
-            'format. The stations are added to your library and grouped into '
-            'a new playlist named after the file. A station whose stream '
-            'address you have already saved is reused rather than duplicated.',
-            style: TextStyle(color: cs.onSurfaceVariant),
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: constraints.maxHeight.isFinite
+                ? constraints.maxHeight - 48
+                : 0,
           ),
-          if (_importMessage != null) ...[
-            const Gap(12),
-            ImportMessageBanner(
-              message: _importMessage!,
-              isError: _importError,
-              cs: cs,
-            ),
-          ],
-          const Gap(16),
-          ImportActionCard(
-            icon: Icons.upload_file_outlined,
-            title: 'Import M3U or PLS playlist',
-            subtitle: 'Select a .m3u, .m3u8 or .pls file to import.',
-            loading: _loading,
-            onTap: _import,
-          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Import ──────────────────────────────────────────────────
 
-          // ── Export ──────────────────────────────────────────────────
-          const Gap(32),
-          Text('Export', style: Theme.of(context).textTheme.titleLarge),
-          const Gap(8),
-          Text(
-            'Save your whole library, or any one playlist, as an M3U or PLS '
-            'file. Both are plain text formats that every other radio player '
-            'reads, so nothing you collect here is locked in.',
-            style: TextStyle(color: cs.onSurfaceVariant),
+              Text('Import', style: Theme.of(context).textTheme.titleLarge),
+              const Gap(8),
+              Text(
+                'Bring in a playlist you already have, in the M3U, M3U8 or PLS '
+                'format. The stations are added to your library and grouped into '
+                'a new playlist named after the file. A station whose stream '
+                'address you have already saved is reused rather than duplicated.',
+                style: TextStyle(color: cs.onSurfaceVariant),
+              ),
+              if (_importMessage != null) ...[
+                const Gap(12),
+                ImportMessageBanner(
+                  message: _importMessage!,
+                  isError: _importError,
+                  cs: cs,
+                ),
+              ],
+              const Gap(16),
+              ImportActionCard(
+                icon: Icons.upload_file_outlined,
+                title: 'Import M3U or PLS playlist',
+                subtitle: 'Select a .m3u, .m3u8 or .pls file to import.',
+                loading: _loading,
+                onTap: _import,
+              ),
+
+              // ── Export ──────────────────────────────────────────────────
+              const Gap(32),
+              Text('Export', style: Theme.of(context).textTheme.titleLarge),
+              const Gap(8),
+              Text(
+                'Save your whole library, or any one playlist, as an M3U or PLS '
+                'file. Both are plain text formats that every other radio player '
+                'reads, so nothing you collect here is locked in.',
+                style: TextStyle(color: cs.onSurfaceVariant),
+              ),
+              if (_exportMessage != null) ...[
+                const Gap(12),
+                ImportMessageBanner(
+                  message: _exportMessage!,
+                  isError: _exportError,
+                  cs: cs,
+                ),
+              ],
+              const Gap(16),
+              ImportActionCard(
+                icon: Icons.download_outlined,
+                title: 'Export a playlist',
+                subtitle: playlists == 0
+                    ? 'Export all $stations saved stations as one file.'
+                    : 'Choose all $stations stations, or one of your $playlists '
+                          'playlists.',
+                loading: _loading,
+                onTap: () => _export(provider),
+              ),
+            ],
           ),
-          if (_exportMessage != null) ...[
-            const Gap(12),
-            ImportMessageBanner(
-              message: _exportMessage!,
-              isError: _exportError,
-              cs: cs,
-            ),
-          ],
-          const Gap(16),
-          ImportActionCard(
-            icon: Icons.download_outlined,
-            title: 'Export a playlist',
-            subtitle: playlists == 0
-                ? 'Export all $stations saved stations as one file.'
-                : 'Choose all $stations stations, or one of your $playlists '
-                      'playlists.',
-            loading: _loading,
-            onTap: () => _export(provider),
-          ),
-        ],
+        ),
       ),
     );
   }
