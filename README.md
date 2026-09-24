@@ -112,9 +112,9 @@ build is listed.
 
 The latest version of the app can be run online at
 [radiopod.solidcommunity.au](https://radiopod.solidcommunity.au) with
-no installation required though requiring a Solid login, or downloaded
-and installed for your platform from the [Solid Community
-AU](https://solidcommunity.au) repository:
+no installation required. Or else download and install for your
+platform from the [Solid Community AU](https://solidcommunity.au)
+repository or your platform store:
 
 <!-- markdownlint-disable MD036 -->
 + **Web**
@@ -124,6 +124,7 @@ AU](https://solidcommunity.au) repository:
   [aab](https://solidcommunity.au/installers/radiopod.aab);
 + **GNU/Linux**
   [deb](https://solidcommunity.au/installers/radiopod_amd64.deb) or
+  [snap store](https://snapcraft.io/radiopod) or
   [snap](https://solidcommunity.au/installers/radiopod_amd64.snap) or
   [zip](https://solidcommunity.au/installers/radiopod-linux.zip);
 + **macOS**
