@@ -14,7 +14,6 @@ import 'package:flutter/material.dart';
 
 import 'package:gap/gap.dart';
 
-import 'package:radiopod/models/station.dart';
 import 'package:radiopod/utils/station_icon.dart';
 
 /// A preview of the station's icon and the three things that can be done to
@@ -25,7 +24,14 @@ import 'package:radiopod/utils/station_icon.dart';
 
 class StationIconField extends StatelessWidget {
   final String? icon;
-  final Station station;
+
+  /// The address the station advertises artwork at, when it has one.
+  ///
+  /// 20260925 gjw Taken as a URL rather than as the whole Station, because a
+  /// station being CREATED does not exist yet and has nothing to advertise.
+  /// This is the only thing the field ever wanted from it.
+
+  final String? advertisedIcon;
   final bool busy;
   final String? message;
   final VoidCallback onDownload;
@@ -35,7 +41,7 @@ class StationIconField extends StatelessWidget {
   const StationIconField({
     super.key,
     required this.icon,
-    required this.station,
+    required this.advertisedIcon,
     required this.busy,
     required this.message,
     required this.onDownload,
@@ -51,7 +57,7 @@ class StationIconField extends StatelessWidget {
     // address. Most imported stations do not, and a button that can only
     // fail is worse than no button.
 
-    final advertises = station.favicon != null && station.favicon!.isNotEmpty;
+    final advertises = advertisedIcon != null && advertisedIcon!.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,8 +100,8 @@ class StationIconField extends StatelessWidget {
                   if (!advertises && icon == null) ...[
                     const Gap(6),
                     Text(
-                      'This station advertises no icon, so there is nothing '
-                      'to download. Choose a picture instead.',
+                      'No icon is advertised for this station, so there is '
+                      'nothing to download. Choose a picture instead.',
                       style: TextStyle(
                         color: cs.onSurfaceVariant,
                         fontSize: 12,
@@ -140,9 +146,9 @@ class StationIconField extends StatelessWidget {
       );
     } else if (stored != null) {
       inner = Image.memory(stored, fit: BoxFit.cover, gaplessPlayback: true);
-    } else if (station.favicon != null && station.favicon!.isNotEmpty) {
+    } else if (advertisedIcon != null && advertisedIcon!.isNotEmpty) {
       inner = Image.network(
-        station.favicon!,
+        advertisedIcon!,
         fit: BoxFit.cover,
         // See station_tile.dart for why the web needs this.
         webHtmlElementStrategy: WebHtmlElementStrategy.fallback,

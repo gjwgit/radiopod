@@ -103,7 +103,7 @@ class _DialogState extends State<_StationPropertiesDialog> {
 
               StationIconField(
                 icon: _icon,
-                station: widget.station,
+                advertisedIcon: widget.station.favicon,
                 busy: _busy,
                 message: _message,
                 onDownload: _download,

@@ -1,6 +1,6 @@
 /// RadioPod — application scaffold configuration.
 ///
-// Time-stamp: <Wednesday 2026-09-23 13:43:29 +1000 Graham Williams>
+// Time-stamp: <Friday 2026-09-25 05:44:56 +1000 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -36,12 +36,18 @@ import 'package:radiopod/screens/playlists_screen.dart';
 import 'package:radiopod/screens/search_screen.dart';
 import 'package:radiopod/screens/settings_screen.dart';
 import 'package:radiopod/screens/stations_screen.dart';
+import 'package:radiopod/screens/stations_widgets/new_station_dialog.dart';
 import 'package:radiopod/screens/transfer_screen.dart';
 import 'package:radiopod/services/app_provider.dart'
     show AppProvider, StartupPhase;
 import 'package:radiopod/widgets/pod_refresh_action.dart';
 
 const appScaffold = AppScaffold();
+
+/// Index of the Stations tab in the menu below, which owns the New station
+/// action in the app bar.
+
+const _stationsTab = 0;
 
 class AppScaffold extends StatefulWidget {
   const AppScaffold({super.key});
@@ -51,6 +57,38 @@ class AppScaffold extends StatefulWidget {
 }
 
 class _AppScaffoldState extends State<AppScaffold> {
+  /// Which tab is showing, so an action can belong to one screen.
+  ///
+  /// The app bar is shared by every screen, but New station only makes sense
+  /// on Stations. It was first tried as a floating button on the list
+  /// itself, which sat over the last station — the same overlap that had to
+  /// be undone when the now-playing bar was removed.
+
+  int _tab = _stationsTab;
+
+  /// Add a station by hand.
+  ///
+  /// Lives here rather than in StationsScreen because the app bar is built
+  /// here. The dialog constructs the station and this saves it, so the
+  /// dialog needs no provider. The duplicate test is the same stream-URL
+  /// match the library uses everywhere else.
+
+  Future<void> _newStation() async {
+    final provider = context.read<AppProvider>();
+    final station = await showNewStationDialog(
+      context,
+      isDuplicate: provider.isSaved,
+    );
+    if (station == null || !mounted) return;
+
+    await provider.addStation(station);
+    if (!mounted) return;
+    showPositiveSnackBar(
+      context,
+      'Added ${station.name} to the top of your stations.',
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -159,12 +197,36 @@ class _AppScaffoldState extends State<AppScaffold> {
                 'https://github.com/gjwgit/radiopod/blob/dev/CHANGELOG.md',
           ),
           actions: [
+            // 20260925 gjw Hidden with `visible` rather than left out of the
+            // list, as SolidAppBarAction documents: that keeps its id
+            // registered, so it returns to its place in the user's own
+            // ordering instead of jumping to the end when it reappears.
+
+            SolidAppBarAction(
+              id: 'new-station',
+              icon: Icons.add,
+              visible: _tab == _stationsTab,
+              tooltip: '''
+
+              **New station**
+
+              Add a station manually, specifically for a station that
+              Radio-Browser does not list.
+
+              You will give it a name, the stream address, and optionally a
+              logo. It is saved to your library only: nothing is submitted to
+              Radio-Browser or anywhere else.
+
+              ''',
+              onPressed: _newStation,
+            ),
             buildPodRefreshAction(
               context: context,
               onRefresh: context.read<AppProvider>().refreshFromPod,
             ),
           ],
         ),
+        onMenuSelected: (i) => setState(() => _tab = i),
         menu: [
           const SolidMenuItem(
             title: 'Stations',
