@@ -1,7 +1,7 @@
 name: radiopod
 description: "Radio Pod - Internet Radio with Secure and Private Storage"
 publish_to: 'none'
-version: 1.1.11+1
+version: 1.1.12+1
 
 environment:
   sdk: ^3.13.4
@@ -102,17 +102,21 @@ flutter_launcher_icons:
 
   adaptive_icon_background: "#6C391D"
   adaptive_icon_foreground: "assets/images/app_icon_foreground.png"
+  # 20260924 gjw iOS gets its OWN opaque file rather than app_icon.png put
+  # through `remove_alpha_ios`. That flag fringed every antialiased edge
+  # bright green and turned the outer signal arcs green with it, while
+  # compositing the same artwork onto the same colour in make_icon.py is
+  # clean — so the fault is in that code path, not the source. The file it
+  # points at has no alpha channel to remove.
+  image_path_ios: "assets/images/app_icon_ios.png"
   ios: true
-  remove_alpha_ios: true
-  background_color_ios: "#ffffff"
-  # 20260923 gjw macOS gets the SHAPED variant. Unlike iOS, macOS does not
-  # mask the icon — it draws exactly what it is given — so a full bleed
-  # square appears as a hard-edged square beside every other Mac app. The
-  # shaped file carries the squircle, its transparent surround and the
-  # drop shadow, on Apple's 824-in-1024 grid.
+  # 20260924 gjw macOS needs no file of its own now. It does not mask the
+  # icon — it draws exactly what it is given — which used to mean a second,
+  # shaped variant so it did not show a hard-edged square. app_icon.png IS
+  # that shape now: the dial and its signal arcs, cropped to their own
+  # extent, with everything outside transparent.
   macos:
     generate: true
-    image_path: "assets/images/app_icon_shaped.png"
   web:
     generate: true
     background_color: "#ffffff"

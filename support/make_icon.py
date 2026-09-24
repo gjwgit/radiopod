@@ -17,9 +17,10 @@ anti-aliased; supersampling is what makes the curves clean.
 """
 
 import math
+import pathlib
 
 import numpy as np
-from PIL import Image, ImageChops, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter
 
 S = 1024          # final size
 SS = 4            # supersample factor
@@ -111,7 +112,12 @@ ImageDraw.Draw(shadow).ellipse(
     fill=(0, 0, 0, 165),
 )
 shadow = shadow.filter(ImageFilter.GaussianBlur(radius=px(22)))
-img = Image.alpha_composite(img, shadow)
+
+# 20260924 gjw NOT composited into the mark here, as it once was. The
+# transparent output below is the mark and nothing else, and a blurred black
+# ellipse under a free-standing dial reads as a smudge rather than a shadow.
+# It is put back underneath for the outputs that do have a background, in the
+# same order as before, so those are unchanged.
 
 # ── Dial face ──────────────────────────────────────────────────────────────
 
@@ -242,18 +248,14 @@ for r, w, a in ((372, 19, 255), (420, 16, 190), (468, 13, 120)):
 
 img = Image.alpha_composite(img, signal)
 
-mark_only = img.copy()
-img = Image.alpha_composite(bg_img, img)
+# The mark alone, with nothing behind it and no shadow. This is the icon on
+# platforms that do not mask.
 
-# ── Corner shading ─────────────────────────────────────────────────────────
-# Slight darkening at the extreme corners so the square still has depth once
-# macOS rounds it.
+mark_clean = img.copy()
 
-corner = np.sqrt((x - N / 2) ** 2 + (y - N / 2) ** 2) / (N / 2)
-vig = np.clip((corner - 0.74) / 0.60, 0, 1) ** 1.7 * 0.36
-img = Image.alpha_composite(
-    img, rgba(np.zeros((N, N, 3), dtype=np.float32), vig)
-)
+# The mark with its shadow, for anything drawn against a background.
+
+mark_only = Image.alpha_composite(shadow, img)
 
 ASSETS = '/home/gjw/git/github/gjwgit/radiopod/assets/images/'
 
@@ -295,49 +297,92 @@ print('wrote app_icon_foreground.png (safe-zone dial, for Android adaptive)')
 sample = bg_img.convert('RGB').getpixel((int(N * 0.5), int(N * 0.14)))
 print('  adaptive_icon_background: #%02X%02X%02X' % sample)
 
-# ── Output 1: full bleed, opaque ───────────────────────────────────────────
-# For iOS, Android, web and Windows. Those platforms mask the icon to their
-# own shape, and iOS REJECTS an alpha channel outright, so the square must
-# reach every edge.
-
-img.convert('RGB').resize((S, S), Image.LANCZOS).save(ASSETS + 'app_icon.png')
-print('wrote app_icon.png          (full bleed, for iOS/Android/web/Windows)')
-
-# ── Output 2: shaped, transparent ──────────────────────────────────────────
-# For macOS and Linux, NEITHER OF WHICH MASKS THE ICON. Handed the full
-# bleed square they draw a hard-edged square, which looks wrong beside every
-# other app on the system. So the rounded shape and the surrounding
-# transparency have to be baked in here.
+# ── Output 2: the icon itself — the mark alone, transparent ────────────────
+# For macOS and Linux, NEITHER OF WHICH MASKS THE ICON. They draw exactly
+# what they are given, so what is given is the artwork and nothing else: the
+# dial and its signal arcs, with every pixel outside them transparent.
 #
-# Geometry follows Apple's macOS grid: an 824pt body on a 1024pt canvas,
-# leaving a 100pt margin for the shadow to occupy. The body is a
-# SUPERELLIPSE rather than a rounded rectangle — that is the "squircle"
-# Apple actually uses, and its continuous curvature is visibly smoother at
-# the corners than an arc spliced onto a straight edge.
+# 20260924 gjw This was a squircle — the artwork on its brown ground, cut to
+# Apple's superellipse on the 824-in-1024 grid with a drop shadow below it.
+# That is the right treatment for an icon that IS a rounded square, and the
+# wrong one here: it framed a dial that already has its own strong outline,
+# and put a brown panel behind an app whose mark reads perfectly well
+# without one.
+#
+# THE MARK DEFINES THE EXTENT. Rather than sitting the artwork inside a fixed
+# body, the alpha channel is measured and the result cropped to it, then
+# scaled so the longer side fills the canvas. So the dial's bezel and the tip
+# of the outermost arc touch the edges, and the icon is as large as the file
+# allows instead of carrying invisible margin.
+#
+# A faint threshold, not zero, decides what counts as ink. The outermost arc
+# is drawn at alpha 120 and fades further as it is antialiased, so a pure
+# non-zero test would stretch the box out to pixels no eye could see.
 
-BODY, PAD_X, PAD_Y, EXP = 824, 100, 88, 5.0
+INK = 2
 
-body_px = BODY * SS
-art = img.convert('RGBA').resize((body_px, body_px), Image.LANCZOS)
+alpha = mark_clean.getchannel('A')
+bbox = alpha.point(lambda v: 255 if v > INK else 0).getbbox()
+mark = mark_clean.crop(bbox)
 
-canvas = Image.new('RGBA', (N, N), (0, 0, 0, 0))
-canvas.paste(art, (PAD_X * SS, PAD_Y * SS))
+mw, mh = mark.size
+scale = S / max(mw, mh)
+mark = mark.resize((round(mw * scale), round(mh * scale)), Image.LANCZOS)
 
-bcx = (PAD_X + BODY / 2) * SS
-bcy = (PAD_Y + BODY / 2) * SS
-a = body_px / 2
-se = (np.abs((x - bcx) / a) ** EXP) + (np.abs((y - bcy) / a) ** EXP)
-mask = Image.fromarray(((se <= 1.0) * 255).astype(np.uint8), 'L')
-canvas.putalpha(mask)
+# Square canvas, because an icon file has to be square even when the mark is
+# not. The mark is centred in whichever direction it falls short.
 
-# Drop shadow, offset down into the margin the grid reserves for it.
+icon = Image.new('RGBA', (S, S), (0, 0, 0, 0))
+icon.paste(mark, ((S - mark.width) // 2, (S - mark.height) // 2))
+icon.save(ASSETS + 'app_icon.png')
+print('wrote app_icon.png          (the mark alone, every platform)')
 
-shadow = Image.composite(
-    Image.new('RGBA', (N, N), (0, 0, 0, 132)),
-    Image.new('RGBA', (N, N), (0, 0, 0, 0)),
-    ImageChops.offset(mask, 0, int(16 * SS)),
-).filter(ImageFilter.GaussianBlur(radius=SS * 14))
+# ── Output 3: opaque, for iOS only ─────────────────────────────────────────
+# iOS REJECTS an alpha channel outright, so it cannot be given the mark.
+#
+# 20260924 gjw flutter_launcher_icons' own `remove_alpha_ios` was tried and
+# is not usable: flattening the transparent mark through it fringed every
+# antialiased edge bright GREEN, and turned the outer signal arcs green with
+# it. Compositing the same file onto the same colour here is clean, so the
+# fault is in that path, not in the artwork.
+#
+# So iOS gets a file that never had alpha: the mark, its drop shadow, and the
+# original warm background with the corner shading that gives the square some
+# depth. This is exactly the icon iOS showed before the mark was cut out, so
+# nothing about the iOS appearance changes.
 
-shaped = Image.alpha_composite(shadow, canvas).resize((S, S), Image.LANCZOS)
-shaped.save(ASSETS + 'app_icon_shaped.png')
-print('wrote app_icon_shaped.png   (squircle + alpha, for macOS/Linux)')
+square = Image.alpha_composite(bg_img, mark_only)
+
+corner = np.sqrt((x - N / 2) ** 2 + (y - N / 2) ** 2) / (N / 2)
+vig = np.clip((corner - 0.74) / 0.60, 0, 1) ** 1.7 * 0.36
+square = Image.alpha_composite(
+    square, rgba(np.zeros((N, N, 3), dtype=np.float32), vig)
+)
+
+square.convert('RGB').resize((S, S), Image.LANCZOS).save(
+    ASSETS + 'app_icon_ios.png'
+)
+print('wrote app_icon_ios.png      (opaque, iOS rejects alpha)')
+
+# ── Output 4: the Snap Store listing icon ──────────────────────────────────
+# snap/gui/icon.png is what the Snap Store shows beside the listing and what
+# the desktop entry points at. Generated here rather than copied by hand so
+# it cannot fall behind the artwork, which is how it came to still be
+# carrying the old squircle.
+#
+# The store's limits: PNG, JPEG or SVG; square; at least 40x40 and at most
+# 512x512; under 256kB. So it is the mark at exactly 512, the largest size
+# allowed, with the transparency intact.
+
+SNAP_ICON = 512
+snap_icon = icon.resize((SNAP_ICON, SNAP_ICON), Image.LANCZOS)
+snap_dir = pathlib.Path(__file__).resolve().parent.parent / 'snap' / 'gui'
+snap_path = snap_dir / 'icon.png'
+snap_icon.save(snap_path, optimize=True)
+
+size_kb = snap_path.stat().st_size / 1024
+assert size_kb < 256, f'snap icon is {size_kb:.0f}kB, over the 256kB limit'
+print(
+    f'wrote snap/gui/icon.png     '
+    f'({SNAP_ICON}x{SNAP_ICON}, {size_kb:.0f}kB, for the Snap Store)'
+)
