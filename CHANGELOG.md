@@ -37,6 +37,9 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.1 Feature Tuning
 
++ Web: switching station stops the one already playing [1.1.9 20260924 gjw]
++ Web: Stop really stops, and switching station works [1.1.8 20260924 gjw]
++ Web: station logos show instead of falling back to a glyph [1.1.7 20260924 gjw]
 + Snap: allow the keyring access a Pod login needs [1.1.6 20260924 gjw]
 + Snap: play audio again, by finding libmpv's blas and lapack [1.1.5 20260924 gjw]
 + A stopped station shows its icon again, not a play button [1.1.4 20260923 gjw]

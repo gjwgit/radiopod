@@ -58,6 +58,26 @@ void initNativeAudioBackend() {
 
 bool get needsIcyPolling => Platform.isLinux || Platform.isWindows;
 
+/// Whether Stop should PAUSE the player rather than tear it down.
+///
+/// True only where libmpv is the backend, which is the same pair of
+/// platforms as [needsIcyPolling] and for the same underlying reason: those
+/// are the builds just_audio drives through media_kit rather than natively.
+///
+/// There, disposing the player on Stop is slow enough to leave the button
+/// looking dead, and is a likely source of the crash on quit — so Stop
+/// pauses and the next Play re-opens the URL.
+///
+/// EVERYWHERE ELSE STOP MUST REALLY STOP. On the web the audio element is a
+/// single shared object: a paused element still holds the old stream, and
+/// loading a new URL into it waits on a `durationchange` event that a live
+/// stream, having no duration, may never fire — so the next station sat on
+/// "Connecting…" for ever while the previous one was still audible. A real
+/// stop resets the element, which is also the honest behaviour for a radio:
+/// a stopped station should not keep its connection open.
+
+bool get stopByPause => Platform.isLinux || Platform.isWindows;
+
 /// Force the C locale for numeric formatting on Linux.
 ///
 /// libmpv aborts the process with "Non-C locale detected" when LC_NUMERIC is

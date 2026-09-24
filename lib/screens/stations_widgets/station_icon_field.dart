@@ -144,6 +144,8 @@ class StationIconField extends StatelessWidget {
       inner = Image.network(
         station.favicon!,
         fit: BoxFit.cover,
+        // See station_tile.dart for why the web needs this.
+        webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
         errorBuilder: (_, _, _) => fallback,
       );
     } else {

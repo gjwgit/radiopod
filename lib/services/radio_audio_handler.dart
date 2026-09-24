@@ -85,6 +85,14 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   bool _stopped = false;
 
+  /// How long to wait for a station to open before calling it a failure.
+  ///
+  /// Generous, because a distant station on a slow connection is not an
+  /// error. It exists only so a load that will NEVER finish cannot leave the
+  /// row spinning for ever — see the use in [playStation].
+
+  static const _openTimeout = Duration(seconds: 30);
+
   Station? _currentStation;
   String? _currentTrack;
 
@@ -351,7 +359,25 @@ class RadioAudioHandler extends BaseAudioHandler {
     mediaItem.add(stationMediaItem(station, parentId));
 
     try {
-      await _player.setUrl(station.url);
+      // Silence whatever is on BEFORE opening the next station.
+      //
+      // setUrl is supposed to replace the media by itself, and on native
+      // platforms it does. On the web just_audio drives a single shared
+      // <audio> element, and assigning a new src to one that still holds a
+      // live stream is not a reliable reset: the old station carried on
+      // while the row already showed the new one as playing. Pausing first
+      // was not enough either — a paused element still holds its stream —
+      // so this uses the same full reset that Stop does.
+
+      await _silence();
+
+      // A live stream has no duration, and just_audio's web backend waits on
+      // a durationchange event to decide a load has finished. That event can
+      // simply never arrive, which left the row spinning on "Connecting…"
+      // with no way back. Failing is better than hanging: the row can then
+      // show the error and be tapped again.
+
+      await _player.setUrl(station.url).timeout(_openTimeout);
       await _player.play();
     } catch (e) {
       debugPrint('[RadioAudioHandler] cannot play ${station.url}: $e');
@@ -399,9 +425,21 @@ class RadioAudioHandler extends BaseAudioHandler {
   @override
   Future<void> pause() => _player.pause();
 
+  /// Silence the player the way this platform needs.
+  ///
+  /// Shared by [stop] and by [playStation], because switching station has
+  /// exactly the same requirement as stopping: whatever was on must be gone
+  /// BEFORE the next URL is opened. Having the two do different things is
+  /// what let the previous station keep playing under the new one's name.
+  ///
+  /// See [stopByPause] for why libmpv pauses while everything else stops.
+
+  Future<void> _silence() => stopByPause ? _player.pause() : _player.stop();
+
   @override
   Future<void> stop() async {
-    // 20260923 gjw PAUSES RATHER THAN TEARING THE PLAYER DOWN, deliberately.
+    // 20260923 gjw ON LIBMPV, STOP PAUSES RATHER THAN TEARING THE PLAYER
+    // DOWN. Elsewhere it really stops. See [stopByPause].
     //
     // just_audio's own stop() disposes the platform player, and bringing one
     // back up reloads the source at the position the old one reached — which
@@ -412,13 +450,22 @@ class RadioAudioHandler extends BaseAudioHandler {
     // to leave the button looking dead, and is a likely source of the crash
     // on quit.
     //
-    // Pausing sidesteps all of that: it silences immediately, and the next
-    // play calls setUrl, which REPLACES the media and so closes the old
-    // connection anyway. The only cost is that a stopped station holds an
-    // idle connection until the next play — mpv stops reading once its
-    // buffer is full, and the station's server times such clients out.
+    // 20260924 gjw That was first applied to every platform, which was too
+    // broad. The seek complaint no longer applies anywhere, because [play]
+    // re-opens the station rather than resuming it, and the completed state
+    // is caught by the guards in the listener and in _onStreamEnded. What
+    // remains is a libmpv concession.
+    //
+    // On the web pausing was actively wrong. The browser gives just_audio one
+    // shared audio element, so a paused element still holds the previous
+    // stream: the old station stayed audible, and loading the next one into
+    // it waited on a durationchange event that a live stream never fires,
+    // leaving the row on "Connecting…" indefinitely.
+    //
+    // A real stop also drops the connection, which is what a listener means
+    // by Stop. Pausing keeps it open until the next play.
 
-    await _player.pause();
+    await _silence();
     _stopped = true;
     playbackState.add(
       playbackState.value.copyWith(

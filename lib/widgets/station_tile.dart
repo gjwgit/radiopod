@@ -191,6 +191,22 @@ class StationTile extends StatelessWidget {
       Image.network(
         favicon,
         fit: BoxFit.cover,
+        // 20260924 gjw CORS. On the web the default strategy fetches the
+        // BYTES of the image, which the browser refuses cross-origin unless
+        // the server sends Access-Control-Allow-Origin. Station artwork is
+        // an arbitrary third-party URL and essentially never does — none of
+        // ABC News Radio's five Radio-Browser entries do — so every logo
+        // fell back to the radio glyph in the browser while looking right
+        // on every other platform.
+        //
+        // `fallback` keeps the byte fetch, which is what allows the image to
+        // be clipped and blended normally, and drops to an <img> element in
+        // a platform view only when that fetch fails. An <img> merely
+        // DISPLAYS a cross-origin image, which browsers have always allowed;
+        // it is reading the pixels back that needs permission.
+        //
+        // Ignored off the web, so this costs the other platforms nothing.
+        webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
         errorBuilder: (_, _, _) => fallback,
       ),
     );

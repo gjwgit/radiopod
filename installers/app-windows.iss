@@ -17,7 +17,7 @@
 ; Also notice the consecutive "{" characters required, it seems. Looks
 ; like it is for embedding a single "{" and not a constant.
 ;
-AppId={{e847c732-5892-4b4c-bf15-80b4bfd0f0c2}
+AppId={{7493cbba-5d0e-4f7d-af4e-ed90ced9e050}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
