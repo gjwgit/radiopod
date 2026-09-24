@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.1 Feature Tuning
 
++ Update to solidui to allow CONTINUE without secrets [1.1.10 20260924 gjw]
 + Web: switching station stops the one already playing [1.1.9 20260924 gjw]
 + Web: Stop really stops, and switching station works [1.1.8 20260924 gjw]
 + Web: station logos show instead of falling back to a glyph [1.1.7 20260924 gjw]
