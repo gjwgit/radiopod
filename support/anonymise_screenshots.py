@@ -259,7 +259,12 @@ def anonymise(path, font_file, dry_run=False, force=False):
 
     draw.text((tx0 - bb[0], ty0 - bb[1]), WEBID, font=font, fill=fg + (255,))
 
-    new_right = tx0 + (bb[2] - bb[0]) + 3
+    # Far enough right to cover BOTH the new text and everything that was
+    # erased. Taking only the new text's width left the tail of a longer old
+    # WebID standing beyond it — the replacement is usually the shorter of
+    # the two, so the erase is the wider of the two.
+
+    new_right = max(tx0 + (bb[2] - bb[0]), tx1) + 4
     right = new_right if clip is None else min(new_right, clip)
 
     box = (tx0 - 3, top, right, bottom)

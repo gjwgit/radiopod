@@ -271,6 +271,39 @@ idle station. Tap it again to stop, and the logo comes back.
 Many streams do not have a track announcement so the station's own
 details remain on display when it is playing.
 
+### Station options
+
+Every station row has a **⋮** menu for operations on the station
+entry.
+
+![The station properties
+dialog](assets/screenshots/radiopod_stations_properties.png)
+
+**Properties** allows you to rename a station, give it a logo, and say
+what should happen when its stream ends.
+
+Radio-Browser names sometimes contain transmitter details and other
+information so you can rename the stations to suit yourself. The
+default station logo can be downloaded from the address the station
+advertises, or you can choose a logo for yourself. Here we have chasen
+our own logo. When there is no default logo the button is greyed
+out. Either way, the logo is stored with the station information
+locally or in your Pod.
+
+The option to **reconnect when the stream ends** applies when, for
+example, a continuously streaming station's connection drops, rather
+than a news bulletin ends. For the former case you may like to
+reconnect so the station remains on air. The default is to move to the
+next station, so that once the NPR news bulletin finishes we move on
+to the next listed station.
+
+![Adding a station to
+playlists](assets/screenshots/radiopod_stations_playlists.png)
+
+**Add to playlist**, when selected, will list your playlists and
+provide an opportunity to select the playlists this station belongs. A
+station can sit in multiple playlists.
+
 ### Playlists
 
 ![The Playlists screen](assets/screenshots/radiopod_playlists.png)
