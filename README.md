@@ -28,7 +28,8 @@ platform development.
 Solid Pods are a new approach to handling your personal data on the
 World Wide Web and is the latest innovation from the inventor of the
 WWW, Sir Tim Berners-Lee. Obtain a Pod for yourself on any Solid
-server and link it to your app.
+server and link it to your app. **You do not need a Solid Pod to use
+this app in local only mode.**
 
 We make this project available for free so if you appreciate the app
 then please show some ❤️ and tap on the star at
@@ -40,7 +41,7 @@ many more apps using the Solid ecosystem.
 
 + **Search** the community-run Radio-Browser database of internet
   radio stations, by station name or by genre.
-+ **Save** the stations you like into a library that lives encrypted
++ **Save** the stations you like into a library that is stored encrypted
   on your Pod.
 + **Playlists** group your stations. They are also the folders you
   browse in the car.
@@ -218,7 +219,8 @@ data) and **Login**, or you can tap **Continue** to use RadioPod
 without a Solid server and so simply save your station lists
 locally. The **Continue** option is very much a supported way to run
 the app — your stations and playlists are then kept on the device and
-nothing is sent anywhere. You can log in later to a Solid server and
+nothing is sent anywhere. **You do not need a Solid Pod to use this
+app in local only mode.** You can log in later to a Solid server and
 copy what you have collected up to your Pod.
 
 ### Finding a station
@@ -251,7 +253,7 @@ alphabetical. You can drag the handle on the right to arrange it, and
 that order is what an export writes and what Android Auto lists in the
 car. The filter box narrows a long list.
 
-The status bar along the bottom says where the library lives and
+The status bar along the bottom includes a link to your Solid server and
 whether you are logged in and if the security key (used to encrypt
 data in your Pod) is unlocked.
 
@@ -262,12 +264,12 @@ list](assets/screenshots/radiopod_stations_playing.png)
 
 Tap a row/station to play it. The station on air is simply the
 highlighted row. Its logo becomes a stop button, and its second line
-carries the song title — here Pink Floyd's *The Trial* — in place of the
-country and bitrate it shows when idle. Tap it again to stop, and the
-logo comes back.
+carries the song title. Here the song title is Pink Floyd's *The
+Trial*. This replaces the country and bitrate that are shown for an
+idle station. Tap it again to stop, and the logo comes back.
 
-Many streams announce nothing so the station's own details remain the
-common case rather than a fallback.
+Many streams do not have a track announcement so the station's own
+details remain on display when it is playing.
 
 ### Playlists
 
@@ -283,23 +285,22 @@ please. These are also the folders you browse on a car's head unit.
 ![The Export and Import
 screen](assets/screenshots/radiopod_export_import.png)
 
-RadioPod reads and writes M3U, M3U8 and PLS — the plain text formats
-internet radio has always used and every other player reads. Import
-adds the stations to your library and groups them into a playlist
-named after the file, reusing any stream address you already have
-rather than duplicating it. Export saves the whole library or a single
-playlist. Nothing you collect here is locked in.
+RadioPod reads and writes M3U, M3U8 and PLS. These are the plain text
+formats internet radio uses and other players can read and export
+these. The Import adds the stations to your library and groups them
+into a playlist named after the file, reusing any stream address you
+already have rather than duplicating it. The Export saves the whole
+library or a single playlist.
 
 ### Settings
 
 ![The Settings screen](assets/screenshots/radiopod_settings.png)
 
-Settings says where your data is kept and what that means, including
-the one honest caveat: an unencrypted copy of station names and stream
+Settings notes where your data is kept and what that means, including
+the caveat that an unencrypted copy of station names and stream
 addresses stays on the device so Android Auto can browse it before any
 login can happen. There is a button to clear it. The privacy summary
-is the same one above, in the app, where it can be read without
-trusting a README.
+is the same one as above in the app.
 
 ## Licence
 
