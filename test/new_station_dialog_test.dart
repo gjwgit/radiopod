@@ -55,7 +55,11 @@ Future<void> _type(WidgetTester tester, String label, String text) async {
 void main() {
   group('isPlayableUrl', () {
     test('accepts plain http, which many stations still use', () {
-      expect(isPlayableUrl('http://abc.streamguys1.com/live/x'), isTrue);
+      // example.com rather than a real station: the link checker walks the
+      // test files too, and a station address that has since moved fails
+      // the build for no reason anyone can act on.
+
+      expect(isPlayableUrl('http://example.com/live/x'), isTrue);
     });
 
     test('accepts https', () {
@@ -67,8 +71,12 @@ void main() {
     });
 
     test('rejects a scheme just_audio cannot open', () {
+      // rtsp is the plausible mistake — a real streaming scheme that
+      // just_audio has no backend for — rather than a local file path,
+      // which the link checker would try to resolve on disk.
+
       expect(isPlayableUrl('ftp://example.com/stream'), isFalse);
-      expect(isPlayableUrl('file:///tmp/x.mp3'), isFalse);
+      expect(isPlayableUrl('rtsp://example.com/live'), isFalse);
     });
 
     test('rejects a scheme with no host', () {

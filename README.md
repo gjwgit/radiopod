@@ -264,8 +264,8 @@ list](assets/screenshots/radiopod_stations_playing.png)
 
 Tap a row/station to play it. The station on air is simply the
 highlighted row. Its logo becomes a stop button, and its second line
-carries the song title. Here the song title is Pink Floyd's *The
-Trial*. This replaces the country and bitrate that are shown for an
+carries the song title. Here the song title is Pink Floyd's *Us And
+Them*. This replaces the country and bitrate that are shown for an
 idle station. Tap it again to stop, and the logo comes back.
 
 Many streams do not have a track announcement so the station's own
@@ -285,7 +285,7 @@ what should happen when its stream ends.
 Radio-Browser names sometimes contain transmitter details and other
 information so you can rename the stations to suit yourself. The
 default station logo can be downloaded from the address the station
-advertises, or you can choose a logo for yourself. Here we have chasen
+advertises, or you can choose a logo for yourself. Here we have chosen
 our own logo. When there is no default logo the button is greyed
 out. Either way, the logo is stored with the station information
 locally or in your Pod.
