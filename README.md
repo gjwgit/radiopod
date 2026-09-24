@@ -202,6 +202,105 @@ The app is built from the same template as the other apps in the
 suite. `lib/main.dart`, `lib/app.dart` and `lib/app_scaffold.dart`
 carry no app-specific logic beyond configuration.
 
+## Screens
+
+Here we walk through RadioPod on GNU/Linux. Every screen looks the
+same on the other desktops. For mobile devices the app will be laid
+out for the narrower window as required. As with all solidui apps, the
+screen size is remebered on restarting the app.
+
+### Starting up
+
+![The RadioPod login screen](assets/screenshots/radiopod_login.png)
+
+You can choose your Solid server of choice (where you will host your
+data) and **Login**, or you can tap **Continue** to use RadioPod
+without a Solid server and so simply save your station lists
+locally. The **Continue** option is very much a supported way to run
+the app — your stations and playlists are then kept on the device and
+nothing is sent anywhere. You can log in later to a Solid server and
+copy what you have collected up to your Pod.
+
+### Finding a station
+
+![The Search screen before a
+search](assets/screenshots/radiopod_search.png)
+
+You can search the community-run Radio-Browser database by station
+name or by genre. The screen explains what leaves the device, because
+this is the one place in RadioPod where any data does leave the app to
+another service. What is shared is your search text and the name of
+the app, and nothing else.
+
+![Search results for
+ABC](assets/screenshots/radiopod_search_abc.png)
+
+Results carry the station's own logo, country, codec and bitrate.
+Radio-Browser holds a record per submission, so one station can be
+listed many times over; RadioPod collapses those to one row per stream
+address. A tick marks a station already in your library, and the plus
+adds a new one. Tapping any row plays that station straight away, so
+you can listen before deciding to keep it.
+
+### Your stations
+
+![The Stations list](assets/screenshots/radiopod_populated_stations.png)
+
+The library of stations is presented in **your** order rather than
+alphabetical. You can drag the handle on the right to arrange it, and
+that order is what an export writes and what Android Auto lists in the
+car. The filter box narrows a long list.
+
+The status bar along the bottom says where the library lives and
+whether you are logged in and if the security key (used to encrypt
+data in your Pod) is unlocked.
+
+### Play a Station
+
+![A station playing in the
+list](assets/screenshots/radiopod_stations_playing.png)
+
+Tap a row/station to play it. The station on air is simply the
+highlighted row. Its logo becomes a stop button, and its second line
+carries the song title — here Pink Floyd's *The Trial* — in place of the
+country and bitrate it shows when idle. Tap it again to stop, and the
+logo comes back.
+
+Many streams announce nothing so the station's own details remain the
+common case rather than a fallback.
+
+### Playlists
+
+![The Playlists screen](assets/screenshots/radiopod_playlists.png)
+
+You can group stations into playlists however you like. A playlist
+holds references, not copies, so a station renamed once is renamed
+everywhere, and the same station can sit in as many playlists as you
+please. These are also the folders you browse on a car's head unit.
+
+### Import and export
+
+![The Export and Import
+screen](assets/screenshots/radiopod_export_import.png)
+
+RadioPod reads and writes M3U, M3U8 and PLS — the plain text formats
+internet radio has always used and every other player reads. Import
+adds the stations to your library and groups them into a playlist
+named after the file, reusing any stream address you already have
+rather than duplicating it. Export saves the whole library or a single
+playlist. Nothing you collect here is locked in.
+
+### Settings
+
+![The Settings screen](assets/screenshots/radiopod_settings.png)
+
+Settings says where your data is kept and what that means, including
+the one honest caveat: an unencrypted copy of station names and stream
+addresses stays on the device so Android Auto can browse it before any
+login can happen. There is a button to clear it. The privacy summary
+is the same one above, in the app, where it can be read without
+trusting a README.
+
 ## Licence
 
 Copyright (C) 2026, Togaware Pty Ltd.

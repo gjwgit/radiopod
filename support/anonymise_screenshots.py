@@ -9,13 +9,18 @@ Run it again after retaking any screenshot:
 
     python3 support/anonymise_screenshots.py
 
-It is safe to run twice. A screenshot already carrying the fake WebID is
-rewritten to the identical thing.
+Safe to run repeatedly: a file it has already done is recorded as such in
+the PNG itself and skipped next time. That is not a nicety. Detecting the
+text and redrawing it is not an identity operation — the ink of the redrawn
+text is found a pixel right and below where the original was measured, so a
+second pass nudges the label a pixel, and a third nudges it again. Marking
+the file is what stops that walk.
+
+Pass --force to process a marked file anyway.
 
 WHAT IT LOOKS FOR, rather than fixed coordinates, so it survives a change of
-window size or theme: the footer is found from the horizontal divider nearest
-the bottom of the window, and the text from the pixels below that divider in
-the left of the bar. The colours are sampled from the image itself. The type
+window size or theme: the status bar is measured up from the bottom of the
+window, and the text found in the left of it. The colours are sampled from the image itself. The type
 size is calibrated rather than derived — see FONT_SIZE — and a screenshot
 whose footer does not match that calibration is reported and left alone.
 
@@ -27,11 +32,16 @@ import os
 import sys
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, PngImagePlugin
 
 # The fictional WebID that replaces whatever is there.
 
 WEBID = 'pods.solidcommunity.au/fred'
+
+# Written into the PNG of every file this has rewritten, and checked on the
+# way in. See the note above on why re-running must not redo the work.
+
+MARK = 'RadioPodWebIDReplaced'
 
 SHOTS = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -109,23 +119,33 @@ def window_box(alpha):
     return xs.min(), ys.min(), xs.max(), ys.max()
 
 
-def footer_divider(rgb, box, bg):
-    """The y of the rule that separates the status bar from the content.
+# Height of the status bar, measured up from the bottom of the window.
+#
+# 20260924 gjw This was found from the divider rule above the bar, which read
+# better but does not survive a modal: a dialog dims the whole window, taking
+# the divider's contrast with it, and a bottom sheet covers so much width that
+# nearly every row looks like a divider. The bar is a fixed-height widget, so
+# measuring up from the bottom of the window is both simpler and steadier.
 
-    Searched upward from the bottom of the window for the first row that
-    differs from the background across most of its width. Anchoring to this
-    rather than to a pixel offset is what lets the window change height
-    without the script needing to be retuned.
+BAR = 38
+
+
+def visible_right(rgb, bg, tx0, row, x1):
+    """How far right the status bar is actually on show.
+
+    A dialog or bottom sheet can sit over the right of the bar, leaving only
+    the first few characters of the WebID visible. Writing the full
+    replacement there would paint across the sheet, so the run of unbroken
+    bar colour is measured and everything is clipped to it. Returns None when
+    the bar is clear all the way, which is the ordinary case.
     """
 
-    x0, _, x1, y1 = box
-    width = x1 - x0
-    for y in range(y1 - 6, y1 - 90, -1):
-        row = rgb[y, x0 + 4:x1 - 4]
-        if (np.abs(row - bg).sum(axis=1) > INK).sum() > width * 0.7:
-            return y
+    strip = rgb[row, tx0:x1]
+    same = np.abs(strip - bg).sum(axis=1) < 40
+    if same.all():
+        return None
 
-    return None
+    return tx0 + int(np.argmin(same))
 
 
 def rendered_height(font, fg, bg):
@@ -141,9 +161,16 @@ def rendered_height(font, fg, bg):
     return ys.max() - ys.min() + 1
 
 
-def anonymise(path, font_file, dry_run=False):
+def anonymise(path, font_file, dry_run=False, force=False):
     name = os.path.basename(path)
-    im = Image.open(path).convert('RGBA')
+    src = Image.open(path)
+
+    if not force and src.info.get(MARK) == WEBID:
+        print(f'{name:36} already done, skipped')
+
+        return False
+
+    im = src.convert('RGBA')
     arr = np.asarray(im).astype(int)
     rgb, alpha = arr[..., :3], arr[..., 3]
 
@@ -154,17 +181,21 @@ def anonymise(path, font_file, dry_run=False):
 
     bg = rgb[y1 - 6, x1 - 30]
 
-    div = footer_divider(rgb, box, bg)
-    if div is None:
-        print(f'{name:36} no footer divider found, left alone')
+    div = y1 - BAR
 
-        return False
+    # How much of the bar is actually on show. A sheet or dialog over the
+    # right of it must not be written across, and its edge also has to be
+    # kept out of the text search or it reads as enormous ink.
+
+    clip = visible_right(rgb, bg, x0 + 4, y1 - 6, x1 - 2)
 
     # The WebID sits in the left of the bar. The right holds the login and
     # security-key indicators, which must not be touched.
 
     band_x1 = x0 + int((x1 - x0) * 0.45)
-    band = rgb[div + 2:y1 - 2, x0 + 4:band_x1]
+    if clip is not None:
+        band_x1 = min(band_x1, clip)
+    band = rgb[div:y1 - 2, x0 + 4:band_x1]
     ink = np.abs(band - bg).sum(axis=2) > INK
     if not ink.any():
         print(f'{name:36} footer carries no text, left alone')
@@ -173,7 +204,7 @@ def anonymise(path, font_file, dry_run=False):
 
     ty, tx = np.nonzero(ink)
     tx0, tx1 = x0 + 4 + tx.min(), x0 + 4 + tx.max()
-    ty0, ty1 = div + 2 + ty.min(), div + 2 + ty.max()
+    ty0, ty1 = div + ty.min(), div + ty.max()
 
     # The darkest ink pixel is the text colour; everything lighter is an
     # antialiased blend towards the background.
@@ -207,20 +238,42 @@ def anonymise(path, font_file, dry_run=False):
 
         return False
 
-    draw = ImageDraw.Draw(im)
+    # Everything is done on a copy, and only the part of the bar that is
+    # genuinely visible is taken from it. That is what keeps the new text off
+    # a sheet or dialog sitting over the right of the bar.
 
-    # Clear the old text with a margin for its antialiasing, staying inside
-    # the bar and short of the indicators on the right.
+    work = im.copy()
+    draw = ImageDraw.Draw(work)
+
+    top = max(ty0 - 4, div)
+    bottom = min(ty1 + 5, y1 - 1)
+
+    # Clear the old text with a margin for its antialiasing.
 
     draw.rectangle(
-        [tx0 - 3, max(ty0 - 4, div + 1), tx1 + 3, min(ty1 + 4, y1 - 1)],
+        [tx0 - 3, top, tx1 + 3, bottom],
         fill=tuple(int(c) for c in bg) + (255,),
     )
 
     # Placed so the new ink starts exactly where the old ink started.
 
     draw.text((tx0 - bb[0], ty0 - bb[1]), WEBID, font=font, fill=fg + (255,))
-    im.save(path)
+
+    new_right = tx0 + (bb[2] - bb[0]) + 3
+    right = new_right if clip is None else min(new_right, clip)
+
+    box = (tx0 - 3, top, right, bottom)
+    im.paste(work.crop(box), (box[0], box[1]))
+
+    if clip is not None:
+        print(f'{name:36} status bar covered from x{clip}, clipped to it')
+
+    meta = PngImagePlugin.PngInfo()
+    for k, v in src.info.items():
+        if isinstance(v, str) and k != MARK:
+            meta.add_text(k, v)
+    meta.add_text(MARK, WEBID)
+    im.save(path, pnginfo=meta)
 
     print(f'{name:36} replaced at x{tx0} y{ty0}, size {FONT_SIZE}')
 
@@ -229,6 +282,7 @@ def anonymise(path, font_file, dry_run=False):
 
 def main():
     dry_run = '--dry-run' in sys.argv
+    force = '--force' in sys.argv
     font_file = font_path()
 
     changed = 0
@@ -237,7 +291,7 @@ def main():
         if any(s in name.lower() for s in SKIP):
             print(f'{name:36} skipped, no WebID on this screen')
             continue
-        changed += anonymise(path, font_file, dry_run)
+        changed += anonymise(path, font_file, dry_run, force)
 
     print(f'\n{changed} screenshot(s) rewritten to {WEBID}')
 
