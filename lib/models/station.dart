@@ -25,6 +25,14 @@ class Station {
   final String? homepage;
   final String? favicon;
   final String? country;
+
+  /// The region within [country], as Radio-Browser records it.
+  ///
+  /// Absent for a station imported from a playlist file, which
+  /// carries nothing but a name and a URL, and for many
+  /// Radio-Browser entries where nobody filled it in.
+
+  final String? state;
   final String? language;
   final String? codec;
   final int? bitrate;
@@ -90,6 +98,7 @@ class Station {
     this.homepage,
     this.favicon,
     this.country,
+    this.state,
     this.language,
     this.codec,
     this.bitrate,
@@ -125,6 +134,7 @@ class Station {
     if (homepage != null) 'homepage': homepage,
     if (favicon != null) 'favicon': favicon,
     if (country != null) 'country': country,
+    if (state != null) 'state': state,
     if (language != null) 'language': language,
     if (codec != null) 'codec': codec,
     if (bitrate != null) 'bitrate': bitrate,
@@ -142,6 +152,7 @@ class Station {
     homepage: j['homepage'] as String?,
     favicon: j['favicon'] as String?,
     country: j['country'] as String?,
+    state: j['state'] as String?,
     language: j['language'] as String?,
     codec: j['codec'] as String?,
     bitrate: (j['bitrate'] as num?)?.toInt(),
@@ -159,6 +170,7 @@ class Station {
     Object? homepage = _sentinel,
     Object? favicon = _sentinel,
     Object? country = _sentinel,
+    Object? state = _sentinel,
     Object? language = _sentinel,
     Object? codec = _sentinel,
     Object? bitrate = _sentinel,
@@ -174,6 +186,7 @@ class Station {
     homepage: homepage == _sentinel ? this.homepage : homepage as String?,
     favicon: favicon == _sentinel ? this.favicon : favicon as String?,
     country: country == _sentinel ? this.country : country as String?,
+    state: state == _sentinel ? this.state : state as String?,
     language: language == _sentinel ? this.language : language as String?,
     codec: codec == _sentinel ? this.codec : codec as String?,
     bitrate: bitrate == _sentinel ? this.bitrate : bitrate as int?,

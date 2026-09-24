@@ -131,6 +131,20 @@ void main() {
       expect(s.toJson().containsKey('icon'), isFalse);
     });
 
+    test('state round-trips and is omitted when absent', () {
+      const with_ = Station(
+        id: 's1',
+        name: 'n',
+        url: 'https://live.example/n',
+        state: 'NSW',
+      );
+      const without = Station(id: 's2', name: 'n', url: 'https://x.example/n');
+
+      expect(Station.fromJson(with_.toJson()).state, 'NSW');
+      expect(without.toJson().containsKey('state'), isFalse);
+      expect(with_.copyWith(state: null).state, isNull);
+    });
+
     test('a station saved before icons existed reads as null', () {
       final s = Station.fromJson({
         'id': 's1',

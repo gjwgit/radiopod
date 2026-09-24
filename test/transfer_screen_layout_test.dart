@@ -28,9 +28,7 @@ Future<void> _pump(WidgetTester tester) async {
     MaterialApp(
       home: ChangeNotifierProvider(
         create: (_) => AppProvider()..loadForTest(const [], const []),
-        child: const Scaffold(
-          body: Center(child: TransferScreen()),
-        ),
+        child: const Scaffold(body: Center(child: TransferScreen())),
       ),
     ),
   );
@@ -57,7 +55,8 @@ void main() {
     expect(
       heading.dy,
       lessThan(80),
-      reason: 'Import is ${heading.dy}px down a 1400px viewport, so the '
+      reason:
+          'Import is ${heading.dy}px down a 1400px viewport, so the '
           'content is being centred rather than starting at the top',
     );
   });

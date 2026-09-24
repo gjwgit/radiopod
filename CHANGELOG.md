@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.1 Feature Tuning
 
++ Station properties now show the stream details [1.1.13 20260925 gjw]
 + Icon is the dial and waves alone, on transparency [1.1.12 20260924 gjw]
 + Test snap install [1.1.11 20260924 gjw]
 + Update to solidui to allow CONTINUE without secrets [1.1.10 20260924 gjw]

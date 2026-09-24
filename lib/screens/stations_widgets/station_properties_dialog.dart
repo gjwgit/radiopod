@@ -17,6 +17,7 @@ import 'package:gap/gap.dart';
 import 'package:markdown_tooltip/markdown_tooltip.dart';
 
 import 'package:radiopod/models/station.dart';
+import 'package:radiopod/screens/stations_widgets/station_details.dart';
 import 'package:radiopod/screens/stations_widgets/station_icon_field.dart';
 import 'package:radiopod/utils/station_icon.dart';
 
@@ -142,6 +143,10 @@ class _DialogState extends State<_StationPropertiesDialog> {
                   onChanged: (v) => setState(() => _reconnect = v),
                 ),
               ),
+
+              // What is known about the station, below what can be changed
+              // about it. Read-only, and quiet about anything unknown.
+              StationDetails(station: widget.station),
             ],
           ),
         ),
