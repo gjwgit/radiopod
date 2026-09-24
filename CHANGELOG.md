@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.1 Feature Tuning
 
++ Station addresses in Properties open on a tap [1.1.15 20260925 gjw]
 + Add a station manually from the app bar [1.1.14 20260925 gjw]
 + Station properties now show the stream details [1.1.13 20260925 gjw]
 + Icon is the dial and waves alone, on transparency [1.1.12 20260924 gjw]

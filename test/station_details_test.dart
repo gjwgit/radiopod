@@ -84,6 +84,41 @@ void main() {
 
       expect(find.byIcon(Icons.copy), findsNWidgets(2));
     });
+
+    testWidgets('shows the addresses as links, and nothing else', (
+      tester,
+    ) async {
+      // Homepage and Stream open in whatever the desktop uses for them. The
+      // rest are plain facts with nowhere to go, so they must not look
+      // tappable.
+
+      await _pump(tester, _full);
+
+      Finder link(String v) =>
+          find.ancestor(of: find.text(v), matching: find.byType(InkWell));
+
+      expect(link('https://www.abc.net.au'), findsOneWidget);
+      expect(
+        link('http://abc.streamguys1.com/live/newsradio/icecast.audio'),
+        findsOneWidget,
+      );
+      expect(link('Australia'), findsNothing);
+      expect(link('AAC+'), findsNothing);
+    });
+
+    testWidgets('a plain fact stays selectable rather than becoming a link', (
+      tester,
+    ) async {
+      await _pump(tester, _full);
+
+      expect(
+        find.ancestor(
+          of: find.text('Australia'),
+          matching: find.byType(SelectableText),
+        ),
+        findsOneWidget,
+      );
+    });
   });
 
   group('a station with nothing but a name and a URL', () {

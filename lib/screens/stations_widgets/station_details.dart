@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
 import 'package:gap/gap.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:radiopod/models/station.dart';
 
@@ -44,7 +45,7 @@ class StationDetails extends StatelessWidget {
       _section(context, 'Information', [
         _row('Language', s.language),
         _row('Genre', s.tags.isEmpty ? null : s.tags.join(', ')),
-        _row('Homepage', s.homepage, copy: true),
+        _row('Homepage', s.homepage, copy: true, link: true),
       ]),
       _section(context, 'Location', [
         _row('Country', s.country),
@@ -61,7 +62,7 @@ class StationDetails extends StatelessWidget {
         // the one that dies after a minute on the desktop, and knowing that
         // is what points the listener at the station's other entry.
         _row('Format', s.isHls ? 'HLS — a playlist of segments' : null),
-        _row('Stream', s.url, copy: true),
+        _row('Stream', s.url, copy: true, link: true),
       ]),
     ].whereType<Widget>().toList();
 
@@ -129,13 +130,31 @@ class StationDetails extends StatelessWidget {
                 ),
                 const Gap(2),
 
-                // Selectable so a stream address can be picked out by hand
-                // even where the copy button is not what is wanted.
-                SelectableText(
-                  row.value,
-                  style: const TextStyle(fontSize: 13),
-                  maxLines: 2,
-                ),
+                // Selectable so a value can be picked out by hand even where
+                // the copy button is not what is wanted. An address is shown
+                // as a link and opens on a tap; SelectableText is kept under
+                // it so selecting still works either way.
+                if (row.link)
+                  InkWell(
+                    onTap: () => openUrl(context, row.value),
+                    child: Text(
+                      row.value,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: cs.primary,
+                        decoration: TextDecoration.underline,
+                        decorationColor: cs.primary,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  )
+                else
+                  SelectableText(
+                    row.value,
+                    style: const TextStyle(fontSize: 13),
+                    maxLines: 2,
+                  ),
               ],
             ),
           ),
@@ -160,10 +179,15 @@ class StationDetails extends StatelessWidget {
 
   /// A row, or null when there is nothing to put in it.
 
-  _Row? _row(String label, String? value, {bool copy = false}) {
+  _Row? _row(
+    String label,
+    String? value, {
+    bool copy = false,
+    bool link = false,
+  }) {
     if (value == null || value.trim().isEmpty) return null;
 
-    return _Row(label, value.trim(), copy);
+    return _Row(label, value.trim(), copy, link);
   }
 }
 
@@ -172,5 +196,39 @@ class _Row {
   final String value;
   final bool copy;
 
-  const _Row(this.label, this.value, this.copy);
+  /// Whether the value is an address to hand to the desktop.
+
+  final bool link;
+
+  const _Row(this.label, this.value, this.copy, this.link);
+}
+
+/// Open [url] with whatever the system uses for it.
+///
+/// Reports rather than throws. A homepage can be launched into a browser
+/// almost anywhere, but a STREAM address depends on the desktop having
+/// something registered for audio, and under strict snap confinement the
+/// launch goes through a portal that may simply decline. Silence would leave
+/// the user tapping a link that appears to do nothing.
+
+Future<void> openUrl(BuildContext context, String url) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final uri = Uri.tryParse(url);
+
+  var ok = false;
+  if (uri != null) {
+    try {
+      ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('[StationDetails] could not open $url: $e');
+    }
+  }
+
+  if (!ok) {
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Nothing on this system would open that address.'),
+      ),
+    );
+  }
 }
