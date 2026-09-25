@@ -54,12 +54,8 @@ cp -r ../build/linux/x64/release/bundle/* ${APP}_${VER}_amd64/usr/lib/${APP}/
 
 (cd ${APP}_${VER}_amd64/usr/bin; ln -s ../lib/${APP}/${APP} ${APP})
 
-# Copy the app icon. A SHAPED variant may be used here: GNOME, KDE
-# and the other desktops draw the icon exactly as given, with no masking, so
-# app_icon.png carries the mark alone — the dial and its signal arcs, with
-# everything outside them transparent — so it does not appear as a
-# hard-edged square next to every other application
-# and its transparent surround. Not all apps are supporting this yet. See radiopod.
+# Copy the app icon which is assumed to be named ${APP}.png in the
+# installers folder.
 
 cp ../assets/images/app_icon.png ${APP}_${VER}_amd64/usr/share/icons/hicolor/512x512/apps/${APP}.png
 
