@@ -54,7 +54,7 @@ class RadioBrowser {
   /// Identifies the app to Radio-Browser, as their terms of use require.
 
   static const _userAgent =
-      'RadioPod/1.1.15 (+https://github.com/gjwgit/radiopod)';
+      'RadioPod/1.1.16 (+https://github.com/gjwgit/radiopod)';
 
   /// Endpoint listing the currently available API mirrors.
 
@@ -156,6 +156,45 @@ class RadioBrowser {
       for (final s in stations)
         if (s.isHls) s,
     ]);
+  }
+
+  /// Fetch the current record for [stationUuid], or null if it has gone.
+  ///
+  /// Radio-Browser entries are edited by the people who submitted them: an
+  /// address changes, a codec is corrected, a logo appears. This is how a
+  /// saved station picks that up, which is why [Station.stationUuid] is kept
+  /// in the first place.
+  ///
+  /// PRIVACY. `/json/stations/byuuid/` is a READ, and says nothing about
+  /// what is being listened to — it is the same kind of request Search
+  /// makes. It must not be confused with `/json/url/<stationuuid>`, the
+  /// click-reporting endpoint that feeds the popularity ranking, which
+  /// RadioPod does not call and which the README promises it does not call.
+  /// The two differ by one path segment.
+  ///
+  /// Throws on a network or server failure so the caller can report it. A
+  /// station that is simply no longer listed returns null, which is not an
+  /// error: entries are removed when they stop working.
+
+  static Future<Station?> lookup(String stationUuid) async {
+    final host = await _resolveHost();
+    final uri = Uri.https(host, '/json/stations/byuuid/$stationUuid');
+
+    final res = await http
+        .get(uri, headers: {'User-Agent': _userAgent})
+        .timeout(const Duration(seconds: 20));
+
+    if (res.statusCode != 200) {
+      throw http.ClientException(
+        'Radio-Browser returned ${res.statusCode}.',
+        uri,
+      );
+    }
+
+    final records = (jsonDecode(utf8.decode(res.bodyBytes)) as List)
+        .cast<Map<String, dynamic>>();
+
+    return records.isEmpty ? null : _toStation(records.first);
   }
 
   /// Convert one Radio-Browser record to a [Station], or null if unusable.

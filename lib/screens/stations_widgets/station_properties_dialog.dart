@@ -19,7 +19,31 @@ import 'package:markdown_tooltip/markdown_tooltip.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/stations_widgets/station_details.dart';
 import 'package:radiopod/screens/stations_widgets/station_icon_field.dart';
+import 'package:radiopod/services/radio_browser.dart';
 import 'package:radiopod/utils/station_icon.dart';
+
+/// What a freshly fetched record becomes once the listener's own choices
+/// are laid back over it.
+///
+/// Radio-Browser owns the facts — the address, the codec, where the station
+/// broadcasts from. The listener owns three things that a refresh must never
+/// touch:
+///
+/// - the local [Station.id], which playlists reference; replacing it would
+///   silently drop the station out of every playlist holding it,
+/// - [Station.reconnectOnEnd], which answers a question about this listener's
+///   experience that the database has no opinion on,
+/// - [Station.icon], a picture they went out of their way to choose.
+///
+/// Pure, so the rule can be tested without a network.
+
+Station applyRefresh(
+  Station fresh,
+  Station current, {
+  required bool reconnectOnEnd,
+  required String? icon,
+}) =>
+    fresh.copyWith(id: current.id, reconnectOnEnd: reconnectOnEnd, icon: icon);
 
 /// Edit [station], returning the changed copy, or null if cancelled.
 
@@ -48,6 +72,18 @@ class _DialogState extends State<_StationPropertiesDialog> {
   late bool _reconnect = widget.station.reconnectOnEnd;
   late String? _icon = widget.station.icon;
 
+  /// The station as it stands, including anything a refresh has brought
+  /// down. Held here rather than written straight through, so a refresh is
+  /// reviewed and then Saved like any other edit — and can be abandoned with
+  /// Cancel if what came back is worse than what was there.
+
+  late Station _station = widget.station;
+
+  /// What the refresh reported, shown under the button.
+
+  String? _refreshMessage;
+  bool _refreshing = false;
+
   /// What the icon controls are doing, so the buttons can be disabled and
   /// the outcome reported inline rather than in a SnackBar behind a dialog.
 
@@ -72,6 +108,7 @@ class _DialogState extends State<_StationPropertiesDialog> {
   /// OK cannot rewrite the station list on the Pod for nothing.
 
   bool get _changed =>
+      !identical(_station, widget.station) ||
       (_trimmed.isNotEmpty && _trimmed != widget.station.name) ||
       _reconnect != widget.station.reconnectOnEnd ||
       _icon != widget.station.icon;
@@ -146,7 +183,10 @@ class _DialogState extends State<_StationPropertiesDialog> {
 
               // What is known about the station, below what can be changed
               // about it. Read-only, and quiet about anything unknown.
-              StationDetails(station: widget.station),
+              StationDetails(station: _station),
+
+              const Gap(16),
+              _refreshControl(cs),
             ],
           ),
         ),
@@ -164,13 +204,107 @@ class _DialogState extends State<_StationPropertiesDialog> {
     );
   }
 
+  /// The control for bringing the details up to date.
+  ///
+  /// Offered only for a station that came from Search, since the lookup is by
+  /// the Radio-Browser id and one imported from a playlist file has none. A
+  /// button that could only ever fail is worse than no button, so it is
+  /// disabled and the reason given.
+
+  Widget _refreshControl(ColorScheme cs) {
+    final known = widget.station.stationUuid != null;
+    final note =
+        _refreshMessage ??
+        (known
+            ? null
+            : 'This station was not found through Search, so Radio-Browser '
+                  'has no record to update it from.');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        OutlinedButton.icon(
+          icon: _refreshing
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.sync, size: 18),
+          label: const Text('Update from Radio-Browser'),
+          onPressed: known && !_refreshing ? _refresh : null,
+        ),
+        if (note != null) ...[
+          const Gap(6),
+          Text(
+            note,
+            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// Everything the refresh brought down, with the three things this dialog
+  /// owns laid over the top. The user's own icon in particular is never
+  /// replaced by a refresh: they chose it deliberately.
+
   void _save() => Navigator.of(context).pop(
-    widget.station.copyWith(
-      name: _trimmed,
-      reconnectOnEnd: _reconnect,
-      icon: _icon,
-    ),
+    _station.copyWith(name: _trimmed, reconnectOnEnd: _reconnect, icon: _icon),
   );
+
+  /// Fetch this station's current record from Radio-Browser.
+  ///
+  /// Updates the ADDRESS as well as the details. That is the point of the
+  /// exercise: a station that has stopped playing has often simply moved,
+  /// and the saved uuid is what finds where it moved to.
+  ///
+  /// The name goes into the text field rather than being applied silently,
+  /// so a station renamed to something personal is not quietly reverted
+  /// without the user seeing it happen.
+
+  Future<void> _refresh() async {
+    final uuid = widget.station.stationUuid;
+    if (uuid == null) return;
+
+    setState(() {
+      _refreshing = true;
+      _refreshMessage = null;
+    });
+    try {
+      final fresh = await RadioBrowser.lookup(uuid);
+      if (!mounted) return;
+
+      setState(() {
+        if (fresh == null) {
+          _refreshMessage =
+              'Radio-Browser no longer lists this station. Entries are '
+              'removed when they stop working.';
+
+          return;
+        }
+
+        // Keep this station's own identity and the choices that belong to
+        // the listener rather than to the database.
+
+        _station = applyRefresh(
+          fresh,
+          widget.station,
+          reconnectOnEnd: _reconnect,
+          icon: _icon,
+        );
+        _name.text = fresh.name;
+        _refreshMessage = 'Updated from Radio-Browser. Save to keep it.';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _refreshMessage = 'Could not reach Radio-Browser. $e';
+      });
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
+  }
 
   /// Fetch the artwork the station advertises, if it still has any.
 

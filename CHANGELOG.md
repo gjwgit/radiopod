@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.1 Feature Tuning
 
++ Update a saved station from Radio-Browser [1.1.16 20260925 gjw]
 + Station addresses in Properties open on a tap [1.1.15 20260925 gjw]
 + Add a station manually from the app bar [1.1.14 20260925 gjw]
 + Station properties now show the stream details [1.1.13 20260925 gjw]
