@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+	20260928 gjw How `flutter build ipa` should export the archive, named
+	explicitly by the package-ios-ipa job in .github/workflows/installers.yaml.
+
+	FOR THE APP STORE. Note that notepod's copy of this file uses the
+	`debugging` method, which produces an IPA for sideloading onto registered
+	devices and CANNOT be submitted. RadioPod is going to the store, so the
+	method here is `app-store` and the profile below has to be an App Store
+	profile, not a development one.
+
+	THE PROFILE NAME MUST MATCH EXACTLY. `provisioningProfiles` maps the
+	bundle identifier to the NAME of the profile as it appears in the Apple
+	Developer portal, not to a file. Name the profile "RadioPod App Store"
+	when creating it, or change the string below to whatever it was called.
+	A mismatch fails the export with "No profiles for com.togaware.radiopod
+	were found", which reads like the profile is missing rather than misnamed.
+
+	signingStyle is manual because CI has no Apple account to sign in with:
+	the certificate and profile arrive as the IOS_CERTIFICATE and
+	IOS_PROVISION_PROFILE secrets and are installed into a temporary keychain.
+-->
+<plist version="1.0">
+<dict>
+	<key>destination</key>
+	<string>export</string>
+
+	<key>method</key>
+	<string>app-store</string>
+
+	<key>signingStyle</key>
+	<string>manual</string>
+
+	<key>teamID</key>
+	<string>G7843T3SD3</string>
+
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>com.togaware.radiopod</key>
+		<string>RadioPod App Store</string>
+	</dict>
+
+	<!--
+		False, so the build number baked into the archive is the one that
+		gets uploaded, rather than Xcode renumbering it. The workflow
+		computes that number from the version and passes it to the build.
+	-->
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
+
+	<key>generateAppStoreInformation</key>
+	<false/>
+
+	<key>stripSwiftSymbols</key>
+	<true/>
+
+	<key>uploadSymbols</key>
+	<true/>
+
+	<key>testFlightInternalTestingOnly</key>
+	<false/>
+</dict>
+</plist>
