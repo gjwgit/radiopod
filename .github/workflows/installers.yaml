@@ -808,7 +808,8 @@ jobs:
     if: |
       contains(github.event.head_commit.message, 'bump version') ||
       contains(github.event.head_commit.message, 'build installers') ||
-      contains(github.event.head_commit.message, 'build ios')
+      contains(github.event.head_commit.message, 'build ios') ||
+      contains(github.event.head_commit.message, 'upload ios')
     runs-on: macos-latest
     env:
       IOS_APP_RELEASE_PATH: build/ios/ipa
@@ -986,8 +987,7 @@ jobs:
 
           rm -f ~/.appstoreconnect/private_keys/AuthKey_$AC_API_KEY_ID.p8
 
-      # # Important! Cleanup: remove the certificate and provisioning profile from the runner!
-
+      # Important! Cleanup: remove the certificate and provisioning profile from the runner!
       # - name: Clean up keychain and provisioning profile
       #   if: ${{ always() }}
       #   run: |
