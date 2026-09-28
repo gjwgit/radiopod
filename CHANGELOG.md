@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.1 Feature Tuning
 
++ iOS App Store build tested and working [1.1.18 20260928 gjw]
 + iOS App Store build, and a build number that increments [1.1.17 20260928 gjw]
 + Update a saved station from Radio-Browser [1.1.16 20260925 gjw]
 + Station addresses in Properties open on a tap [1.1.15 20260925 gjw]
