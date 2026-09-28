@@ -945,42 +945,48 @@ jobs:
           name: ${{ env.APP }}-ipa
           path: ${{ env.IOS_APP_RELEASE_PATH }}/${{ env.APP }}.ipa
 
-      # # Important! Cleanup: remove the certificate and provisioning profile from the runner!
-      # 20260928 gjw COMMENTED OUT UNTIL WANTED. Uploads the IPA straight to
-      # App Store Connect, which is what saves a manual Transporter round
-      # trip on every release. The AC_API_* secrets are already set — the
+      # 20260928 gjw Uploads the IPA straight to App Store Connect, saving a
+      # Transporter round trip. The AC_API_* secrets are already set — the
       # macOS job uses the same three for notarisation.
       #
-      # Think before enabling it. The job runs on every `bump version`, so
-      # every bump would push a build to TestFlight. A build cannot be
-      # deleted once uploaded, only expired, so the history fills up. If that
-      # is not wanted, gate it on its own trigger, for example
-      #
-      #   if: contains(github.event.head_commit.message, 'upload ios')
+      # GATED ON `upload ios` IN THE COMMIT MESSAGE, and that gate is the
+      # point. The job itself runs on every `bump version`, and a build
+      # cannot be deleted from App Store Connect once uploaded, only
+      # expired, so an ungated step would fill the history with builds
+      # nobody asked for. Say `upload ios` when you mean it.
       #
       # An App Store Connect app record for com.togaware.radiopod has to
-      # exist first, or the upload is rejected with no such app.
+      # exist first (appstoreconnect.apple.com → Apps → +), or the upload is
+      # rejected with no such app — which reads like a signing failure and
+      # is not one.
+      #
+      # The build number comes from pubspec's `+N`. App Store Connect
+      # refuses a number it has seen before, so a second upload needs
+      # another `make minor_versions` first.
       #
       # altool wants the key at a path it searches by name, hence the
       # AuthKey_<id>.p8 filename rather than somewhere in RUNNER_TEMP.
-      #
-      # - name: Upload the IPA to App Store Connect
-      #   env:
-      #     AC_API_KEY: ${{ secrets.AC_API_KEY }}
-      #     AC_API_KEY_ID: ${{ secrets.AC_API_KEY_ID }}
-      #     AC_API_ISSUER_ID: ${{ secrets.AC_API_ISSUER_ID }}
-      #   run: |
-      #     mkdir -p ~/.appstoreconnect/private_keys
-      #     echo -n "$AC_API_KEY" | base64 --decode \
-      #       -o ~/.appstoreconnect/private_keys/AuthKey_$AC_API_KEY_ID.p8
-      #
-      #     xcrun altool --upload-app \
-      #       --type ios \
-      #       --file ${{ env.IOS_APP_RELEASE_PATH }}/${{ env.APP }}.ipa \
-      #       --apiKey "$AC_API_KEY_ID" \
-      #       --apiIssuer "$AC_API_ISSUER_ID"
-      #
-      #     rm -f ~/.appstoreconnect/private_keys/AuthKey_$AC_API_KEY_ID.p8
+
+      - name: Upload the IPA to App Store Connect
+        if: contains(github.event.head_commit.message, 'upload ios')
+        env:
+          AC_API_KEY: ${{ secrets.AC_API_KEY }}
+          AC_API_KEY_ID: ${{ secrets.AC_API_KEY_ID }}
+          AC_API_ISSUER_ID: ${{ secrets.AC_API_ISSUER_ID }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo -n "$AC_API_KEY" | base64 --decode \
+            -o ~/.appstoreconnect/private_keys/AuthKey_$AC_API_KEY_ID.p8
+
+          xcrun altool --upload-app \
+            --type ios \
+            --file ${{ env.IOS_APP_RELEASE_PATH }}/${{ env.APP }}.ipa \
+            --apiKey "$AC_API_KEY_ID" \
+            --apiIssuer "$AC_API_ISSUER_ID"
+
+          rm -f ~/.appstoreconnect/private_keys/AuthKey_$AC_API_KEY_ID.p8
+
+      # # Important! Cleanup: remove the certificate and provisioning profile from the runner!
 
       # - name: Clean up keychain and provisioning profile
       #   if: ${{ always() }}
