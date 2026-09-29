@@ -1,6 +1,6 @@
 /// LibraryStorageSection — where the library lives, and what to do about it.
 ///
-// Time-stamp: <Sunday 2026-09-21 06:00:00 +1000 Graham Williams>
+// Time-stamp: <Tuesday 2026-09-29 14:31:59 +1000 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -63,7 +63,7 @@ class _LibraryStorageSectionState extends State<LibraryStorageSection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Where your stations are kept',
+          'Where your station list is are kept:',
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const Gap(8),
@@ -72,14 +72,16 @@ class _LibraryStorageSectionState extends State<LibraryStorageSection> {
         _paragraph(
           cs,
           local
-              ? 'You are not logged in, so RadioPod is keeping your stations '
+              ? 'You are not logged in, so RadioPod will keep your stations '
                     'and playlists on this device, in the app\'s private '
                     'storage. Nothing is sent anywhere. They will still be '
-                    'here next time you open the app.'
+                    'here next time you open the app but not available from '
+                    'other devices.'
               : 'You are logged in, so your stations and playlists live on '
                     'your Solid Pod, encrypted with your security key before '
-                    'they leave this device. The server holding them — '
-                    'including its administrators — cannot read them.',
+                    'they leave this device. Administrators on the server '
+                    'holding them nor anyone else who might hack the server '
+                    'can read them. They are secure.',
         ),
         const Gap(12),
         _paragraph(
