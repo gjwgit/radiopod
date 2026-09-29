@@ -16,7 +16,8 @@ import 'package:flutter/foundation.dart';
 
 import 'package:oidc/oidc.dart';
 
-/// A short in-memory record of the native sign-in browser's own events.
+/// A short in-memory record of what happened during a login attempt, from the
+/// native sign-in browser's own events and from the Dart side's `debugPrint`.
 ///
 /// 20260929 gjw Why this exists. When a login fails, solidui can only say
 /// "the login window may have been closed, or the server refused the
@@ -57,9 +58,20 @@ class OidcEventLog {
 
   static const maxEntries = 50;
 
+  /// Caps one captured line, so a stack trace cannot crowd out the log.
+
+  static const maxLineLength = 300;
+
   final List<String> _entries = [];
 
   StreamSubscription<OidcNativeBrowserEvent>? _subscription;
+
+  bool _wrappedDebugPrint = false;
+
+  /// True while [_add] is echoing to the console, so the `debugPrint` wrapper
+  /// does not read our own output back and loop.
+
+  bool _emitting = false;
 
   /// The log, oldest first.
 
@@ -83,6 +95,67 @@ class OidcEventLog {
     } on Object catch (error) {
       _add('could not subscribe to native events: $error');
     }
+
+    _captureDebugPrint();
+  }
+
+  /// 20260929 gjw Also keep the Dart side's own account of a failure.
+  ///
+  /// The native events only exist once the browser has been asked for, and a
+  /// login can fail well before that. When it does, solidpod catches EVERY
+  /// exception, returns null, and reports the reason through `debugPrint`
+  /// alone (`authenticate.dart:311`) — so on a TestFlight device the cause is
+  /// written to a console nobody can read.
+  ///
+  /// `debugPrint` is a mutable function reference, so wrapping it here copies
+  /// those lines into this log on the way past. Release builds still run it,
+  /// which is the point: this has to work in the build the tester has.
+  ///
+  /// Only lines matching [shouldCapture] are kept, so this stays a login log
+  /// rather than a transcript of the whole app.
+
+  void _captureDebugPrint() {
+    if (_wrappedDebugPrint) return;
+
+    _wrappedDebugPrint = true;
+
+    final inner = debugPrint;
+
+    debugPrint = (String? message, {int? wrapWidth}) {
+      if (message != null && !_emitting && shouldCapture(message)) {
+        _add(
+          message.length > maxLineLength
+              ? '${message.substring(0, maxLineLength)}…'
+              : message,
+        );
+      }
+
+      inner(message, wrapWidth: wrapWidth);
+    };
+  }
+
+  /// Whether a `debugPrint` line is about logging in.
+  ///
+  /// Deliberately a small list. A diagnostic the user is invited to paste into
+  /// a bug report should not quietly accumulate everything the app ever
+  /// printed.
+
+  @visibleForTesting
+  static bool shouldCapture(String message) {
+    final text = message.toLowerCase();
+
+    return const [
+      'solid',
+      'oidc',
+      'authenticate',
+      'keychain',
+      'securestorage',
+      'secure storage',
+
+      // Spelt out rather than matching 'session', which would drag in every
+      // audio_session line and drown the log in playback chatter.
+      'restoresession',
+    ].any(text.contains);
   }
 
   /// Clears the log, so a tester can retry and capture just that attempt.
@@ -96,9 +169,12 @@ class OidcEventLog {
 
     if (_entries.length > maxEntries) _entries.removeAt(0);
 
-    // Also to the console, for a device that happens to be attached.
+    // Also to the console, for a device that happens to be attached. The
+    // flag stops the wrapper above copying our own line straight back in.
 
+    _emitting = true;
     debugPrint('oidc: $line');
+    _emitting = false;
   }
 
   /// Renders one event as a line a person can read.

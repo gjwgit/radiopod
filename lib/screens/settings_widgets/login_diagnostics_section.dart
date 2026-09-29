@@ -58,10 +58,10 @@ class _LoginDiagnosticsSectionState extends State<LoginDiagnosticsSection> {
         ),
         const Gap(8),
         Text(
-          'What the sign-in browser reported on this device. It is kept in '
-          'memory only, is never written to your Pod or sent anywhere, and '
-          'holds no addresses or sign-in codes. Useful to copy into a bug '
-          'report when a login will not complete.',
+          'What the sign-in browser and the login code reported on this '
+          'device. It is kept in memory only, is never written to your Pod or '
+          'sent anywhere, and holds no sign-in codes. Useful to copy into a '
+          'bug report when a login will not complete.',
           style: TextStyle(color: cs.onSurfaceVariant),
         ),
         const Gap(12),

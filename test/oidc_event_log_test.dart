@@ -95,6 +95,44 @@ void main() {
     });
   });
 
+  // 20260929 gjw The Dart side is where a login that never opens a browser
+  // fails, and solidpod reports it through debugPrint and nowhere else. These
+  // name the real lines it emits.
+
+  group('shouldCapture', () {
+    test('keeps solidpod\'s own report of a failed login', () {
+      expect(
+        OidcEventLog.shouldCapture(
+          'Solid Authenticate Failed: Exception: something went wrong',
+        ),
+        isTrue,
+      );
+      expect(
+        OidcEventLog.shouldCapture('tryRestoreSession failed: bad token'),
+        isTrue,
+      );
+      expect(
+        OidcEventLog.shouldCapture('solidpod: keychain using the legacy one'),
+        isTrue,
+      );
+    });
+
+    test('keeps the oidc packages', () {
+      expect(
+        OidcEventLog.shouldCapture('oidc_darwin: failed to launch the url'),
+        isTrue,
+      );
+    });
+
+    test('ignores unrelated chatter', () {
+      expect(OidcEventLog.shouldCapture('MPV: cache-on-disk'), isFalse);
+      expect(
+        OidcEventLog.shouldCapture('Another exception was thrown'),
+        isFalse,
+      );
+    });
+  });
+
   // The redirect event is redacted at the source, but assert it here too: a
   // log the user is invited to paste into a bug report must never be able to
   // carry an authorization code.
