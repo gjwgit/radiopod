@@ -358,6 +358,11 @@ like.
 
 ### iOS
 
+<img src="assets/screenshots/radiopod_android_stations.png"
+alt="Station list on Android Phone" width="300">
+
+### iOS
+
 <img src="assets/screenshots/radiopod_ios_stations.png" alt="Station list on the iPhone" width="300">
 
 ## Licence
