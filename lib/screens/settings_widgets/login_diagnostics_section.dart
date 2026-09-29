@@ -52,7 +52,10 @@ class _LoginDiagnosticsSectionState extends State<LoginDiagnosticsSection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Gap(32),
-        Text('Login diagnostics', style: Theme.of(context).textTheme.titleLarge),
+        Text(
+          'Login diagnostics',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
         const Gap(8),
         Text(
           'What the sign-in browser reported on this device. It is kept in '

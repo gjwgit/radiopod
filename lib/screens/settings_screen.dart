@@ -87,7 +87,6 @@ class SettingsScreen extends StatelessWidget {
           //
           // 20260929 gjw Shows itself only when a login has actually been
           // attempted, so it is invisible to anyone who has no trouble.
-
           const LoginDiagnosticsSection(),
         ],
       ),

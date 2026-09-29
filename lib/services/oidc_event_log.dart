@@ -131,7 +131,9 @@ class OidcEventLog {
     final buffer = StringBuffer('FAILED — ${error.kind.name}');
 
     if (error.nativeDomain != null || error.nativeCode != null) {
-      buffer.write(' (${error.nativeDomain ?? '?'} ${error.nativeCode ?? '?'})');
+      buffer.write(
+        ' (${error.nativeDomain ?? '?'} ${error.nativeCode ?? '?'})',
+      );
     }
 
     if (error.message != null) buffer.write(': ${error.message}');
