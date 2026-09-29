@@ -140,6 +140,8 @@ class _SearchScreenState extends State<SearchScreen> {
             current: now.isCurrent(station.id),
             playing: now.playing,
             connecting: now.connecting,
+            loading: now.loading,
+            paused: now.paused,
             failed: now.failed,
             track: now.track,
             onTap: () => now.isCurrent(station.id)

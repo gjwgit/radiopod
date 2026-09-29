@@ -19,14 +19,20 @@ import 'package:radiopod/utils/station_icon.dart';
 /// Search results.
 ///
 /// THE ROW IS THE PLAYER. There is no separate now-playing bar: the station
-/// on air is the highlighted row, its leading logo becomes a Stop button,
-/// and its second line carries the song rather than the station's codec and
-/// bitrate. Tapping the row starts a station, or stops the one playing.
+/// on air is the highlighted row, and its second line leads with what the
+/// transport is doing — `Playing | <song or details>`, `Paused`, `Stopped`,
+/// `Connecting`, `Loading` or `Unavailable`. Tapping the row starts a
+/// station, or stops the one playing. Only the current station carries a
+/// status, so starting another moves the label to the new row.
 ///
 /// A floating bar was tried first and sat over the last entry in the list,
 /// hiding it. Putting the state in the row removes the overlap, saves the
 /// screen space, and means a station previewed from Search — which is in no
 /// list of saved stations — can still be stopped from where it was started.
+///
+/// THE LOGO STAYS. An earlier version swapped the row's logo for a Stop
+/// button while it played, which hid the one picture that identifies the
+/// station at a glance. The status label says the same thing in words.
 ///
 /// The trailing widget is supplied by the caller because the useful action
 /// differs by screen: an overflow menu in the library, a remove button
@@ -36,12 +42,14 @@ class StationTile extends StatelessWidget {
   final Station station;
 
   /// True when this station is the one the media session is on, whatever the
-  /// transport is doing. Drives the highlight and the leading control.
+  /// transport is doing. Drives the highlight and the status label.
 
   final bool current;
 
   final bool playing;
   final bool connecting;
+  final bool loading;
+  final bool paused;
   final bool failed;
 
   /// The song on air, shown INSTEAD of the station details while it is
@@ -59,6 +67,8 @@ class StationTile extends StatelessWidget {
     this.current = false,
     this.playing = false,
     this.connecting = false,
+    this.loading = false,
+    this.paused = false,
     this.failed = false,
     this.track,
     this.onTap,
@@ -68,12 +78,23 @@ class StationTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final second = _secondLine();
+    final status = current ? _status() : null;
+    final detail = _detail();
+    final showsTrack = current && playing && track != null;
+
+    final detailStyle = TextStyle(
+      color: failed && current
+          ? cs.error
+          : showsTrack
+          ? cs.primary
+          : cs.onSurfaceVariant,
+      fontWeight: showsTrack ? FontWeight.w500 : FontWeight.w400,
+    );
 
     return ListTile(
       selected: current,
       selectedTileColor: cs.primaryContainer.withValues(alpha: 0.38),
-      leading: _leading(cs),
+      leading: _logo(cs),
       title: Text(
         station.name,
         maxLines: 1,
@@ -82,86 +103,62 @@ class StationTile extends StatelessWidget {
           fontWeight: current ? FontWeight.w600 : FontWeight.w400,
         ),
       ),
-      subtitle: second == null
+      subtitle: status == null && detail == null
           ? null
-          : Text(
-              second,
+          : Text.rich(
+              TextSpan(
+                children: [
+                  if (status != null)
+                    TextSpan(
+                      text: status,
+                      style: TextStyle(
+                        color: failed ? cs.error : cs.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  if (status != null && detail != null)
+                    TextSpan(
+                      text: ' | ',
+                      style: TextStyle(color: cs.onSurfaceVariant),
+                    ),
+                  if (detail != null)
+                    TextSpan(text: detail, style: detailStyle),
+                ],
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: failed
-                    ? cs.error
-                    : (current && track != null)
-                    ? cs.primary
-                    : cs.onSurfaceVariant,
-                fontSize: 12,
-                fontWeight: (current && track != null)
-                    ? FontWeight.w500
-                    : FontWeight.w400,
-              ),
+              style: const TextStyle(fontSize: 12),
             ),
       trailing: trailing,
       onTap: onTap,
     );
   }
 
-  /// The second line: what is happening on the current station, the song it
-  /// announced, or the station's own details.
+  /// What the transport is doing on the current station, as one word.
+  ///
+  /// Checked in order of what matters most: a failure outranks everything,
+  /// and a buffering stream is Loading even though the player still counts
+  /// it as playing.
 
-  String? _secondLine() {
+  String _status() {
+    if (failed) return 'Unavailable';
+    if (connecting) return 'Connecting';
+    if (loading) return 'Loading';
+    if (playing) return 'Playing';
+    if (paused) return 'Paused';
+    return 'Stopped';
+  }
+
+  /// The text after the status: the reason for a failure, the song on air,
+  /// or the station's own details.
+
+  String? _detail() {
     if (current) {
       if (failed) return 'Could not connect to this station.';
-      if (connecting) return 'Connecting…';
-      if (track != null) return track;
-      if (!playing) return 'Stopped';
+      if (playing && track != null) return track;
     }
 
     return station.subtitle.isEmpty ? null : station.subtitle;
-  }
-
-  /// The station logo, or the transport control when this row is on air.
-  ///
-  /// Swapping the logo for a Stop button is deliberate: it puts the control
-  /// exactly where the eye already is for the highlighted row, and costs no
-  /// extra width in a list that has to work on a phone.
-  ///
-  /// A STOPPED ROW GETS ITS LOGO BACK. Only a row that is doing something —
-  /// playing, connecting, or failed — gives up its artwork, because that is
-  /// when the state is worth more than the picture. Once stopped there is
-  /// nothing to interrupt, and a Play button would hide the icon for no
-  /// gain: tapping the row already starts it again, and the highlight and
-  /// the 'Stopped' line still say which station it was.
-
-  Widget _leading(ColorScheme cs) {
-    if (current) {
-      if (connecting) {
-        return const SizedBox(
-          width: 40,
-          height: 40,
-          child: Center(
-            child: SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          ),
-        );
-      }
-
-      if (failed || playing) {
-        return SizedBox(
-          width: 40,
-          height: 40,
-          child: Icon(
-            failed ? Icons.error_outline : Icons.stop_circle,
-            size: 34,
-            color: failed ? cs.error : cs.primary,
-          ),
-        );
-      }
-    }
-
-    return _logo(cs);
   }
 
   /// The station logo, falling back to a radio icon.
