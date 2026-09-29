@@ -358,6 +358,8 @@ like.
 
 ### iOS
 
+<img src="assets/screenshots/radiopod_ios_stations.png" alt="Station list on the iPhone" width="300">
+
 ![Station list on the iPhone](assets/screenshots/radiopod_ios_stations.png)
 
 ## Licence
