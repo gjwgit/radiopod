@@ -352,11 +352,11 @@ like.
 
 ## Platforms
 
-### Desktop
+### Linux
 
 ![Station list on desktop](assets/screenshots/radiopod_populated_stations.png)
 
-### iOS
+### Android
 
 <img src="assets/screenshots/radiopod_android_stations.png"
 alt="Station list on Android Phone" width="300">
