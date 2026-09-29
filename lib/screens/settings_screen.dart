@@ -1,6 +1,6 @@
 /// SettingsScreen — where your data lives, and the privacy explanation.
 ///
-// Time-stamp: <Sunday 2026-09-21 06:00:00 +1000 Graham Williams>
+// Time-stamp: <Wednesday 2026-09-30 09:25:39 +1000 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -50,8 +50,8 @@ class SettingsScreen extends StatelessWidget {
           const Gap(8),
           _paragraph(
             cs,
-            'RadioPod contacts exactly one third party, and only when you '
-            'use Search: the community-run Radio-Browser database at '
+            'RadioPod contacts exactly one third party and only when you '
+            'use Search. This is the community-run Radio-Browser database at '
             'all.api.radio-browser.info. It is sent your search text and the '
             'name of this app, and nothing else — no WebID, no Pod address, '
             'no station library.',
@@ -60,7 +60,7 @@ class SettingsScreen extends StatelessWidget {
           _paragraph(
             cs,
             'Radio-Browser offers an endpoint for apps to report which '
-            'station a listener picked, which feeds its popularity ranking. '
+            'station a listener picked. This data feeds its popularity ranking. '
             'RadioPod does not call it. Nothing about what you listen to '
             'leaves this device.',
           ),
