@@ -1,1 +1,27 @@
 #include "Generated.xcconfig"
+
+// 20260929 gjw Keep the global symbols in the Release binary.
+//
+// fast_rsa generates the DPoP key pair that Solid-OIDC login needs, and it is
+// a Go library reached through dart:ffi. On iOS its binding calls
+// DynamicLibrary.process() (fast_rsa/lib/bridge/binding.dart:159), so the
+// symbol has to be findable with dlsym(RTLD_DEFAULT, "RSABridgeCall") in the
+// app's OWN executable — the code is linked in by the -force_load in
+// fast_rsa.podspec, but a symbol that has been stripped cannot be looked up.
+//
+// Xcode's default strip style for a Release app target is "all", which
+// removes it. Login then fails before the browser is ever opened, with
+//
+//   Failed to lookup symbol 'RSABridgeCall':
+//   dlsym(RTLD_DEFAULT, RSABridgeCall): symbol not found
+//
+// which solidpod swallows and reports as a generic failed sign-in.
+//
+// Android and GNU/Linux are unaffected: there the same binding opens
+// librsa_bridge.so by name instead of searching the process, so stripping the
+// executable costs it nothing. That is why login works everywhere but here.
+//
+// `non-global` still strips local and debug symbols, so this is not a
+// wholesale disabling of stripping.
+
+STRIP_STYLE = non-global
