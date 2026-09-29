@@ -1,7 +1,7 @@
 name: radiopod
 description: "Radio Pod - Internet Radio with Secure and Private Storage"
 publish_to: 'none'
-version: 1.1.18+3
+version: 1.1.19+4
 
 environment:
   sdk: ^3.13.4
@@ -42,6 +42,15 @@ dependencies:
   gap: ^3.0.1
   http: ^1.6.0
   markdown_tooltip: ^0.0.10
+
+  # 20260929 gjw Declared directly, though solidpod already pulls it in, so
+  # OidcEventLog can subscribe to OidcPlatform.nativeBrowserEvents(). That is
+  # the only place the reason a login failed still exists — solidui's message
+  # cannot say, because the oidc package discards the server's error. Relying
+  # on a transitive dependency for a direct import is what dependency_validator
+  # objects to, and rightly: solidpod could drop it at any release.
+
+  oidc: ^4.0.0
   provider: ^6.1.5+1
 
   # 20260920 gjw audio_service does not re-export rxdart, but its

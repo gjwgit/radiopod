@@ -741,7 +741,7 @@ packages:
     source: hosted
     version: "9.6.0"
   oidc:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: oidc
       sha256: f99dd9f4a1ad03b48f275c9c37ed87430d286a278d4ef574bffc4f03f5dab391

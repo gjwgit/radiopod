@@ -16,6 +16,7 @@ import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
 
 import 'package:radiopod/screens/settings_widgets/library_storage_section.dart';
+import 'package:radiopod/screens/settings_widgets/login_diagnostics_section.dart';
 import 'package:radiopod/services/app_provider.dart';
 
 /// Says plainly where RadioPod's data goes, and offers the levers the user
@@ -81,6 +82,13 @@ class SettingsScreen extends StatelessWidget {
             '${provider.stations.length} stations in '
             '${provider.playlists.length} playlists.',
           ),
+
+          // ── Login diagnostics ───────────────────────────────────────
+          //
+          // 20260929 gjw Shows itself only when a login has actually been
+          // attempted, so it is invisible to anyone who has no trouble.
+
+          const LoginDiagnosticsSection(),
         ],
       ),
     );

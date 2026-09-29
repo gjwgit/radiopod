@@ -34,6 +34,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:radiopod/app.dart';
 import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/services/app_provider.dart';
+import 'package:radiopod/services/oidc_event_log.dart';
 import 'package:radiopod/services/player.dart';
 
 void main() async {
@@ -43,6 +44,14 @@ void main() async {
 
   WidgetsFlutterBinding.ensureInitialized();
   SolidSecurityKeyCentralManager.instance;
+
+  // 20260929 gjw Listen for the native sign-in browser's events BEFORE any
+  // login can start, so the first attempt is recorded too. The events are the
+  // only place a failed login's actual cause survives; see OidcEventLog. On
+  // GNU/Linux, Windows and the web there is no native browser layer and the
+  // stream is empty, so this costs nothing there.
+
+  OidcEventLog.instance.start();
 
   // 20260921 gjw Start the media session BEFORE runApp. On Android the system
   // can launch this app headless — Android Auto starts the MediaBrowserService
