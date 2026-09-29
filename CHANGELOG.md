@@ -10,18 +10,18 @@ install locally the latest version from the [Solid Community
 AU](https://solidcommunity.au) or directly:
 
 + **Android** as
-[apk](https://solidcommunity.au/installers/radiopod.apk) or
-[aab](https://solidcommunity.au/installers/radiopod.aab);
+  [apk](https://solidcommunity.au/installers/radiopod.apk) or
+  [aab](https://solidcommunity.au/installers/radiopod.aab);
 + **GNU/Linux** as
-[deb](https://solidcommunity.au/installers/radiopod_amd64.deb) or
-[snap](https://solidcommunity.au/installers/radiopod_amd64.snap) or
-[zip](https://solidcommunity.au/installers/radiopod-linux.zip);
+  [deb](https://solidcommunity.au/installers/radiopod_amd64.deb) or
+  [snap](https://solidcommunity.au/installers/radiopod_amd64.snap) or
+  [zip](https://solidcommunity.au/installers/radiopod-linux.zip);
 + **macOS** as
-[dmg](https://solidcommunity.au/installers/radiopod-macos.dmg) or
-[zip](https://solidcommunity.au/installers/radiopod-macos.zip);
+  [dmg](https://solidcommunity.au/installers/radiopod-macos.dmg) or
+  [zip](https://solidcommunity.au/installers/radiopod-macos.zip);
 + **Windows** as
-[exe](https://solidcommunity.au/installers/radiopod-windows-inno.exe)
-or [zip](https://solidcommunity.au/installers/radiopod-windows.zip).
+  [exe](https://solidcommunity.au/installers/radiopod-windows-inno.exe)
+  or [zip](https://solidcommunity.au/installers/radiopod-windows.zip).
 
 Contributions are welcome. Visit
 [github](https://github.com/gjwgit/radiopod) to submit an issue or,
@@ -37,7 +37,8 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.1 Feature Tuning
 
-+ Login diagnostics also catch failures before the browser opens [1.1.20 20260929 gjw]
++ Login diagnostics also catch failures before the browser
+  opens [1.1.20 20260929 gjw]
 + Settings reports why a login did not complete [1.1.19 20260929 gjw]
 + iOS App Store build tested and working [1.1.18 20260928 gjw]
 + iOS App Store build, and a build number that increments [1.1.17 20260928 gjw]
@@ -50,9 +51,11 @@ Williams](https://togaware.com/Graham.Williams.html).
 + Update to solidui to allow CONTINUE without secrets [1.1.10 20260924 gjw]
 + Web: switching station stops the one already playing [1.1.9 20260924 gjw]
 + Web: Stop really stops, and switching station works [1.1.8 20260924 gjw]
-+ Web: station logos show instead of falling back to a glyph [1.1.7 20260924 gjw]
++ Web: station logos show instead of falling back to a
+  glyph [1.1.7 20260924 gjw]
 + Snap: allow the keyring access a Pod login needs [1.1.6 20260924 gjw]
-+ Snap: play audio again, by finding libmpv's blas and lapack [1.1.5 20260924 gjw]
++ Snap: play audio again, by finding libmpv's blas and
+  lapack [1.1.5 20260924 gjw]
 + A stopped station shows its icon again, not a play button [1.1.4 20260923 gjw]
 + Station icons no longer flicker while a stream plays [1.1.3 20260923 gjw]
 + Station Properties: rename, set an icon, reconnect option [1.1.2 20260923 gjw]
@@ -62,8 +65,10 @@ Williams](https://togaware.com/Graham.Williams.html).
 ## 1.0 Functional App
 
 + Stop no longer makes the station stop itself again [1.0.17 20260923 gjw]
-+ Linux: Stop responds at once and Play restarts the stream [1.0.16 20260923 gjw]
-+ Adaptive Android icon so it shows properly in Android Auto [1.0.15 20260923 gjw]
++ Linux: Stop responds at once and Play restarts the
+  stream [1.0.16 20260923 gjw]
++ Adaptive Android icon so it shows properly in Android
+  Auto [1.0.15 20260923 gjw]
 + Android Auto opens on a scrollable station list [1.0.14 20260923 gjw]
 + Rounded icon with transparency for Linux and macOS [1.0.13 20260923 gjw]
 + New app artwork: a tuner dial receiving a signal [1.0.12 20260923 gjw]
@@ -85,9 +90,11 @@ Williams](https://togaware.com/Graham.Williams.html).
 + Display title of playing track [0.0.9 20260921 gjw]
 + Privacy page naming exactly what leaves the device [0.0.8 20260921 gjw]
 + libmpv playback backend for GNU/Linux and Windows [0.0.7 20260921 gjw]
-+ Background playback with notification and headset controls [0.0.6 20260921 gjw]
++ Background playback with notification and headset
+  controls [0.0.6 20260921 gjw]
 + Android Auto browse tree of playlists and all stations [0.0.5 20260921 gjw]
 + Import and export M3U, M3U8 and PLS playlist files [0.0.4 20260921 gjw]
-+ Search the Radio-Browser database by station name or genre [0.0.3 20260921 gjw]
++ Search the Radio-Browser database by station name or
+  genre [0.0.3 20260921 gjw]
 + Station library and playlists stored encrypted on the Pod [0.0.2 20260921 gjw]
 + Initial app skeleton from the todopod solidui template [0.0.1 20260920 gjw]
