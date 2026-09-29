@@ -350,6 +350,16 @@ device so Android Auto and Apple Car Play can browse it before any
 login is required. There is a button to clear this data whenever you
 like.
 
+## Platforms
+
+### Desktop
+
+![Station list on desktop](assets/screenshots/radiopod_populated_stations.png)
+
+### iOS
+
+![Station list on the iPhone](assets/screenshots/radiopod_ios_stations.png)
+
 ## Licence
 
 Copyright (C) 2026, Togaware Pty Ltd.
