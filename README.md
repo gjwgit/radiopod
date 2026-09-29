@@ -360,8 +360,6 @@ like.
 
 <img src="assets/screenshots/radiopod_ios_stations.png" alt="Station list on the iPhone" width="300">
 
-![Station list on the iPhone](assets/screenshots/radiopod_ios_stations.png)
-
 ## Licence
 
 Copyright (C) 2026, Togaware Pty Ltd.
