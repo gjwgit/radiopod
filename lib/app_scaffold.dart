@@ -167,7 +167,8 @@ class _AppScaffoldState extends State<AppScaffold> {
           - Search the community-run Radio-Browser station database
           - Save stations and group them into playlists
           - Import and export M3U and PLS playlist files
-          - Android Auto support for browsing and playing while driving
+          - Android Auto and Apple CarPlay support for browsing and playing
+            while driving
           - Background playback with lock screen and headset controls
           - Runs on Android, iOS, Linux, macOS, Windows and the web
           - Security key management for encrypted data
@@ -255,7 +256,7 @@ class _AppScaffoldState extends State<AppScaffold> {
             tooltip:
                 '**Playlists**\n\n'
                 'Group your stations into named lists. Playlists are the '
-                'folders Android Auto shows you while driving.',
+                'folders Android Auto and CarPlay show you while driving.',
             child: PlaylistsScreen(),
           ),
           const SolidMenuItem(

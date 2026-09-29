@@ -4,9 +4,24 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3 (the "License");
+/// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
 /// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -16,6 +31,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 
 import 'package:radiopod/constants/app.dart';
+import 'package:radiopod/services/carplay_bridge.dart';
 import 'package:radiopod/services/local_store.dart';
 import 'package:radiopod/services/radio_audio_handler.dart';
 import 'package:radiopod/utils/platform_io.dart'
@@ -92,6 +108,12 @@ class Player {
     } catch (e) {
       debugPrint('[Player] audio session configuration failed: $e');
     }
+
+    // 20260929 tc Attach the CarPlay bridge BEFORE the cached library is
+    // pushed in, so a car that launched the app has a station to play the
+    // moment the list appears.
+
+    CarPlayBridge.attach(_handler!);
 
     final (stations, playlists) = await LocalStore.load();
     _handler!.setLibrary(stations, playlists);

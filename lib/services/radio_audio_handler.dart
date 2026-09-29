@@ -4,9 +4,24 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3 (the "License");
+/// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
 /// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -22,6 +37,7 @@ import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/services/browse_tree.dart';
+import 'package:radiopod/services/carplay_bridge.dart';
 import 'package:radiopod/services/icy_reader.dart';
 import 'package:radiopod/services/stream_end_policy.dart';
 import 'package:radiopod/utils/platform_io.dart'
@@ -315,6 +331,11 @@ class RadioAudioHandler extends BaseAudioHandler {
     for (final entry in _childSubjects.entries) {
       entry.value.add(<String, dynamic>{});
     }
+
+    // 20260929 tc CarPlay does not browse through audio_service, so its
+    // native lists are handed the same library here.
+
+    CarPlayBridge.publishLibrary(stations, playlists);
   }
 
   // ── Playback ──────────────────────────────────────────────────────────────

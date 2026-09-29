@@ -4,7 +4,7 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3 (the "License");
+/// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
 /// License: https://opensource.org/license/gpl-3-0
 //
@@ -19,7 +19,7 @@
 // details.
 //
 // You should have received a copy of the GNU General Public License along with
-// this program.  If not, see <https://opensource.org/license/gpl-3-0>.
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
 ///
 /// Authors: Graham Williams
 
