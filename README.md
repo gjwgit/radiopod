@@ -21,18 +21,26 @@ Play or Android Auto, or at your desk. Your station library and your
 playlists are stored locally or, if you log in, are stored encrypted
 in your own personal online data store
 ([Pod](https://solidproject.org/about)) where nobody, not even the
-server administrator, can see what you listen to. The app is supported
-by [Togaware](https://togaware.com) and implemented by [Graham
-Williams](https://togaware.com/Graham.Williams.html) using
-[Flutter](https://flutter.dev)'s
-[SolidUI](https://github.com/anusii/solidui) package for cross
-platform development.
+server administrator, can see your station library or your
+playlists.
 
 Solid Pods are a new approach to handling your personal data on the
 World Wide Web and is the latest innovation from the inventor of the
 WWW, Sir Tim Berners-Lee. Obtain a Pod for yourself on any Solid
 server and link it to your app. **You do not need a Solid Pod to use
-this app in local-only mode.**
+this app in local-only mode.** If you would like to register for a new
+Pod on a Solid server, choose a server and tap the Register button on
+starting up the app. You will be prompted for an email address
+(username) a password, and a pod name. On logging in to your Pod for
+the first time you will be asked for a security key to protect your
+data on the server.
+
+The app is supported by [Togaware](https://togaware.com) and
+implemented by [Graham
+Williams](https://togaware.com/Graham.Williams.html) using
+[Flutter](https://flutter.dev)'s
+[SolidUI](https://github.com/anusii/solidui) package for cross
+platform development.
 
 We make this project available for free so if you appreciate the app
 then please show some ❤️ and tap on the star at
@@ -72,7 +80,9 @@ into playlists of your choosing. In **local-only** mode (tap
 device. When you **Login** to your Solid server hosting your Pod, your
 data is stored in your Pod and is accessible to your app running on
 any device through your security key. The security key is used to
-decrypt the data on your device.
+decrypt the data on your device so it is not accessible by anyone on
+the server. Your Solid server of choice may collect your login
+timestamp and other standard server logging of meta data.
 
 + Your stations and playlists are **encrypted before they leave your
   device** and written to your own Solid Pod. The server holding them,
