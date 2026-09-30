@@ -40,6 +40,23 @@ android {
         )
     }
 
+    // Live captions are not offered on Android yet — there is no Android
+    // decoder in packages/radio_pcm — so the sherpa-onnx speech recogniser
+    // that pubspec.yaml pulls in for iOS and macOS is never loaded here.
+    // Leaving its native libraries out saves some 26 MB per ABI. It is an FFI
+    // plugin with no Java side, so nothing tries to load them. Remove these
+    // lines when captions come to Android.
+
+    packaging {
+        jniLibs {
+            excludes += setOf(
+                "**/libonnxruntime.so",
+                "**/libsherpa-onnx-c-api.so",
+                "**/libsherpa-onnx-cxx-api.so",
+            )
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.

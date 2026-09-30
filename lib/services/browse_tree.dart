@@ -129,18 +129,30 @@ List<MediaItem> browseChildren(
 /// playing right now is more use to a listener than the station's codec and
 /// bitrate; the station details stand in whenever it is not. The track is
 /// also carried in extras so the UI can tell the two apart.
+///
+/// [caption] is live speech-to-text, and when present it TAKES THE TITLE,
+/// the line the lock screen draws largest, so the words scroll past there
+/// like lyrics. The station and programme then share the album line, which
+/// is where a listener glancing down expects to find what they are hearing.
+/// The artist is left empty so iOS does not print the same thing twice.
 
-MediaItem stationMediaItem(Station station, String parentId, {String? track}) =>
-    MediaItem(
-      id: stationMediaId(parentId, station.id),
-      title: station.name,
-      artist: track ?? (station.subtitle.isEmpty ? null : station.subtitle),
-      album: appName,
-      artUri: _artUri(station.favicon),
-      playable: true,
-      isLive: true,
-      extras: {'stationId': station.id, 'track': ?track},
-    );
+MediaItem stationMediaItem(
+  Station station,
+  String parentId, {
+  String? track,
+  String? caption,
+}) => MediaItem(
+  id: stationMediaId(parentId, station.id),
+  title: caption ?? station.name,
+  artist: caption != null
+      ? null
+      : track ?? (station.subtitle.isEmpty ? null : station.subtitle),
+  album: caption != null ? [station.name, ?track].join(' · ') : appName,
+  artUri: _artUri(station.favicon),
+  playable: true,
+  isLive: true,
+  extras: {'stationId': station.id, 'track': ?track, 'caption': ?caption},
+);
 
 /// A station logo URL as a [Uri], or null when there is none or it will not
 /// parse. Only http(s) is accepted — a head unit will not fetch anything

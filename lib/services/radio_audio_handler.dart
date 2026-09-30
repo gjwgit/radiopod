@@ -96,6 +96,19 @@ class RadioAudioHandler extends BaseAudioHandler {
   Station? _currentStation;
   String? _currentTrack;
 
+  /// The words being spoken right now, when captions are on.
+  ///
+  /// While set, the caption takes the title of the published media item and
+  /// the station moves down to the album line — see [stationMediaItem].
+
+  String? _currentCaption;
+
+  /// The station on air, for anything that needs more than the media item's
+  /// id — captions need the stream address, to open a connection of their
+  /// own. Null until a station is started.
+
+  final currentStation = BehaviorSubject<Station?>.seeded(null);
+
   /// The desktop track reader for the current station, cancelled whenever
   /// playback moves on so only one stream is ever being polled.
 
@@ -344,6 +357,8 @@ class RadioAudioHandler extends BaseAudioHandler {
 
     _currentStation = station;
     _currentTrack = null;
+    _currentCaption = null;
+    currentStation.add(station);
     _startedAt = DateTime.now();
     _stopped = false;
 
@@ -517,8 +532,35 @@ class RadioAudioHandler extends BaseAudioHandler {
     if (track == _currentTrack) return;
 
     _currentTrack = track;
-    mediaItem.add(stationMediaItem(station, _queueParentId, track: track));
+    _publish(station);
   }
+
+  /// Show [caption] in place of the station name, or restore the station
+  /// name when it is null.
+  ///
+  /// Called by CaptionService as the recogniser hears each word. Repeats are
+  /// ignored for the same reason as in [_setTrack].
+
+  void setCaption(String? caption) {
+    final station = _currentStation;
+    if (station == null) return;
+
+    final c = caption?.trim();
+    final next = (c == null || c.isEmpty) ? null : c;
+    if (next == _currentCaption) return;
+
+    _currentCaption = next;
+    _publish(station);
+  }
+
+  void _publish(Station station) => mediaItem.add(
+    stationMediaItem(
+      station,
+      _queueParentId,
+      track: _currentTrack,
+      caption: _currentCaption,
+    ),
+  );
 
   /// Start (or restart) reading the song on air for [station].
   ///

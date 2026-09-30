@@ -51,7 +51,18 @@ dependencies:
   # objects to, and rightly: solidpod could drop it at any release.
 
   oidc: ^4.0.0
+  path_provider: ^2.1.6
   provider: ^6.1.5+1
+
+  # Live captions. sherpa_onnx runs a streaming speech recogniser on the
+  # device, so nothing heard is sent anywhere to be transcribed. radio_pcm is
+  # RadioPod's own plugin, in packages/, that decodes a station's stream to
+  # the 16 kHz mono samples the recogniser wants — just_audio has no way to
+  # hand over the audio it plays. It is implemented for iOS and macOS only so
+  # far, and the CC button appears only there.
+
+  radio_pcm:
+    path: packages/radio_pcm
 
   # 20260920 gjw audio_service does not re-export rxdart, but its
   # `subscribeToChildren` returns a ValueStream and the Android Auto browse
@@ -60,6 +71,7 @@ dependencies:
 
   rxdart: ^0.28.0
   shared_preferences: ^2.5.5
+  sherpa_onnx: ^1.13.8
   solidpod: ^1.0.24
   solidui: ^1.2.0
   # 20260925 gjw Declared directly, though solidui already pulls it in, so
