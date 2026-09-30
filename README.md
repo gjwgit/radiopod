@@ -63,6 +63,8 @@ many more apps using the Solid ecosystem.
 
 ## Privacy
 
+Visit our [privacy statement](https://gjwgit.github.io/radiopod).
+
 RadioPod is built to protect your privacy. The app maintains a list of
 radio stations you listen to and how they may be optionally organised
 into playlists of your choosing. In **local-only** mode (tap
