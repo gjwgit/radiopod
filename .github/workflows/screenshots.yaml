@@ -23,12 +23,18 @@ name: App Store Screenshots
 on:
   workflow_dispatch:
     inputs:
+      # 20260930 gjw These track the runner's Xcode and WILL go stale. The
+      # first run wanted an M4 iPad and a 16 Pro Max; the runner had an M5
+      # and a 17 Pro Max, and the job stopped. The step below now falls back
+      # to a pattern when the exact name is missing, so a bump in Xcode is
+      # survivable without editing anything — but correcting the default
+      # here is still the tidier fix.
       ipad:
         description: 'iPad simulator name'
-        default: 'iPad Pro 13-inch (M4)'
+        default: 'iPad Pro 13-inch (M5)'
       iphone:
         description: 'iPhone simulator name'
-        default: 'iPhone 16 Pro Max'
+        default: 'iPhone 17 Pro Max'
 
 env:
   FLUTTER_VERSION: "3.47.5"
@@ -77,21 +83,40 @@ jobs:
             ${{ matrix.device == 'ipad'
                 && inputs.ipad
                 || inputs.iphone }}
+          # Matches any generation, for when the exact name has moved on.
+          # Both keep the screen size the App Store listing needs: a 13-inch
+          # iPad, and a Pro Max iPhone, which is the 6.9-inch class.
+          FALLBACK: >-
+            ${{ matrix.device == 'ipad'
+                && 'iPad Pro 13-inch'
+                || 'iPhone .* Pro Max' }}
         run: |
+          DEVICES=$(xcrun simctl list devices available)
+
           echo "Wanted: $NAME"
 
-          UDID=$(xcrun simctl list devices available \
-                   | grep -F "$NAME (" \
-                   | head -n 1 \
-                   | sed -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/')
+          pick() {
+            printf '%s\n' "$DEVICES" \
+              | grep -E "$1" \
+              | head -n 1 \
+              | sed -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/'
+          }
+
+          UDID=$(pick "^ *$(printf '%s' "$NAME" | sed 's/[][\.*^$()+?{}|]/\\&/g') \(")
 
           if [ -z "$UDID" ]; then
-            echo "::error::No available simulator called '$NAME'."
+            echo "::warning::No simulator called '$NAME'; \
+              falling back to /$FALLBACK/."
+            UDID=$(pick "$FALLBACK")
+          fi
+
+          if [ -z "$UDID" ]; then
+            echo "::error::No simulator matching '$NAME' or /$FALLBACK/."
             echo "::error::See the step above for what this runner has."
             exit 1
           fi
 
-          echo "Using $UDID"
+          printf '%s\n' "$DEVICES" | grep -F "$UDID" | sed 's/^ */Using /'
           echo "UDID=$UDID" >> "$GITHUB_OUTPUT"
 
           xcrun simctl boot "$UDID"
