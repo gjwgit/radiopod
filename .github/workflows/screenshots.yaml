@@ -1,0 +1,143 @@
+name: App Store Screenshots
+
+# 20260930 gjw Captures the App Store screenshots on a macOS runner, so no
+# Mac and no iPad are needed to produce them.
+#
+# WHY IT EXISTS. Apple requires screenshots at each device's exact pixel
+# dimensions, and will not accept an iPhone-only set for an app whose
+# TARGETED_DEVICE_FAMILY is "1,2" — which RadioPod's is, in three places in
+# project.pbxproj. Screenshots taken by hand off a debug build carry the
+# DEBUG ribbon and are rejected; this job runs with the banner already off
+# (see lib/app.dart).
+#
+# HOW IT WORKS. integration_test/screenshots_test.dart seeds a small station
+# library, taps Continue, walks the screens and calls the binding's
+# takeScreenshot at each one. On iOS that renders every visible window over
+# the whole screen at native scale, so the PNG is already the size Apple
+# wants. test_driver/integration_test.dart receives the bytes on the host and
+# writes them to SCREENSHOT_DIR. Nothing here parses output or races a timer.
+#
+# Manual only. Screenshots are wanted a few times a year, not on every push,
+# and the trigger vocabulary in installers.yaml is crowded enough already.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ipad:
+        description: 'iPad simulator name'
+        default: 'iPad Pro 13-inch (M4)'
+      iphone:
+        description: 'iPhone simulator name'
+        default: 'iPhone 16 Pro Max'
+
+env:
+  FLUTTER_VERSION: "3.47.5"
+
+jobs:
+
+  screenshots:
+    runs-on: macos-latest
+
+    strategy:
+      # Keep going, so a wrong simulator name for one device still yields the
+      # other device's set rather than nothing at all.
+      fail-fast: false
+      matrix:
+        include:
+          - slug: ipad-13
+            device: ipad
+          - slug: iphone-69
+            device: iphone
+
+    steps:
+
+      - name: Clone Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Install Flutter Project Dependencies
+        run: flutter pub get
+
+      # The simulator names available depend on the runner's Xcode, and they
+      # change without warning. Print the list before choosing, so a failure
+      # names the alternatives instead of just saying the device is unknown.
+
+      - name: List the available simulators
+        run: xcrun simctl list devices available
+
+      - name: Boot the simulator
+        id: sim
+        env:
+          NAME: >-
+            ${{ matrix.device == 'ipad'
+                && inputs.ipad
+                || inputs.iphone }}
+        run: |
+          echo "Wanted: $NAME"
+
+          UDID=$(xcrun simctl list devices available \
+                   | grep -F "$NAME (" \
+                   | head -n 1 \
+                   | sed -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/')
+
+          if [ -z "$UDID" ]; then
+            echo "::error::No available simulator called '$NAME'."
+            echo "::error::See the step above for what this runner has."
+            exit 1
+          fi
+
+          echo "Using $UDID"
+          echo "UDID=$UDID" >> "$GITHUB_OUTPUT"
+
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+
+          # A tidy status bar, as Apple's own screenshots have. The binding
+          # captures the status bar along with everything else, so a real
+          # battery percentage and carrier name would date the images.
+
+          xcrun simctl status_bar "$UDID" override \
+            --time "9:41" \
+            --batteryState charged \
+            --batteryLevel 100 \
+            --cellularMode active \
+            --cellularBars 4 \
+            --wifiBars 3 || true
+
+      - name: Walk the app and capture
+        env:
+          SCREENSHOT_DIR: screenshots/${{ matrix.slug }}
+        timeout-minutes: 30
+        run: |
+          flutter drive \
+            --driver=test_driver/integration_test.dart \
+            --target=integration_test/screenshots_test.dart \
+            -d "${{ steps.sim.outputs.UDID }}"
+
+      - name: Note what was captured
+        if: ${{ always() }}
+        run: |
+          DIR="screenshots/${{ matrix.slug }}"
+          ls -lh "$DIR" 2>/dev/null || { echo "nothing captured"; exit 0; }
+
+          # Apple rejects a set whose dimensions are not exactly right, so
+          # print them here rather than finding out at upload time.
+          for f in "$DIR"/*.png; do
+            [ -e "$f" ] || continue
+            printf '%-24s ' "$(basename "$f")"
+            sips -g pixelWidth -g pixelHeight "$f" \
+              | awk '/pixel/ {printf "%s ", $2} END {print ""}'
+          done
+
+      - name: Upload the screenshots
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: radiopod-screenshots-${{ matrix.slug }}
+          path: screenshots/${{ matrix.slug }}
+          if-no-files-found: warn

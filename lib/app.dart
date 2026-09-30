@@ -46,7 +46,13 @@ class App extends StatelessWidget {
       // 20260921 gjw We can manually turn off the debug banner. It is turned
       // off automatically for a `flutter --release`.
       //
-      debugShowCheckedModeBanner: true,
+      // 20260930 gjw FALSE now, for the App Store screenshots. An
+      // integration_test runs in DEBUG, so the ribbon would be burnt into
+      // every image the screenshots workflow produces, and Apple rejects
+      // screenshots showing it. Release builds are unaffected either way —
+      // the banner never appears there.
+      //
+      debugShowCheckedModeBanner: false,
 
       title: appTitle,
 
