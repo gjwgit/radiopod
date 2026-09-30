@@ -360,12 +360,20 @@ like.
 
 ### Android
 
+<!-- markdownlint-disable MD033 -->
+<!-- Inline HTML image tags, so the phone screenshots can be scaled down.
+     Markdown's own image syntax has no width, and at full size these
+     tower over the desktop shot above. -->
+
 <img src="assets/screenshots/radiopod_android_stations.png"
 alt="Station list on Android Phone" width="300">
 
 ### iOS
 
-<img src="assets/screenshots/radiopod_ios_stations.png" alt="Station list on the iPhone" width="300">
+<img src="assets/screenshots/radiopod_ios_stations.png"
+alt="Station list on the iPhone" width="300">
+
+<!-- markdownlint-enable MD033 -->
 
 ## Licence
 

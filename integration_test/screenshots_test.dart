@@ -51,36 +51,40 @@ import 'package:radiopod/services/local_store.dart';
 
 /// A small library, so the screens are not photographed empty.
 ///
-/// Real stations with real addresses, since a screenshot showing invented
-/// names would misrepresent the app. These are ordinary public streams and
-/// the list order is the order the Stations screen shows — see CLAUDE.md §5,
+/// Real stations at REACHABLE addresses. A screenshot carrying invented
+/// names would misrepresent the app, and an invented URL would be worse: the
+/// repository's link checker reads this file and fails on one, which is how
+/// the first pass at this list was caught. Every address below was confirmed
+/// to answer before being added, and the codec follows from the URL rather
+/// than being guessed.
+///
+/// The list order is the order the Stations screen shows — see CLAUDE.md §5,
 /// the list order is the user's order and nothing re-sorts it.
 
 const _stations = [
   Station(
     id: 'shot-1',
-    name: 'ABC News Radio',
-    url: 'https://abc.streamguys1.com/news-analysis',
+    name: '2GB Sydney',
+    // NOT split across two string literals, however long it is: the link
+    // checker reads this file as text and would see only the first half,
+    // then fail on a URL that does not exist.
+    url: 'https://playerservices.streamtheworld.com/api/livestream-redirect/2GB.mp3',
     country: 'Australia',
     codec: 'MP3',
-    bitrate: 128,
   ),
   Station(
     id: 'shot-2',
-    name: 'ABC Classic',
-    url: 'https://mediaserviceslive.akamaized.net/hls/live/2036923/classic/',
-    country: 'Australia',
-    codec: 'AAC',
-    bitrate: 96,
-    isHls: true,
-  ),
-  Station(
-    id: 'shot-3',
     name: 'BBC World Service',
     url: 'https://stream.live.vc.bbcmedia.co.uk/bbc_world_service',
     country: 'United Kingdom',
     codec: 'MP3',
-    bitrate: 96,
+  ),
+  Station(
+    id: 'shot-3',
+    name: 'Classic FM',
+    url: 'https://ice-the.musicradio.com/ClassicFMMP3',
+    country: 'United Kingdom',
+    codec: 'MP3',
   ),
   Station(
     id: 'shot-4',
@@ -96,13 +100,16 @@ const _stations = [
     url: 'https://icecast.radiofrance.fr/fip-hifi.aac',
     country: 'France',
     codec: 'AAC',
-    bitrate: 192,
   ),
 ];
 
 const _playlists = [
-  Playlist(id: 'pl-1', name: 'News', stationIds: ['shot-1', 'shot-3']),
-  Playlist(id: 'pl-2', name: 'Music', stationIds: ['shot-4', 'shot-5']),
+  Playlist(id: 'pl-1', name: 'Talk and News', stationIds: ['shot-1', 'shot-2']),
+  Playlist(
+    id: 'pl-2',
+    name: 'Music',
+    stationIds: ['shot-3', 'shot-4', 'shot-5'],
+  ),
 ];
 
 Future<void> _shot(
