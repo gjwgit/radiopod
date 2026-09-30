@@ -60,7 +60,7 @@ dependencies:
 
   rxdart: ^0.28.0
   shared_preferences: ^2.5.5
-  solidpod: ^1.0.24
+  solidpod: ^1.1.0
   solidui: ^1.2.0
   # 20260925 gjw Declared directly, though solidui already pulls it in, so
   # the station properties dialog can open a station's homepage and hand its
