@@ -1,6 +1,6 @@
 /// RadioPod — the primary [MaterialApp] widget.
 ///
-// Time-stamp: <Sunday 2026-09-21 06:00:00 +1000 Graham Williams>
+// Time-stamp: <Thursday 2026-10-01 08:48:40 +1000 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -84,7 +84,7 @@ class App extends StatelessWidget {
         title: appTitle.replaceAll(' - ', '\n'),
         image: const AssetImage('assets/images/app_image.jpg'),
         logo: const AssetImage('assets/images/app_icon.png'),
-        link: 'https://github.com/gjwgit/radiopod',
+        link: 'https://gjwgit.github.io/radiopod',
         clientId: 'https://gjwgit.github.io/radiopod/client-profile.jsonld',
         redirectUris: kIsWeb
             ? ['${Uri.base.origin}/redirect.html']
