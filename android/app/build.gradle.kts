@@ -30,6 +30,11 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+// Whether this machine can sign a release at all. A CI runner cannot, by
+// design, and must still be able to build DEBUG for the screenshots job.
+
+val hasUploadKey = keystorePropertiesFile.exists()
+
 android {
     namespace = "com.togaware.radiopod"
     compileSdk = flutter.compileSdkVersion
@@ -66,12 +71,22 @@ android {
         )
     }
 
+    // 20261001 gjw Created ONLY when key.properties is there.
+    //
+    // Gradle evaluates this block during CONFIGURATION, for every task — so
+    // casting a missing property here broke `assembleDebug` too, and with it
+    // the Android screenshots job, which has no keystore and needs none. The
+    // guard below puts the loud failure back where it belongs: on a release
+    // build, and nowhere else.
+
     signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String
-            keyPassword = keystoreProperties["keyPassword"] as String
-            storeFile = keystoreProperties["storeFile"]?.let { file(it) }
-            storePassword = keystoreProperties["storePassword"] as String
+        if (hasUploadKey) {
+            create("release") {
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = keystoreProperties["storeFile"]?.let { file(it) }
+                storePassword = keystoreProperties["storePassword"] as String
+            }
         }
     }
 
@@ -84,10 +99,32 @@ android {
             // because the signature would not match.
             //
             // NOT falling back to the debug key when key.properties is
-            // absent, deliberately. A missing keystore now fails the build
+            // absent, deliberately. A missing keystore fails the build
             // loudly rather than quietly producing an unshippable artefact
-            // that looks fine until it is uploaded.
-            signingConfig = signingConfigs.getByName("release")
+            // that looks fine until it is uploaded. findByName gives null
+            // there, and the task-graph guard below turns that into an
+            // error the moment a release build is actually asked for.
+            signingConfig = signingConfigs.findByName("release")
+        }
+    }
+}
+
+// 20261001 gjw Refuse a RELEASE build with no upload key, and only then.
+//
+// Checked against the task graph rather than at configuration, so `flutter
+// build apk --debug` and the integration_test run in .github/workflows/
+// screenshots.yaml are untouched on a machine that has no keystore — which
+// is every CI runner, since the key is deliberately not a GitHub secret.
+
+if (!hasUploadKey) {
+    gradle.taskGraph.whenReady {
+        if (allTasks.any { it.name.contains("Release") }) {
+            throw GradleException(
+                "android/key.properties is missing, so a release build " +
+                    "cannot be signed with the upload key. See " +
+                    "ignore/ANDROID.md — it is four lines pointing at " +
+                    "~/upload-keystore.jks.",
+            )
         }
     }
 }
