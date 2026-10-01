@@ -240,11 +240,18 @@ jobs:
           arch: x86_64
           profile: pixel_6
           disable-animations: true
-          script: |
-            flutter drive \
-              --driver=test_driver/integration_test.dart \
-              --target=integration_test/screenshots_test.dart \
-              -d emulator-5554
+          # 20261001 gjw `>-` FOLDS these lines into ONE, which matters.
+          # android-emulator-runner hands `script` to `sh -c`, and a literal
+          # block with backslash continuations arrived mangled:
+          #
+          #   Target file "\" not found.
+          #
+          # One line, no continuations, is what this action wants.
+          script: >-
+            flutter drive
+            --driver=test_driver/integration_test.dart
+            --target=integration_test/screenshots_test.dart
+            -d emulator-5554
 
       - name: Note what was captured
         if: ${{ always() }}
