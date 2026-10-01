@@ -191,18 +191,18 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    await _shot(binding, tester, '01-stations');
+    await _shot(binding, tester, 'stations');
 
     await _openMenu(tester, Icons.search);
-    await _shot(binding, tester, '02-search');
+    await _shot(binding, tester, 'search');
 
     await _openMenu(tester, Icons.queue_music);
-    await _shot(binding, tester, '03-playlists');
+    await _shot(binding, tester, 'playlists');
 
     await _openMenu(tester, Icons.save_alt);
-    await _shot(binding, tester, '04-transfer');
+    await _shot(binding, tester, 'export_import');
 
     await _openMenu(tester, Icons.settings);
-    await _shot(binding, tester, '05-settings');
+    await _shot(binding, tester, 'settings');
   });
 }

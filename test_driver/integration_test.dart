@@ -22,17 +22,30 @@ import 'package:integration_test/integration_test_driver_extended.dart';
 /// driver extension, and this writes them where the workflow can upload
 /// them. Nothing here touches the device.
 ///
-/// SCREENSHOT_DIR lets the workflow give each simulator its own folder, so
-/// an iPad run does not overwrite an iPhone one. It defaults to a plain
+/// SCREENSHOT_DIR lets the workflow give each device its own folder, so an
+/// iPad run does not overwrite an iPhone one. It defaults to a plain
 /// `screenshots/` for a run by hand.
+///
+/// SCREENSHOT_PREFIX names the files the way assets/screenshots already
+/// does: radiopod_ios_stations.png, radiopod_ipad_settings.png,
+/// radiopod_android_search.png. The test supplies only the screen —
+/// `stations`, `search` — because it has no idea which device it is on, and
+/// an iPad cannot be told from an iPhone in Dart without guessing at the
+/// window size. The workflow knows, so the workflow says.
+///
+/// Files land on the SAME names as the hand-taken shots in
+/// assets/screenshots, which is deliberate: copying a fresh set over the top
+/// replaces the stale ones rather than accumulating a second naming scheme.
 
 Future<void> main() async {
-  final dir = Platform.environment['SCREENSHOT_DIR'] ?? 'screenshots';
+  final env = Platform.environment;
+  final dir = env['SCREENSHOT_DIR'] ?? 'screenshots';
+  final prefix = env['SCREENSHOT_PREFIX'] ?? 'radiopod';
 
   await integrationDriver(
     onScreenshot:
         (String name, List<int> bytes, [Map<String, Object?>? args]) async {
-          final file = File('$dir/$name.png')
+          final file = File('$dir/${prefix}_$name.png')
             ..createSync(recursive: true)
             ..writeAsBytesSync(bytes);
 

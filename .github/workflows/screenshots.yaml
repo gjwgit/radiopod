@@ -50,10 +50,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # `prefix` names the files the way assets/screenshots already does
+          # — radiopod_ipad_stations.png, radiopod_ios_settings.png — so a
+          # fresh set can be copied straight over the hand-taken ones rather
+          # than starting a second naming scheme. The test supplies only the
+          # screen; it cannot tell an iPad from an iPhone.
           - slug: ipad-13
             device: ipad
+            prefix: radiopod_ipad
           - slug: iphone-69
             device: iphone
+            prefix: radiopod_ios
 
     steps:
 
@@ -137,6 +144,7 @@ jobs:
       - name: Walk the app and capture
         env:
           SCREENSHOT_DIR: screenshots/${{ matrix.slug }}
+          SCREENSHOT_PREFIX: ${{ matrix.prefix }}
         timeout-minutes: 30
         run: |
           flutter drive \
@@ -225,6 +233,7 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         env:
           SCREENSHOT_DIR: screenshots/android-phone
+          SCREENSHOT_PREFIX: radiopod_android
         with:
           api-level: 34
           target: google_apis
