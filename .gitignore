@@ -369,3 +369,10 @@ app.*.map.json
 CLAUDE.md
 Claude.md
 .claude/*
+
+# 20261001 gjw Gradle writes android/build/, which `/build/` above does not
+# match — that pattern is anchored to the top of the repository. Every
+# Flutter project here has the same directory, so it belongs in this shared
+# file rather than in one project's android/.gitignore.
+
+android/build/

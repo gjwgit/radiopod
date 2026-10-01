@@ -12,6 +12,7 @@
 
 library;
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -173,6 +174,22 @@ void main() {
 
     await tester.tap(continueButton.first);
     await tester.pumpAndSettle(const Duration(seconds: 10));
+
+    // 20261001 gjw Android captures differently from iOS and has to be told
+    // first. takeScreenshot() there reads back a surface that is not
+    // readable until convertFlutterSurfaceToImage() has swapped it for an
+    // image view; without this it throws
+    //
+    //   Call convertFlutterSurfaceToImage() before taking a screenshot
+    //
+    // (integration_test/lib/src/_callback_io.dart). The binding reverts it
+    // on tear-down by itself. It is a no-op on every other platform, but
+    // guarded anyway so the intent is plain.
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      await binding.convertFlutterSurfaceToImage();
+      await tester.pumpAndSettle();
+    }
 
     await _shot(binding, tester, '01-stations');
 
