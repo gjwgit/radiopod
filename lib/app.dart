@@ -1,6 +1,6 @@
 /// RadioPod — the primary [MaterialApp] widget.
 ///
-// Time-stamp: <Thursday 2026-10-01 08:48:40 +1000 Graham Williams>
+// Time-stamp: <Friday 2026-10-02 20:47:13 +1000 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -80,6 +80,7 @@ class App extends StatelessWidget {
       // and the library only needs the Pod when it is read or written.
       home: SolidLogin(
         required: false,
+        skipLogin: true,
         appDirectory: appDirectory,
         title: appTitle.replaceAll(' - ', '\n'),
         image: const AssetImage('assets/images/app_image.jpg'),

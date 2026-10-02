@@ -35,6 +35,10 @@ then please show some ❤️ and tap on the star at
 This app is authored by [Graham
 Williams](https://togaware.com/Graham.Williams.html).
 
+## 1.3 Skip login is enabled by default
+
++ Update to solidui 1.4.0 with skip Login [1.3.0 20261002 gjw]
+
 ## 1.2 Add support for Apple CarPlay
 
 + Add initial support for Apple CarPlay [1.2.0 20261002 tonypioneer]
