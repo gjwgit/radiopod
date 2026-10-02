@@ -141,6 +141,8 @@ class _StationsScreenState extends State<StationsScreen> {
             current: current,
             playing: now.playing,
             connecting: now.connecting,
+            loading: now.loading,
+            paused: now.paused,
             failed: now.failed,
             track: now.track,
 

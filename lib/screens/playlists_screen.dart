@@ -165,6 +165,8 @@ class PlaylistsScreen extends StatelessWidget {
               current: now.isCurrent(s.id),
               playing: now.playing,
               connecting: now.connecting,
+              loading: now.loading,
+              paused: now.paused,
               failed: now.failed,
               track: now.track,
               onTap: () => now.isCurrent(s.id)

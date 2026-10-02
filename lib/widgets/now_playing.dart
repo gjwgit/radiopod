@@ -44,7 +44,19 @@ class NowPlaying {
   final String? track;
 
   final bool playing;
+
+  /// Opening the connection to the stream.
+
   final bool connecting;
+
+  /// Connected, and filling the buffer before (or while) sound comes out.
+
+  final bool loading;
+
+  /// Loaded and ready but not playing: a pause that kept the connection.
+
+  final bool paused;
+
   final bool failed;
 
   const NowPlaying({
@@ -52,6 +64,8 @@ class NowPlaying {
     this.track,
     this.playing = false,
     this.connecting = false,
+    this.loading = false,
+    this.paused = false,
     this.failed = false,
   });
 
@@ -71,11 +85,20 @@ class NowPlaying {
       other.track == track &&
       other.playing == playing &&
       other.connecting == connecting &&
+      other.loading == loading &&
+      other.paused == paused &&
       other.failed == failed;
 
   @override
-  int get hashCode =>
-      Object.hash(stationId, track, playing, connecting, failed);
+  int get hashCode => Object.hash(
+    stationId,
+    track,
+    playing,
+    connecting,
+    loading,
+    paused,
+    failed,
+  );
 }
 
 /// Rebuilds [builder] whenever the media session changes.
@@ -91,6 +114,11 @@ class NowPlayingBuilder extends StatelessWidget {
 
   const NowPlayingBuilder({super.key, required this.builder});
 
+  /// The station whose current start has reached `ready`, if [_started].
+
+  static String? _startedId;
+  static bool _started = false;
+
   /// One stream of exactly what a row needs, and no more.
   ///
   /// Combining the two sources here rather than nesting two StreamBuilders
@@ -102,14 +130,35 @@ class NowPlayingBuilder extends StatelessWidget {
     Player.handler.playbackState,
     (MediaItem? item, PlaybackState state) {
       final processing = state.processingState;
+      final stationId = item?.extras?['stationId'] as String?;
+
+      // 20260929 tc BUFFERING IS NOT LOADING ONCE THE STATION HAS STARTED.
+      // The players report `buffering` whenever the buffer dips, and on a
+      // live stream that happens routinely while sound is still coming out,
+      // so the row said "Loading" over audible music. Loading now means only
+      // the stretch between connecting and the first `ready` of this start.
+      // After that a dip still counts as Playing. Opening the station again,
+      // stopping it, or switching station clears the latch.
+      //
+      // Static rather than per stream because the stream is rebuilt with its
+      // StreamBuilder, and a fresh latch would start by misreading the
+      // replayed state as Loading.
+
+      if (stationId != _startedId) _started = false;
+      _startedId = stationId;
+      if (processing == AudioProcessingState.ready) {
+        _started = true;
+      } else if (processing != AudioProcessingState.buffering) {
+        _started = false;
+      }
 
       return NowPlaying(
-        stationId: item?.extras?['stationId'] as String?,
+        stationId: stationId,
         track: item?.extras?['track'] as String?,
         playing: state.playing,
-        connecting:
-            processing == AudioProcessingState.loading ||
-            processing == AudioProcessingState.buffering,
+        connecting: processing == AudioProcessingState.loading,
+        loading: processing == AudioProcessingState.buffering && !_started,
+        paused: processing == AudioProcessingState.ready && !state.playing,
         failed: processing == AudioProcessingState.error,
       );
     },
