@@ -87,42 +87,58 @@ void main() {
       ),
     );
 
-    expect(find.text('Pink Floyd - Wish You Were Here'), findsOneWidget);
-    expect(find.text('Australia · MP3 · 128 kbps'), findsNothing);
+    expect(
+      find.text('Playing | Pink Floyd - Wish You Were Here'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Australia · MP3 · 128 kbps'), findsNothing);
   });
 
-  testWidgets('the row on air offers Stop, not the logo', (tester) async {
+  testWidgets('the row on air keeps its logo and says Playing', (tester) async {
     await _pump(
       tester,
-      const StationTile(station: plain, current: true, playing: true),
+      const StationTile(station: detailed, current: true, playing: true),
     );
 
-    expect(find.byIcon(Icons.stop_circle), findsOneWidget);
-    expect(find.byIcon(Icons.radio), findsNothing);
+    expect(find.byIcon(Icons.radio), findsOneWidget);
+    expect(find.byIcon(Icons.stop_circle), findsNothing);
+    expect(find.text('Playing | Australia · MP3 · 128 kbps'), findsOneWidget);
   });
 
-  testWidgets('a stopped row gets its logo back and says so', (tester) async {
-    // Only a row that is doing something gives up its artwork. Stopped there
-    // is nothing to interrupt, so a Play button would cost the icon for no
-    // gain — tapping the row starts it again, and the 'Stopped' line still
-    // says which station it was.
-
+  testWidgets('a stopped row keeps its logo and says so', (tester) async {
     await _pump(tester, const StationTile(station: plain, current: true));
 
     expect(find.byIcon(Icons.radio), findsOneWidget);
-    expect(find.byIcon(Icons.play_circle), findsNothing);
-    expect(find.byIcon(Icons.stop_circle), findsNothing);
     expect(find.text('Stopped'), findsOneWidget);
   });
 
-  testWidgets('a connecting row shows progress', (tester) async {
-    await _pump(
-      tester,
-      const StationTile(station: plain, current: true, connecting: true),
-    );
+  testWidgets('each transport state has its own label', (tester) async {
+    const cases = {
+      'Paused': StationTile(station: plain, current: true, paused: true),
+      'Connecting': StationTile(
+        station: plain,
+        current: true,
+        connecting: true,
+      ),
+      'Loading': StationTile(
+        station: plain,
+        current: true,
+        playing: true,
+        loading: true,
+      ),
+      'Unavailable | Could not connect to this station.': StationTile(
+        station: plain,
+        current: true,
+        failed: true,
+      ),
+    };
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    expect(find.text('Connecting…'), findsOneWidget);
+    for (final MapEntry(key: label, value: tile) in cases.entries) {
+      await _pump(tester, tile);
+      expect(find.text(label), findsOneWidget, reason: label);
+      expect(find.byIcon(Icons.radio), findsOneWidget, reason: label);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    }
   });
 
   testWidgets('rows that are not on air keep their logo and details', (
@@ -132,6 +148,7 @@ void main() {
 
     expect(find.byIcon(Icons.radio), findsOneWidget);
     expect(find.text('Australia · MP3 · 128 kbps'), findsOneWidget);
+    expect(find.textContaining('|'), findsNothing);
   });
 
   testWidgets('marks the station on air in bold', (tester) async {
