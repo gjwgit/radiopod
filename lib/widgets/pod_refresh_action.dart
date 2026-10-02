@@ -1,5 +1,26 @@
 /// Reusable "refresh from Pod" app bar action.
 ///
+/// Copyright (C) 2026, Togaware Pty Ltd
+///
+/// Licensed under the GNU General Public License, Version 3 (the "License").
+///
+/// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
+
 /// Reloads the app's in-memory data from the Pod (which may have been updated
 /// by another instance of the app or another app sharing the same Pod data),
 /// then reports — via a simple OK dialog — whether anything changed.
@@ -17,14 +38,6 @@
 ///        ]
 ///   3. Copy this file into the new app and adjust the import of nothing else —
 ///      it only depends on solidui and flutter.
-///
-// Time-stamp: <2026-06-19>
-///
-/// Copyright (C) 2025, Software Innovation Institute, ANU.
-///
-/// Licensed under the GNU General Public License, Version 3 (the "License").
-///
-/// License: https://opensource.org/license/gpl-3-0.
 
 library;
 
