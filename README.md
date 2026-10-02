@@ -389,24 +389,24 @@ Stop rather than Pause and no seek controls.
 Apple CarPlay is supported natively from your connected iPhone. To
 begin tap on the RadioPod button to open the app.
 
-![CarPlay Screen](radiopod_ios_carplay_screen.jpg)
+![CarPlay Screen](assets/screenshots/radiopod_ios_carplay_screen.jpg)
 
 You will see the station list and the currently playing station is at
 the top right.
 
-![CarPlay Stations ABC Playing](radiopod_ios_carplay_stations_abc.jpg)
+![CarPlay Stations ABC Playing](assets/screenshots/radiopod_ios_carplay_stations_abc.jpg)
 
-![CarPlay Stations](radiopod_ios_carplay_stations.jpg)
+![CarPlay Stations](assets/screenshots/radiopod_ios_carplay_stations.jpg)
 
 Here is the playing-now screen.
 
-![CarPlay Playing](radiopod_ios_carplay_playing.jpg)
+![CarPlay Playing](assets/screenshots/radiopod_ios_carplay_playing.jpg)
 
 You can also navigate through the playlists.
 
-![CarPlay Playlists](radiopod_ios_carplay_playlists.jpg)
+![CarPlay Playlists](assets/screenshots/radiopod_ios_carplay_playlists.jpg)
 
-![CarPlay Playlist Canberra](radiopod_ios_carplay_playlist_canberra.jpg)
+![CarPlay Playlist Canberra](assets/screenshots/radiopod_ios_carplay_playlist_canberra.jpg)
 
 
 <!-- markdownlint-enable MD033 -->
