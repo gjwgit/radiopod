@@ -35,8 +35,13 @@ then please show some ❤️ and tap on the star at
 This app is authored by [Graham
 Williams](https://togaware.com/Graham.Williams.html).
 
+## 1.2 Add support for Apple CarPlay
+
++ Add initial support for Apple CarPlay [1.2.0 20261002 tonypioneer]
+
 ## 1.1 Feature Tuning
 
++ Retain logo on playing station [1.1.23 20261002 tonypioneer]
 + Cancelling the security key no longer loops [1.1.22 20261002 gjw]
 + Fix the iOS login, broken by a stripped symbol [1.1.21 20260929 gjw]
 + Diagnostics cover a login failing early [1.1.20 20260929 gjw]
