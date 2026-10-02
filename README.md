@@ -109,27 +109,6 @@ storage on the device for the car to browse. It holds no more than a
 playlist file would, never your security key or WebID, and never
 leaves the device. **Settings** has a button to clear it.
 
-## Android Auto
-
-Android Auto sees RadioPod as a media app through a
-`MediaBrowserService`, provided by the
-[audio_service](https://pub.dev/packages/audio_service) package. The
-browse tree shown in-car is two levels deep, which is what Android's
-media app guidelines ask for:
-
-```text
-RadioPod
-├── <each of your playlists>
-│   └── the stations in it, in playlist order
-└── All Stations
-    └── every saved station, alphabetically
-```
-
-Choosing a station sets the surrounding folder as the queue, so Next
-and Previous on the steering wheel move through the list that was
-actually being browsed. Live radio has no timeline, so RadioPod offers
-Stop rather than Pause and no seek controls.
-
 ## Installation
 
 The latest version of the app can be run online at
@@ -383,6 +362,52 @@ alt="Station list on Android Phone" width="300">
 
 <img src="assets/screenshots/radiopod_ios_stations.png"
 alt="Station list on the iPhone" width="300">
+
+## Android Auto
+
+Android Auto sees RadioPod as a media app through a
+`MediaBrowserService`, provided by the
+[audio_service](https://pub.dev/packages/audio_service) package. The
+browse tree shown in-car is two levels deep, which is what Android's
+media app guidelines ask for:
+
+```text
+RadioPod
+├── <each of your playlists>
+│   └── the stations in it, in playlist order
+└── All Stations
+    └── every saved station, alphabetically
+```
+
+Choosing a station sets the surrounding folder as the queue, so Next
+and Previous on the steering wheel move through the list that was
+actually being browsed. Live radio has no timeline, so RadioPod offers
+Stop rather than Pause and no seek controls.
+
+## Apple CarPlay
+
+Apple CarPlay is supported natively from your connected iPhone. To
+begin tap on the RadioPod button to open the app.
+
+![CarPlay Screen](radiopod_ios_carplay_screen.jpg)
+
+You will see the station list and the currently playing station is at
+the top right.
+
+![CarPlay Stations ABC Playing](radiopod_ios_carplay_stations_abc.jpg)
+
+![CarPlay Stations](radiopod_ios_carplay_stations.jpg)
+
+Here is the playing-now screen.
+
+![CarPlay Playing](radiopod_ios_carplay_playing.jpg)
+
+You can also navigate through the playlists.
+
+![CarPlay Playlists](radiopod_ios_carplay_playlists.jpg)
+
+![CarPlay Playlist Canberra](radiopod_ios_carplay_playlist_canberra.jpg)
+
 
 <!-- markdownlint-enable MD033 -->
 
