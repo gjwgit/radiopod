@@ -1,6 +1,6 @@
 /// RadioPod — the primary [MaterialApp] widget.
 ///
-// Time-stamp: <Sunday 2026-09-21 06:00:00 +1000 Graham Williams>
+// Time-stamp: <Thursday 2026-10-01 08:48:40 +1000 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -46,7 +46,13 @@ class App extends StatelessWidget {
       // 20260921 gjw We can manually turn off the debug banner. It is turned
       // off automatically for a `flutter --release`.
       //
-      debugShowCheckedModeBanner: true,
+      // 20260930 gjw FALSE now, for the App Store screenshots. An
+      // integration_test runs in DEBUG, so the ribbon would be burnt into
+      // every image the screenshots workflow produces, and Apple rejects
+      // screenshots showing it. Release builds are unaffected either way —
+      // the banner never appears there.
+      //
+      debugShowCheckedModeBanner: false,
 
       title: appTitle,
 
@@ -78,7 +84,7 @@ class App extends StatelessWidget {
         title: appTitle.replaceAll(' - ', '\n'),
         image: const AssetImage('assets/images/app_image.jpg'),
         logo: const AssetImage('assets/images/app_icon.png'),
-        link: 'https://github.com/gjwgit/radiopod',
+        link: 'https://gjwgit.github.io/radiopod',
         clientId: 'https://gjwgit.github.io/radiopod/client-profile.jsonld',
         redirectUris: kIsWeb
             ? ['${Uri.base.origin}/redirect.html']

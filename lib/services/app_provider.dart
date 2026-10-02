@@ -81,6 +81,31 @@ class AppProvider extends ChangeNotifier {
 
   bool _testMode = false;
 
+  /// 20261002 gjw True once the user has dismissed the security key prompt.
+  ///
+  /// THIS IS WHAT BREAKS AN OTHERWISE INFINITE LOOP. solidui's security key
+  /// screen is pushed fullscreen, and its Cancel does
+  /// `pushReplacement(context, widget.child)` — where the child is the
+  /// AppScaffold the prompt was asked for. Cancel therefore does not cancel:
+  /// it builds a NEW AppScaffold, whose initState asks again, for ever. The
+  /// Pod session outlives a restart, so the app could not be opened at all.
+  ///
+  /// Lives HERE, not in the scaffold's State, precisely because the scaffold
+  /// is the thing being rebuilt. AppProvider sits above MaterialApp in
+  /// main.dart and survives the replacement.
+  ///
+  /// Session-scoped on purpose. The next launch asks once more, which is
+  /// right: someone who cancelled today may want to unlock tomorrow. Within
+  /// a session the key can still be set from the status bar.
+  ///
+  /// [_keyPromptShown] is set BEFORE the prompt is awaited, not after. The
+  /// replacement scaffold starts its own _initKeys while this one is still
+  /// suspended on that await, so a flag set afterwards can lose the race and
+  /// let a second prompt through.
+
+  bool _keyPromptShown = false;
+  bool _keyPromptDeclined = false;
+
   // ── Getters ───────────────────────────────────────────────────────────────
 
   List<Station> get stations => _stations;
@@ -94,6 +119,42 @@ class AppProvider extends ChangeNotifier {
   /// True when the library is being kept on this device rather than on a Pod.
 
   bool get isLocal => _source == LibrarySource.local;
+
+  /// True once the security key prompt has been put up this session, whatever
+  /// came of it. Checked before prompting again.
+
+  bool get keyPromptShown => _keyPromptShown;
+
+  /// True once the security key prompt has been dismissed this session.
+
+  bool get keyPromptDeclined => _keyPromptDeclined;
+
+  /// Claim the one security key prompt this session allows.
+  ///
+  /// Returns false when the prompt has already been shown, so the caller can
+  /// skip it. Call this BEFORE awaiting the prompt — see [_keyPromptShown].
+
+  bool claimKeyPrompt() {
+    if (_keyPromptShown) return false;
+    _keyPromptShown = true;
+
+    return true;
+  }
+
+  /// Record that the user dismissed the security key prompt, and fall back to
+  /// the device library so the app is usable rather than stuck.
+  ///
+  /// Without the fallback every load would still take the Pod branch and
+  /// throw "You must first set the security key!" twice over — once for
+  /// stations.ttl and once for playlists.ttl — leaving an empty app and a
+  /// pair of errors in the log.
+
+  void declineKeyPrompt() {
+    if (_keyPromptDeclined) return;
+    _keyPromptDeclined = true;
+    _source = LibrarySource.local;
+    notifyListeners();
+  }
 
   /// True while the app is unlocking the Pod or loading initial data.
 
@@ -356,8 +417,15 @@ class AppProvider extends ChangeNotifier {
   /// `getWebId()` — says so here instead of making solidpod work it out
   /// again. Someone who tapped Continue never reaches the keychain at all.
 
+  /// 20261002 gjw A declined key pins the source to local for the session.
+  /// Without that, the scaffold rebuilt by Cancel calls this on the way in,
+  /// flips the source back to pod, and every load throws "You must first set
+  /// the security key!" again — the loop's other half.
+
   void setLoggedIn(bool loggedIn) {
-    _source = loggedIn ? LibrarySource.pod : LibrarySource.local;
+    _source = loggedIn && !_keyPromptDeclined
+        ? LibrarySource.pod
+        : LibrarySource.local;
     notifyListeners();
   }
 

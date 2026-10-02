@@ -23,18 +23,49 @@ corner, so the two sit together.
 Run support/make_icon.py first if the artwork has changed.
 """
 
+import argparse
 import os
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-W, H = 1440, 480          # 3:1, comfortably inside the store's range
+# 20261001 gjw Two stores want a hero image, and they want different shapes.
+#
+#   snap  1440x480, exactly 3:1, under 2MB   -> snap/gui/banner.png
+#   play  1024x500, exactly that, under 15MB -> installers/feature_graphic.png
+#
+# Google Play calls it the FEATURE GRAPHIC, it is mandatory for a listing,
+# and 1024x500 is the only size it accepts. Everything composed below is
+# proportional to the canvas, so the same artwork lays out at either aspect;
+# only the assertions and the destination differ.
+#
+# Play may overlay a play button over the CENTRE of this image when a promo
+# video is attached to the listing. RadioPod has no video, so the centre is
+# free — if one is ever added, check the dial is not sitting under it.
+
+TARGETS = {
+    'snap': {
+        'size': (1440, 480),
+        'out': ('snap', 'gui', 'banner.png'),
+        'max_bytes': 2 * 1024 * 1024,
+    },
+    'play': {
+        'size': (1024, 500),
+        'out': ('installers', 'feature_graphic.png'),
+        'max_bytes': 15 * 1024 * 1024,
+    },
+}
+
 SS = 2                    # supersample, for clean type and curves
-NW, NH = W * SS, H * SS
+
+# Set by main() from the chosen target. background() and signal_arcs() read
+# NW and NH when they are called, which is after that.
+
+W = H = NW = NH = 0
+OUT = ''
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MARK = os.path.join(ROOT, 'assets', 'images', 'app_icon.png')
-OUT = os.path.join(ROOT, 'snap', 'gui', 'banner.png')
 
 FONTS = os.path.expanduser(
     '~/development/flutter/bin/cache/artifacts/material_fonts/'
@@ -109,6 +140,25 @@ def signal_arcs():
 
 
 def main():
+    global W, H, NW, NH, OUT
+
+    parser = argparse.ArgumentParser(
+        description='Generate the store hero image.',
+    )
+    parser.add_argument(
+        'target',
+        nargs='?',
+        default='snap',
+        choices=sorted(TARGETS),
+        help='which store to build for (default: snap)',
+    )
+    args = parser.parse_args()
+
+    spec = TARGETS[args.target]
+    W, H = spec['size']
+    NW, NH = W * SS, H * SS
+    OUT = os.path.join(ROOT, *spec['out'])
+
     img = background()
     img = Image.alpha_composite(img, signal_arcs())
 
@@ -123,9 +173,20 @@ def main():
     draw = ImageDraw.Draw(img)
     tx = mx + side + int(NW * 0.055)
 
-    title_font = ImageFont.truetype(FONTS + 'Roboto-Medium.ttf', 104 * SS)
-    tag_font = ImageFont.truetype(FONTS + 'Roboto-Light.ttf', 44 * SS)
-    third_font = ImageFont.truetype(FONTS + 'Roboto-Light.ttf', 28 * SS)
+    # 20261001 gjw Type scales with the WIDTH, not with a fixed point size,
+    # because width is what the lines run out of. Sizing by height would
+    # make the type LARGER on Play's narrower canvas, which is backwards.
+    #
+    # Expressed against the snap target's width so the sizes come out at
+    # exactly the original 104/44/28 there — decimal fractions were rounding
+    # 208 down to 207 and quietly redrawing a banner that was already right.
+
+    def pt(points):
+        return round(points * W / TARGETS['snap']['size'][0]) * SS
+
+    title_font = ImageFont.truetype(FONTS + 'Roboto-Medium.ttf', pt(104))
+    tag_font = ImageFont.truetype(FONTS + 'Roboto-Light.ttf', pt(44))
+    third_font = ImageFont.truetype(FONTS + 'Roboto-Light.ttf', pt(28))
 
     # Set from the middle outwards so the block stays centred against the
     # dial whatever the strings are changed to.
@@ -147,14 +208,26 @@ def main():
         )
 
     out = img.convert('RGB').resize((W, H), Image.LANCZOS)
+    os.makedirs(os.path.dirname(OUT), exist_ok=True)
     out.save(OUT, optimize=True)
 
     size = os.path.getsize(OUT)
-    assert W == H * 3, f'{W}x{H} is not 3:1'
-    assert 720 <= W <= 4320 and 240 <= H <= 1440, f'{W}x{H} out of range'
-    assert size < MAX_BYTES, f'{size / 1024:.0f}kB is over the 2MB limit'
 
-    print(f'wrote snap/gui/banner.png   {W}x{H}, 3:1, {size / 1024:.0f}kB')
+    if args.target == 'snap':
+        assert W == H * 3, f'{W}x{H} is not 3:1'
+        assert 720 <= W <= 4320 and 240 <= H <= 1440, f'{W}x{H} out of range'
+    else:
+        # Play takes this size and no other. A pixel out and the upload is
+        # refused with a message about the feature graphic's dimensions.
+        assert (W, H) == (1024, 500), f'{W}x{H} is not Play\'s 1024x500'
+
+    assert size < spec['max_bytes'], (
+        f'{size / 1024:.0f}kB is over the '
+        f'{spec["max_bytes"] / 1024 / 1024:.0f}MB limit'
+    )
+
+    rel = os.path.relpath(OUT, ROOT)
+    print(f'wrote {rel}   {W}x{H}, {size / 1024:.0f}kB')
 
 
 if __name__ == '__main__':

@@ -37,8 +37,9 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.1 Feature Tuning
 
-+ Login diagnostics also catch failures before the browser
-  opens [1.1.20 20260929 gjw]
++ Cancelling the security key no longer loops [1.1.22 20261002 gjw]
++ Fix the iOS login, broken by a stripped symbol [1.1.21 20260929 gjw]
++ Diagnostics cover a login failing early [1.1.20 20260929 gjw]
 + Settings reports why a login did not complete [1.1.19 20260929 gjw]
 + iOS App Store build tested and working [1.1.18 20260928 gjw]
 + iOS App Store build, and a build number that increments [1.1.17 20260928 gjw]
