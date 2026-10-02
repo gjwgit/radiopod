@@ -119,10 +119,37 @@ class _AppScaffoldState extends State<AppScaffold> {
 
       provider.setLoggedIn(loggedIn);
 
+      // 20261002 gjw Ask for the security key AT MOST ONCE a session.
+      //
+      // solidui's key screen is fullscreen, and its Cancel runs
+      // `pushReplacement(context, widget.child)` — the child being this very
+      // AppScaffold. Cancelling therefore rebuilt the scaffold, whose
+      // initState called _initKeys again, which prompted again: an endless
+      // loop with no way into the app, and no way out of it on a restart
+      // either, since the Pod session persists.
+      //
+      // getKeyFromUserIfRequired returns void and cannot say whether the key
+      // was entered or the prompt dismissed, so ask the key store afterwards.
+      // Still no key means dismissed — or a failure, which wants the same
+      // treatment: let them into the app on the device library instead of
+      // asking again.
+
       if (loggedIn) {
-        if (!mounted) return;
-        await getKeyFromUserIfRequired(context, widget);
-        if (!mounted) return;
+        if (provider.claimKeyPrompt()) {
+          if (!mounted) return;
+          await getKeyFromUserIfRequired(context, widget);
+          if (!mounted) return;
+        }
+
+        // Checked by EVERY instance, not only the one that prompted. The
+        // scaffold Cancel builds gets here having skipped the prompt, and
+        // without this it would load from the Pod it cannot decrypt and
+        // throw twice over.
+
+        if (!await KeyManager.hasSecurityKey()) {
+          provider.declineKeyPrompt();
+          if (!mounted) return;
+        }
       }
 
       provider.setStartupPhase(StartupPhase.loading);

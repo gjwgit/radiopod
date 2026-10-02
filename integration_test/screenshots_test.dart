@@ -113,12 +113,31 @@ const _playlists = [
   ),
 ];
 
+/// 20261001 gjw Settle, with a BOUNDED wait.
+///
+/// pumpAndSettle's first argument is the INTERVAL BETWEEN PUMPS, not a
+/// timeout — its timeout is the third argument and defaults to TEN MINUTES.
+/// Two calls written as `pumpAndSettle(Duration(seconds: 10))`, meaning to
+/// wait up to ten seconds, instead pumped in ten-second steps for up to
+/// twenty minutes between them, and the iPhone leg burned its whole 30
+/// minute step allowance before being killed.
+///
+/// Thirty seconds is generous for a screen that is only laying out, and a
+/// screen that has not settled by then is a fault worth failing on rather
+/// than waiting out.
+
+Future<void> _settle(WidgetTester tester) => tester.pumpAndSettle(
+  const Duration(milliseconds: 100),
+  EnginePhase.sendSemanticsUpdate,
+  const Duration(seconds: 30),
+);
+
 Future<void> _shot(
   IntegrationTestWidgetsFlutterBinding binding,
   WidgetTester tester,
   String name,
 ) async {
-  await tester.pumpAndSettle();
+  await _settle(tester);
 
   // A beat for anything that settles outside the widget tree — a station
   // logo arriving over the network, say. pumpAndSettle does not wait for
@@ -126,7 +145,7 @@ Future<void> _shot(
 
   await tester.runAsync(() => Future<void>.delayed(const Duration(seconds: 2)));
 
-  await tester.pumpAndSettle();
+  await _settle(tester);
   await binding.takeScreenshot(name);
 }
 
@@ -143,7 +162,7 @@ Future<void> _openMenu(WidgetTester tester, IconData icon) async {
   );
 
   await tester.tap(target.first);
-  await tester.pumpAndSettle();
+  await _settle(tester);
 }
 
 void main() {
@@ -157,7 +176,7 @@ void main() {
     await LocalStore.save(_stations, _playlists);
 
     app.main();
-    await tester.pumpAndSettle(const Duration(seconds: 10));
+    await _settle(tester);
 
     // Tapping Continue is a supported way to run RadioPod, and it is the
     // only way through the login screen without a Pod on a CI runner.
@@ -173,7 +192,7 @@ void main() {
     );
 
     await tester.tap(continueButton.first);
-    await tester.pumpAndSettle(const Duration(seconds: 10));
+    await _settle(tester);
 
     // 20261001 gjw Android captures differently from iOS and has to be told
     // first. takeScreenshot() there reads back a surface that is not
@@ -188,7 +207,7 @@ void main() {
 
     if (defaultTargetPlatform == TargetPlatform.android) {
       await binding.convertFlutterSurfaceToImage();
-      await tester.pumpAndSettle();
+      await _settle(tester);
     }
 
     await _shot(binding, tester, 'stations');

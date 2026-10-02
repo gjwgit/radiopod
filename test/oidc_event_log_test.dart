@@ -11,7 +11,6 @@
 library;
 
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:oidc/oidc.dart';
 
 import 'package:radiopod/services/oidc_event_log.dart';
