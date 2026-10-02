@@ -408,7 +408,6 @@ You can also navigate through the playlists.
 
 ![CarPlay Playlist Canberra](assets/screenshots/radiopod_ios_carplay_playlist_canberra.jpg)
 
-
 <!-- markdownlint-enable MD033 -->
 
 ## Licence
