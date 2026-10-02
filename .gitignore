@@ -246,8 +246,25 @@ android/app/.cxx/
 
 # ios/macos generated project files
 ios/Flutter/
-ios/Runner.xcodeproj/
-ios/Runner.xcworkspace/
+
+# 20261002 gjw The Xcode project and workspace are HAND-MAINTAINED, not
+# generated, and must be committable. project.pbxproj carries the signing
+# configuration, the build phases and the path to the entitlements file.
+#
+# These were `ios/Runner.xcodeproj/` and `ios/Runner.xcworkspace/` — whole
+# directories. Files inside were force-added once and so stayed tracked, but
+# every later change needed `git add -f`, and nothing showed in a plain
+# `git status`. That is how a pull request flipped the Release configuration
+# from manual distribution signing to automatic without anyone seeing it:
+# the archive then failed on a CI runner with "No Accounts: Add a new
+# account in Accounts settings" while still building on a developer Mac,
+# which has an Apple account for automatic signing to ask.
+#
+# Only the per-user state is ignored now, as Flutter's own template does.
+
+ios/Runner.xcodeproj/xcuserdata/
+ios/Runner.xcodeproj/project.xcworkspace/xcuserdata/
+ios/Runner.xcworkspace/xcuserdata/
 
 # 20261002 gjw Exclude the CONTENTS of ios/Runner, not the DIRECTORY, so the
 # hand-written sources below can be re-included.
