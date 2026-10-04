@@ -1197,10 +1197,10 @@ packages:
     dependency: "direct main"
     description:
       name: solidui
-      sha256: "10edbd7287963bdca45c8ded2ad441cbeb31635f645afa6daae0a8036ed72790"
+      sha256: "2491c2e29e5f6f030551d88d6148597c481207427afc32ae966890c6c84a8220"
       url: "https://pub.dev"
     source: hosted
-    version: "1.4.0"
+    version: "1.4.3"
   source_span:
     dependency: transitive
     description:
@@ -1341,10 +1341,10 @@ packages:
     dependency: "direct main"
     description:
       name: url_launcher
-      sha256: f6a7e5c4835bb4e3026a04793a4199ca2d14c739ec378fdfe23fc8075d0439f8
+      sha256: e8cc955c97e06df9879140a1fe301f3d493f01b7c62dec7f46834be31d7e9fda
       url: "https://pub.dev"
     source: hosted
-    version: "6.3.2"
+    version: "6.3.3"
   url_launcher_android:
     dependency: transitive
     description:

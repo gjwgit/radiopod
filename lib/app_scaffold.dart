@@ -40,6 +40,7 @@ import 'package:radiopod/screens/stations_widgets/new_station_dialog.dart';
 import 'package:radiopod/screens/transfer_screen.dart';
 import 'package:radiopod/services/app_provider.dart'
     show AppProvider, StartupPhase;
+import 'package:radiopod/widgets/error_dialog.dart';
 import 'package:radiopod/widgets/pod_refresh_action.dart';
 
 const appScaffold = AppScaffold();
@@ -107,7 +108,43 @@ class _AppScaffoldState extends State<AppScaffold> {
       // Stations list and no way to tell why.
 
       final webId = await getWebId();
-      final loggedIn = webId != null && webId.isNotEmpty;
+      final hasWebId = webId != null && webId.isNotEmpty;
+
+      // 20261004 gjw A STORED WEBID IS NOT A SESSION.
+      //
+      // `getWebId()` reports only that a WebID sits in secure storage.
+      // `isUserLoggedIn()` also requires a non-expired access token, and the
+      // two part company once a token ages out: the WebID is still there, so
+      // this used to decide "logged in", prompt for the security key, and
+      // display the WebID while every operation behind the prompt failed
+      // with "Authentication data not available. Please login first". No key
+      // the user typed could have worked.
+      //
+      // Short-circuited deliberately, so someone who tapped Continue — no
+      // WebID — never reaches isUserLoggedIn and never touches the keychain.
+      // That is what the note below is protecting.
+
+      final loggedIn = hasWebId && await isUserLoggedIn();
+
+      if (hasWebId && !loggedIn) {
+        provider.markSessionExpired();
+
+        if (!mounted) return;
+
+        // Worth interrupting for: the app is about to behave differently
+        // from how it was left, and the remedy is a deliberate act.
+
+        await showErrorDialog(
+          context,
+          title: 'Your Pod session has expired',
+          message:
+              'RadioPod is using the copy of your stations held on this '
+              'device. Your Pod has not been touched.\n\n'
+              'Log in again from the profile menu to reconnect it.',
+        );
+
+        if (!mounted) return;
+      }
 
       // 20260922 gjw Tell the provider what we just found out rather than
       // letting it ask solidpod again. `isUserLoggedIn` starts by probing the

@@ -98,6 +98,60 @@ void main() {
     });
   });
 
+  // 20261004 gjw A stored WebID is not a session. solidpod's getWebId()
+  // reports only that one is in secure storage; isUserLoggedIn() also wants a
+  // non-expired access token. When they disagree the app used to prompt for a
+  // security key that could never verify, showing the WebID while everything
+  // behind the prompt failed with "Authentication data not available".
+
+  group('an expired session', () {
+    test('falls back to the device library', () {
+      final provider = AppProvider()..setLoggedIn(true);
+
+      expect(provider.source, LibrarySource.pod);
+
+      provider.markSessionExpired();
+
+      expect(provider.sessionExpired, isTrue);
+      expect(provider.source, LibrarySource.local);
+      expect(provider.isLocal, isTrue);
+    });
+
+    test('suppresses the key prompt entirely', () {
+      final provider = AppProvider()..markSessionExpired();
+
+      // Nothing later in startup may put the prompt up: without a session no
+      // key can be verified, so asking only wastes the user's time.
+
+      expect(provider.claimKeyPrompt(), isFalse);
+      expect(provider.keyPromptShown, isTrue);
+    });
+
+    test('a later setLoggedIn cannot flip it back to the Pod', () {
+      final provider = AppProvider()..markSessionExpired();
+
+      provider.setLoggedIn(true);
+
+      expect(provider.source, LibrarySource.local);
+    });
+
+    test('marking twice is harmless', () {
+      final provider = AppProvider()
+        ..markSessionExpired()
+        ..markSessionExpired();
+
+      expect(provider.sessionExpired, isTrue);
+      expect(provider.source, LibrarySource.local);
+    });
+
+    test('an ordinary session is not flagged as expired', () {
+      final provider = AppProvider()..setLoggedIn(true);
+
+      expect(provider.sessionExpired, isFalse);
+      expect(provider.source, LibrarySource.pod);
+    });
+  });
+
   test('an undeclined login still uses the Pod', () {
     // The guard must not cost the ordinary case. Someone who enters their
     // key gets the Pod exactly as before.

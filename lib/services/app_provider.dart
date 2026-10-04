@@ -121,6 +121,19 @@ class AppProvider extends ChangeNotifier {
   bool _keyPromptShown = false;
   bool _keyPromptDeclined = false;
 
+  /// 20261004 gjw True when a WebID is stored but the session behind it is no
+  /// longer usable — the access token has expired.
+  ///
+  /// solidpod's `getWebId()` only reports that a WebID is in secure storage;
+  /// `isUserLoggedIn()` additionally requires a non-expired access token. The
+  /// two disagree exactly here, and treating the WebID alone as proof of a
+  /// session asked for a security key that could not possibly work: every
+  /// operation behind it then failed with "Authentication data not
+  /// available. Please login first", while the prompt helpfully displayed the
+  /// WebID the user was supposedly logged in as.
+
+  bool _sessionExpired = false;
+
   // ── Getters ───────────────────────────────────────────────────────────────
 
   List<Station> get stations => _stations;
@@ -143,6 +156,26 @@ class AppProvider extends ChangeNotifier {
   /// True once the security key prompt has been dismissed this session.
 
   bool get keyPromptDeclined => _keyPromptDeclined;
+
+  /// True when a stored WebID has outlived its session. The library falls
+  /// back to this device until the user logs in again.
+
+  bool get sessionExpired => _sessionExpired;
+
+  /// Record an expired session: no key prompt, and the device library.
+  ///
+  /// Also claims the key prompt, so nothing later in startup puts it up. A
+  /// key cannot be verified without a session, so asking only wastes the
+  /// user's time and then fails.
+
+  void markSessionExpired() {
+    if (_sessionExpired) return;
+    _sessionExpired = true;
+    _keyPromptShown = true;
+    _keyPromptDeclined = true;
+    _source = LibrarySource.local;
+    notifyListeners();
+  }
 
   /// Claim the one security key prompt this session allows.
   ///
