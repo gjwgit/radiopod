@@ -85,7 +85,7 @@ TITLE = 'RadioPod'
 # summary. "player" is dropped from that wording: it adds nothing after
 # "radio" and the line has to sit within the banner.
 
-TAGLINE = 'Privacy preserving internet radio'
+TAGLINE = 'Privacy-first internet radio'
 
 # How, in one line, under the claim above.
 

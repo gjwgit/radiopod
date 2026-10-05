@@ -1,6 +1,6 @@
 /// RadioPod - app-wide constants.
 ///
-// Time-stamp: <Saturday 2026-09-20 06:00:00 +1000 Graham Williams>
+// Time-stamp: <Tuesday 2026-10-06 07:11:51 +1100 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -33,7 +33,7 @@ const appName = 'RadioPod';
 
 /// Application title displayed as the window title.
 
-const String appTitle = 'RadioPod - Listen to Internet Radio';
+const String appTitle = 'RadioPod - Privacy-First Internet Radio';
 
 /// App directory name used by solidpod for storage paths.
 

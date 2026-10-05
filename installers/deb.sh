@@ -26,7 +26,7 @@ Priority: optional
 Architecture: amd64
 Depends: libgtk-3-0, libblkid1, liblzma5, libmpv2
 Maintainer: Graham Williams <graham.williams@togaware.com>
-Description: Privacy preserving internet radio player
+Description: Privacy-first internet radio player
  With ${APP} you can find internet radio stations in the community-run
  Radio-Browser database, group them into playlists, and listen. Your
  station library is stored encrypted in your Pod, so nobody can see

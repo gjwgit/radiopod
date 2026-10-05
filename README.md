@@ -1,4 +1,4 @@
-# RadioPod - Internet Radio for your Secure and Private Solid Pod Data
+# RadioPod - Privacy-First Internet Radio
 
 [![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
@@ -10,19 +10,26 @@
 [![Github Last Updated](https://img.shields.io/github/last-commit/gjwgit/radiopod?label=last%20updated)](https://github.com/gjwgit/radiopod/commits/dev/)
 [![GitHub Issues](https://img.shields.io/github/issues/gjwgit/radiopod)](https://github.com/gjwgit/radiopod/issues)
 
+Privacy-first: your data encrypted to be securely and privately stored
+on your Solid Pod, not on our servers.
+
 [RadioPod](https://gjwgit.github.io/radiopod/) plays internet radio.
-It is a simple, privacy-first, alternative to apps like
-[Transistor](https://f-droid.org/packages/org.y20k.transistor/),
-[Shortwave](https://snapcraft.io/shortwave), and others. You can
-search for stations in the community-run
-[Radio-Browser](https://www.radio-browser.info) database, group them
-into playlists, and listen on your phone, in the car through Apple Car
-Play or Android Auto, or at your desk. Your station library and your
-playlists are stored locally or, if you log in, are stored encrypted
-in your own personal online data store
-([Pod](https://solidproject.org/about)) where nobody, not even the
-server administrator, can see your station library or your
-playlists.
+It is a simple privacy-first alternative to apps like
+[Transistor](https://f-droid.org/packages/org.y20k.transistor/) and
+[Shortwave](https://snapcraft.io/shortwave). Find stations in the
+community-run [Radio-Browser](https://www.radio-browser.info)
+database, group them into playlists, and listen — at your desk, on
+your phone, or in the car through Apple CarPlay or Android Auto.
+
+Your station library and your playlists are stored locally or else are
+encrypted and privately stored in your own personal online data store
+([Pod](https://solidproject.org/about)) within a Data Vault hosted by
+a Solid Server of your choice.  Pod-stored data is available on any of
+your devices to share your station library and playlists while being
+protected against server administrator access and server breaches.
+
+Playlists can be imported and exported using the M3U or PLS open
+formats that every other radio player reads and writes.
 
 Solid Pods are a new approach to handling your personal data on the
 World Wide Web and is the latest innovation from the inventor of the
