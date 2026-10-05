@@ -374,9 +374,7 @@ class RadioAudioHandler extends BaseAudioHandler {
     _cancelPendingAdvance();
     _watchTrack(station);
 
-    this.queue.add([
-      for (final s in _queueStations) stationMediaItem(s, parentId),
-    ]);
+    _publishQueue();
     mediaItem.add(_sessionItem(station, parentId));
 
     try {
@@ -539,7 +537,61 @@ class RadioAudioHandler extends BaseAudioHandler {
 
     _currentTrack = track;
     mediaItem.add(_sessionItem(station, _queueParentId, track: track));
+    _publishQueue();
   }
+
+  /// Publish the queue, with the station now playing carrying EXACTLY what
+  /// [mediaItem] carries.
+  ///
+  /// 20261006 gjw Android's Bluetooth stack will not hand the car anything
+  /// until the session's metadata agrees with the queue row named by the
+  /// active queue id. When they disagree it waits, and then gives up:
+  ///
+  ///     E MediaPlayerWrapper: Timeout while waiting for metadata to sync
+  ///       Current Metadata: title="Celine Dion" artist="Celine Dion - ..."
+  ///       QueueItem(7):     title="Celine Dion" artist="The United Arab ..."
+  ///
+  /// They could never agree. The now-playing item puts the song on air in
+  /// the artist slot (CLAUDE.md §11) and prefers the user's chosen icon for
+  /// artwork, while the queue was built from plain [stationMediaItem] calls
+  /// carrying the station's codec-and-bitrate subtitle and its own logo. So
+  /// the SAME station appeared twice, described two different ways, and
+  /// every station change and every song change cost a ten second stall.
+  ///
+  /// The row that is playing is therefore the same item the session
+  /// publishes. The rest stay as the browse tree builds them — only the
+  /// active one is reconciled, and only it has a track to carry.
+
+  void _publishQueue() {
+    final items = [
+      for (final s in _queueStations) stationMediaItem(s, _queueParentId),
+    ];
+
+    final station = _currentStation;
+    if (station != null && _queueIndex >= 0 && _queueIndex < items.length) {
+      items[_queueIndex] = _sessionItem(
+        station,
+        _queueParentId,
+        track: _currentTrack,
+      );
+    }
+
+    // An unchanged queue is not republished. Skipping within a playlist
+    // changes which row is active and nothing else, and handing the car a
+    // fresh list makes it tear down and rebuild the whole now-playing list.
+    //
+    // Compared field by field, NOT with listEquals: MediaItem's == is id
+    // only (audio_service.dart:667), so a changed artist or artwork — the
+    // very thing this republishes for — would compare equal.
+
+    if (_queueSignature(items) == _queueSignature(queue.value)) return;
+
+    queue.add(items);
+  }
+
+  static String _queueSignature(List<MediaItem> items) => items
+      .map((i) => '${i.id}\u0000${i.artist}\u0000${i.artUri}')
+      .join('\u0001');
 
   /// Start (or restart) reading the song on air for [station].
   ///

@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.3 Skip login is enabled by default
 
++ Fix the car display stalling on a song change [1.3.8 20261006 gjw]
 + Drag to reorder the playlists themselves [1.3.7 20261005 gjw]
 + Drag to reorder the stations within a playlist [1.3.6 20261005 gjw]
 + Keep station logos in the car's browse list [1.3.5 20261005 gjw]

@@ -34,6 +34,7 @@ import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/services/carplay_bridge.dart';
 import 'package:radiopod/services/local_store.dart';
 import 'package:radiopod/services/radio_audio_handler.dart';
+import 'package:radiopod/services/station_icon_cache.dart';
 import 'package:radiopod/utils/platform_io.dart'
     if (dart.library.js_interop) 'package:radiopod/utils/platform_web.dart';
 
@@ -116,6 +117,21 @@ class Player {
     CarPlayBridge.attach(_handler!);
 
     final (stations, playlists) = await LocalStore.load();
+
+    // 20261006 gjw Write the chosen station icons out HERE as well as in
+    // AppProvider._pushToPlayer().
+    //
+    // THIS IS THE CAR'S PATH. Android Auto starts the media service on its
+    // own, before any login and before AppProvider exists (CLAUDE.md §2), so
+    // the library arrives straight from LocalStore and never passes through
+    // _pushToPlayer. Syncing in only that one place left the cache empty
+    // whenever the car started the app: StationIconCache.pathFor() returned
+    // null, and a station with a chosen icon showed no artwork at all while
+    // one with an https logo was fine. It looked intermittent because
+    // opening the app on the phone populated the cache and hid it.
+
+    await StationIconCache.sync(stations);
+
     _handler!.setLibrary(stations, playlists);
   }
 }
