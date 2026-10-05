@@ -37,7 +37,8 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.3 Skip login is enabled by default
 
-+ solidui 1.4.3 indicates if logged in [1.3.2 20261004 gjw]
++ Update solidui 1.4.4 wavy menu lines if logged in [1.3.320261005 gjw]
++ Update solidui 1.4.3 indicates if logged in [1.3.2 20261004 gjw]
 + An expired Pod session no longer asks for a key [1.3.1 20261004 gjw]
 + Update to solidui 1.4.0 with skip Login [1.3.0 20261002 gjw]
 
