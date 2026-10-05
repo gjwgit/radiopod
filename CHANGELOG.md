@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.3 Skip login is enabled by default
 
++ Drag to reorder the stations within a playlist [1.3.6 20261005 gjw]
 + Keep station logos in the car's browse list [1.3.5 20261005 gjw]
 + Chosen station icon shows on the car's Now Playing [1.3.4 20261005 gjw]
 + Update solidui 1.4.4 wavy menu lines if logged in [1.3.3 20261005 gjw]

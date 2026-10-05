@@ -159,39 +159,95 @@ class PlaylistsScreen extends StatelessWidget {
             ),
           )
         else
-          for (final s in stations)
-            StationTile(
-              station: s,
-              current: now.isCurrent(s.id),
-              playing: now.playing,
-              connecting: now.connecting,
-              loading: now.loading,
-              paused: now.paused,
-              failed: now.failed,
-              track: now.track,
-              onTap: () => now.isCurrent(s.id)
-                  ? _toggle(now)
-                  : _play(context, provider, s, stations),
-              trailing: MarkdownTooltip(
-                message:
-                    '''
+          // 20261005 gjw Reorderable, so a playlist can be put in the order
+          // the driver wants to hear it. shrinkWrap and
+          // NeverScrollableScrollPhysics because this sits inside the
+          // ExpansionTile of an outer scrolling list: without them the inner
+          // list claims unbounded height and fights the outer one for the
+          // drag gesture.
+          ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
 
-                **Remove from playlist**
-
-                Take this station out of ${playlist.name}. It stays in your
-                library and in any other playlist it belongs to.
-
-                ''',
-                child: IconButton(
-                  icon: const Icon(Icons.remove_circle_outline),
-                  onPressed: () =>
-                      provider.removeFromPlaylist(playlist.id, s.id),
-                ),
-              ),
+            // Handles are supplied explicitly, as on the Stations screen, so
+            // the rest of the row keeps its tap-to-play behaviour; the
+            // default handles start a drag on a long press anywhere.
+            buildDefaultDragHandles: false,
+            itemCount: stations.length,
+            onReorderItem: (oldIndex, newIndex) =>
+                provider.reorderInPlaylist(playlist.id, oldIndex, newIndex),
+            itemBuilder: (context, i) => _playlistRow(
+              context,
+              provider,
+              playlist,
+              stations[i],
+              stations,
+              now,
+              i,
             ),
+          ),
       ],
     );
   }
+
+  /// One station row inside a playlist.
+  ///
+  /// Keyed by station id, which ReorderableListView requires and which must
+  /// be stable across the reorder — the index is not.
+
+  Widget _playlistRow(
+    BuildContext context,
+    AppProvider provider,
+    Playlist playlist,
+    Station s,
+    List<Station> stations,
+    NowPlaying now,
+    int index,
+  ) => StationTile(
+    key: ValueKey('${playlist.id}:${s.id}'),
+    station: s,
+    current: now.isCurrent(s.id),
+    playing: now.playing,
+    connecting: now.connecting,
+    loading: now.loading,
+    paused: now.paused,
+    failed: now.failed,
+    track: now.track,
+    onTap: () => now.isCurrent(s.id)
+        ? _toggle(now)
+        : _play(context, provider, s, stations),
+    trailing: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        MarkdownTooltip(
+          message:
+              '''
+
+          **Remove from playlist**
+
+          Take this station out of ${playlist.name}. It stays in your
+          library and in any other playlist it belongs to.
+
+          ''',
+          child: IconButton(
+            icon: const Icon(Icons.remove_circle_outline),
+            onPressed: () => provider.removeFromPlaylist(playlist.id, s.id),
+          ),
+        ),
+
+        // DELIBERATELY WITHOUT A TOOLTIP, for the reason given on the
+        // Stations screen: a tooltip is an OverlayPortal and reordering
+        // re-parents the dragged row, which asserts mid-drag.
+        ReorderableDragStartListener(
+          index: index,
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: Icon(Icons.drag_handle),
+          ),
+        ),
+      ],
+    ),
+  );
 
   Future<void> _create(BuildContext context, AppProvider provider) async {
     final name = await showPlaylistNameDialog(context, title: 'New playlist');
