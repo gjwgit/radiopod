@@ -31,6 +31,7 @@ import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/services/browse_tree.dart';
+import 'package:radiopod/services/station_icon_cache.dart';
 
 const _stations = [
   Station(id: 's1', name: 'Zulu FM', url: 'https://live.example/z'),
@@ -160,6 +161,54 @@ void main() {
       );
 
       expect(stationMediaItem(station, browseAllStationsId).artUri, isNull);
+    });
+
+    // 20261005 gjw A picture the user chose beats the station's own logo.
+    //
+    // Station.icon is base64 in the Pod data and there is nothing for a head
+    // unit to fetch, so these were invisible in the car while the app showed
+    // them. StationIconCache writes the icon out and the artUri points at
+    // that file. These tests drive the cache through its test seam rather
+    // than touching the filesystem.
+
+    test('a browse row keeps the station logo, not the chosen icon', () {
+      StationIconCache.resetForTest();
+      StationIconCache.debugSetPath('s1', '/tmp/station_icons/s1.png');
+      addTearDown(StationIconCache.resetForTest);
+
+      const station = Station(
+        id: 's1',
+        name: 'Alpha FM',
+        url: 'https://live.example/a',
+        favicon: 'https://logo.example/alpha.png',
+      );
+      final item = stationMediaItem(station, browseAllStationsId);
+
+      // Android Auto fetches a browse row's icon in ITS process and cannot
+      // read our files, so the row must carry the fetchable logo. Preferring
+      // the chosen icon here left the car showing nothing at all.
+
+      expect(item.artUri.toString(), 'https://logo.example/alpha.png');
+
+      // The now playing item is loaded in our process, so it gets the icon.
+
+      expect(sessionArtUri(station)?.toFilePath(), '/tmp/station_icons/s1.png');
+    });
+
+    test('the station logo is used when there is no chosen icon', () {
+      StationIconCache.resetForTest();
+
+      const station = Station(
+        id: 's1',
+        name: 'Alpha FM',
+        url: 'https://live.example/a',
+        favicon: 'https://logo.example/alpha.png',
+      );
+
+      expect(
+        stationMediaItem(station, browseAllStationsId).artUri.toString(),
+        'https://logo.example/alpha.png',
+      );
     });
 
     test('the subtitle is the station details when no track is known', () {

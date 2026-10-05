@@ -87,6 +87,26 @@ bool get needsIcyPolling => Platform.isLinux || Platform.isWindows;
 
 bool get stopByPause => Platform.isLinux || Platform.isWindows;
 
+/// Whether this platform has a media session that actually DISPLAYS artwork.
+///
+/// 20261005 gjw False on GNU/Linux and Windows, where audio_service falls
+/// back to NoOpAudioService (CLAUDE.md §2): there is no notification and no
+/// lock screen, so nothing can ever show the art. The Dart side downloads it
+/// regardless — setMediaItem fetches every non-file artUri through
+/// flutter_cache_manager before it reaches the platform — so each station
+/// change pulled an image that could not be shown, and printed a stack trace
+/// whenever the station's logo host was dead:
+///
+///   Error loading artUri: HttpException: Invalid statusCode: 402
+///
+/// That print is audio_service's own and cannot be silenced
+/// (audio_service.dart:1260), so the fix is to stop handing it a URL.
+///
+/// The app's own station list is unaffected: it loads logos itself through
+/// Image.network and still shows them.
+
+bool get showsMediaArt => !(Platform.isLinux || Platform.isWindows);
+
 /// Force the C locale for numeric formatting on Linux.
 ///
 /// libmpv aborts the process with "Non-C locale detected" when LC_NUMERIC is

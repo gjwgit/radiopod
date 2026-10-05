@@ -377,7 +377,7 @@ class RadioAudioHandler extends BaseAudioHandler {
     this.queue.add([
       for (final s in _queueStations) stationMediaItem(s, parentId),
     ]);
-    mediaItem.add(stationMediaItem(station, parentId));
+    mediaItem.add(_sessionItem(station, parentId));
 
     try {
       // Silence whatever is on BEFORE opening the next station.
@@ -538,7 +538,7 @@ class RadioAudioHandler extends BaseAudioHandler {
     if (track == _currentTrack) return;
 
     _currentTrack = track;
-    mediaItem.add(stationMediaItem(station, _queueParentId, track: track));
+    mediaItem.add(_sessionItem(station, _queueParentId, track: track));
   }
 
   /// Start (or restart) reading the song on air for [station].
@@ -696,4 +696,31 @@ class RadioAudioHandler extends BaseAudioHandler {
     ProcessingState.ready: AudioProcessingState.ready,
     ProcessingState.completed: AudioProcessingState.completed,
   };
+}
+
+/// The media item for the session, with artwork only where it can be seen.
+///
+/// 20261005 gjw On GNU/Linux and Windows audio_service is NoOpAudioService
+/// (CLAUDE.md §2) and on the web the artwork fetch hits the CORS wall, so in
+/// all three cases nothing displays the image. audio_service downloads every
+/// non-file artUri through flutter_cache_manager BEFORE reaching the
+/// platform, so each station change pulled an image that could not be shown,
+/// and printed an unsilenceable stack trace whenever a station's logo host
+/// was dead — a 402 from a lapsed Firebase bucket, for one.
+///
+/// The decision lives HERE rather than in stationMediaItem because that is a
+/// pure function with its own tests: gating it there made the browse tree
+/// platform-dependent and the tests failed on the host that ran them.
+///
+/// The app's own station list is unaffected; it loads logos through
+/// Image.network and still shows them.
+
+MediaItem _sessionItem(Station station, String parentId, {String? track}) {
+  final item = stationMediaItem(station, parentId, track: track);
+  if (!showsMediaArt) return item.copyWith(artUri: null);
+
+  // The chosen icon only works HERE, where audio_service loads it for us.
+  // The browse rows keep the station's own logo — see sessionArtUri.
+
+  return item.copyWith(artUri: sessionArtUri(station));
 }

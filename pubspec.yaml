@@ -1,7 +1,7 @@
 name: radiopod
 description: "Radio Pod - Internet Radio with Secure and Private Storage"
 publish_to: 'none'
-version: 1.3.3+10
+version: 1.3.5+12
 
 environment:
   sdk: ^3.13.4
@@ -51,6 +51,15 @@ dependencies:
   # objects to, and rightly: solidpod could drop it at any release.
 
   oidc: ^4.0.0
+
+  # 20261005 gjw Declared directly, though it already arrives transitively,
+  # so StationIconCache can find a directory to write the user-chosen station
+  # icons into. Android Auto cannot fetch a base64 string out of Pod data, so
+  # each icon is written as a file and handed over as a file:// artUri.
+  # Relying on a transitive dependency for a direct import is what
+  # dependency_validator objects to, and rightly.
+
+  path_provider: ^2.1.5
   provider: ^6.1.5+1
 
   # 20260920 gjw audio_service does not re-export rxdart, but its

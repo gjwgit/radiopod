@@ -38,6 +38,7 @@ import 'package:radiopod/models/station.dart';
 import 'package:radiopod/services/local_store.dart';
 import 'package:radiopod/services/player.dart';
 import 'package:radiopod/services/pod_service.dart';
+import 'package:radiopod/services/station_icon_cache.dart';
 import 'package:radiopod/utils/playlist_file.dart';
 
 const _uuid = Uuid();
@@ -690,6 +691,15 @@ class AppProvider extends ChangeNotifier {
   Future<void> _pushToPlayer() async {
     if (_testMode) return;
     try {
+      // 20261005 gjw Materialise the user-chosen icons BEFORE the browse
+      // tree is rebuilt. Station.icon is base64, which a head unit cannot
+      // fetch; StationIconCache writes each one out so browse_tree can hand
+      // over a file:// artUri. Synchronous lookup afterwards, because
+      // stationMediaItem is a pure function called from the audio handler
+      // and the CarPlay bridge alike.
+
+      await StationIconCache.sync(_stations);
+
       Player.handler.setLibrary(_stations, _playlists);
     } catch (e) {
       debugPrint('[AppProvider] player sync error: $e');

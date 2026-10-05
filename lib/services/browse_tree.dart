@@ -30,6 +30,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
+import 'package:radiopod/services/station_icon_cache.dart';
 
 /// The two levels of the browse tree, built as plain functions over the
 /// library so the audio handler stays about playback.
@@ -151,22 +152,67 @@ MediaItem stationMediaItem(Station station, String parentId, {String? track}) =>
       title: station.name,
       artist: track ?? (station.subtitle.isEmpty ? null : station.subtitle),
       album: appName,
-      artUri: _artUri(station.favicon),
+      artUri: _artUri(station),
       playable: true,
       isLive: true,
       extras: {'stationId': station.id, 'track': ?track},
     );
 
-/// A station logo URL as a [Uri], or null when there is none or it will not
-/// parse. Only http(s) is accepted — a head unit will not fetch anything
-/// else, and an odd scheme in Pod data should not reach the media session.
+/// The artwork for a station: the picture the user chose if there is one,
+/// otherwise the station's own logo.
+///
+/// 20261005 gjw The user's choice WINS. They went out of their way to pick
+/// it, usually because the station's own logo was missing or wrong, so
+/// preferring the logo would undo the very thing they did.
+///
+/// [Station.icon] is base64 in the Pod data, not a URL, so there is nothing
+/// for a head unit to fetch — which is why these used to be invisible in the
+/// car while the UI showed them. StationIconCache writes it out and this
+/// returns a `file://` URI to it.
+///
+/// A file URI is fine here, contrary to what this function once assumed.
+/// audio_service turns it into an `artCacheFile` and loads the bitmap in
+/// THIS process, so the image travels inside the metadata and the car never
+/// opens our files. Still nothing else: an odd scheme out of Pod data should
+/// not reach the media session, and a head unit will not fetch it anyway.
 
-Uri? _artUri(String? favicon) {
+Uri? _artUri(Station station) {
+  final favicon = station.favicon;
   if (favicon == null || favicon.isEmpty) return null;
   final uri = Uri.tryParse(favicon);
   if (uri == null || !uri.hasScheme) return null;
 
   return (uri.isScheme('http') || uri.isScheme('https')) ? uri : null;
+}
+
+/// Artwork for the NOW PLAYING item, where a chosen icon can be shown.
+///
+/// 20261005 gjw THE TWO LISTS ARE NOT THE SAME and cannot use the same URI.
+///
+/// A browse row carries only a URI: audio_service builds a
+/// MediaDescriptionCompat with setIconUri (AudioServicePlugin.java:1174) and
+/// ANDROID AUTO'S OWN PROCESS fetches it. It cannot read our app-private
+/// files, so a file:// icon shows as nothing — which is why an https station
+/// logo appears in the car's list and a chosen icon does not.
+///
+/// The now playing item is different: audio_service loads the art IN THIS
+/// PROCESS and puts the bitmap into the metadata (AudioService.java:811), so
+/// a local file works there and the chosen icon displays.
+///
+/// Hence the split. Preferring the chosen icon everywhere made the car's
+/// list WORSE than before it existed: a station with both a chosen icon and
+/// a logo used to show the logo and then showed nothing at all.
+///
+/// Getting a chosen icon into the browse list needs a FileProvider and a
+/// content:// URI granted to the Auto host — and audio_service does not
+/// surface the client package name to Dart (its onGetRoot listener is
+/// commented out), so that needs native code.
+
+Uri? sessionArtUri(Station station) {
+  final iconPath = StationIconCache.pathFor(station.id);
+  if (iconPath != null) return Uri.file(iconPath);
+
+  return _artUri(station);
 }
 
 String _stationCount(int n) => '$n station${n == 1 ? '' : 's'}';

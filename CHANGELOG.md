@@ -37,7 +37,9 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.3 Skip login is enabled by default
 
-+ Update solidui 1.4.4 wavy menu lines if logged in [1.3.320261005 gjw]
++ Keep station logos in the car's browse list [1.3.5 20261005 gjw]
++ Chosen station icon shows on the car's Now Playing [1.3.4 20261005 gjw]
++ Update solidui 1.4.4 wavy menu lines if logged in [1.3.3 20261005 gjw]
 + Update solidui 1.4.3 indicates if logged in [1.3.2 20261004 gjw]
 + An expired Pod session no longer asks for a key [1.3.1 20261004 gjw]
 + Update to solidui 1.4.0 with skip Login [1.3.0 20261002 gjw]

@@ -42,6 +42,16 @@ bool get needsIcyPolling => false;
 
 bool get stopByPause => false;
 
+/// False on the web for a different reason than the desktop: CORS.
+///
+/// 20261005 gjw audio_service fetches artwork BYTES through
+/// flutter_cache_manager, and station artwork is an arbitrary third-party URL
+/// that essentially never sends Access-Control-Allow-Origin — the same wall
+/// that forces WebHtmlElementStrategy.fallback on the station list
+/// (CLAUDE.md §13). So nearly every fetch fails and prints a stack trace.
+
+bool get showsMediaArt => false;
+
 /// No-op on web: just_audio plays through the browser's own audio element,
 /// and the libmpv LC_NUMERIC workaround applies to native Linux only.
 ///
