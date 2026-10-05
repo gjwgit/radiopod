@@ -64,12 +64,25 @@ class PlaylistsScreen extends StatelessWidget {
             : provider.playlists.isEmpty
             ? _empty(context)
             : NowPlayingBuilder(
-                builder: (context, now) => ListView(
+                // 20261005 gjw The playlists themselves reorder too, which
+                // is a different thing from the order of stations inside
+                // one. This is the order the driver scrolls past in the car
+                // before reaching All Stations.
+                //
+                // A reorderable list inside a reorderable list. Each handle
+                // binds to its NEAREST reorderable ancestor, so the grips on
+                // the station rows drive the inner list and the grip on a
+                // playlist header drives this one. Both set
+                // buildDefaultDragHandles: false, without which a long press
+                // anywhere would start a drag in whichever list caught it.
+
+                builder: (context, now) => ReorderableListView.builder(
                   padding: const EdgeInsets.only(bottom: 88),
-                  children: [
-                    for (final p in provider.playlists)
-                      _tile(context, provider, p, now),
-                  ],
+                  buildDefaultDragHandles: false,
+                  itemCount: provider.playlists.length,
+                  onReorderItem: provider.reorderPlaylist,
+                  itemBuilder: (context, i) =>
+                      _tile(context, provider, provider.playlists[i], now, i),
                 ),
               ),
         floatingActionButton: MarkdownTooltip(
@@ -125,28 +138,52 @@ class PlaylistsScreen extends StatelessWidget {
     AppProvider provider,
     Playlist playlist,
     NowPlaying now,
+    int index,
   ) {
     final stations = provider.stationsOf(playlist);
     final n = stations.length;
 
     return ExpansionTile(
+      // Keyed by playlist id: stable across a reorder, where the index is
+      // not, and required by ReorderableListView.
+
+      key: ValueKey(playlist.id),
       leading: const Icon(Icons.queue_music),
       title: Text(playlist.name),
       subtitle: Text('$n station${n == 1 ? '' : 's'}'),
-      trailing: PopupMenuButton<String>(
-        onSelected: (value) => switch (value) {
-          'play' => _playAll(context, provider, stations),
-          'rename' => _rename(context, provider, playlist),
-          _ => _confirmDelete(context, provider, playlist),
-        },
-        itemBuilder: (context) => [
-          PopupMenuItem(
-            value: 'play',
-            enabled: n > 0,
-            child: const Text('Play playlist'),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          PopupMenuButton<String>(
+            onSelected: (value) => switch (value) {
+              'play' => _playAll(context, provider, stations),
+              'rename' => _rename(context, provider, playlist),
+              _ => _confirmDelete(context, provider, playlist),
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'play',
+                enabled: n > 0,
+                child: const Text('Play playlist'),
+              ),
+              const PopupMenuItem(value: 'rename', child: Text('Rename…')),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Text('Delete playlist'),
+              ),
+            ],
           ),
-          const PopupMenuItem(value: 'rename', child: Text('Rename…')),
-          const PopupMenuItem(value: 'delete', child: Text('Delete playlist')),
+
+          // No tooltip, for the reason given on the Stations screen: a
+          // tooltip is an OverlayPortal and reordering re-parents the
+          // dragged row, which asserts mid-drag.
+          ReorderableDragStartListener(
+            index: index,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              child: Icon(Icons.drag_handle),
+            ),
+          ),
         ],
       ),
       children: [

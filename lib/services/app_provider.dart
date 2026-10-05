@@ -275,6 +275,29 @@ class AppProvider extends ChangeNotifier {
   /// [newIndex] comes from `onReorderItem` and has already been adjusted for
   /// the removed item. Do not subtract one; do not switch to `onReorder`.
 
+  /// Move a playlist within the list of playlists.
+  ///
+  /// 20261005 gjw Distinct from [reorderInPlaylist], which orders the
+  /// stations INSIDE one. This is the order the playlists themselves appear
+  /// in — on the Playlists screen, and as the folders the driver scrolls
+  /// past in the car before reaching All Stations. Putting the one used
+  /// every morning at the top is the point.
+  ///
+  /// [newIndex] comes from `onReorderItem` and is already adjusted for the
+  /// removed item, as in [reorderStation].
+
+  Future<String?> reorderPlaylist(int oldIndex, int newIndex) {
+    if (oldIndex == newIndex) return Future.value();
+    if (oldIndex < 0 || oldIndex >= _playlists.length) return Future.value();
+
+    final list = List<Playlist>.from(_playlists);
+    final moved = list.removeAt(oldIndex);
+    list.insert(newIndex.clamp(0, list.length), moved);
+    _playlists = list;
+
+    return _commit();
+  }
+
   Future<String?> reorderInPlaylist(
     String playlistId,
     int oldIndex,

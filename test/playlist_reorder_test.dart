@@ -29,7 +29,65 @@ AppProvider _provider({List<String> ids = const ['s1', 's2', 's3']}) =>
 List<String> _order(AppProvider p) =>
     p.stationsOf(p.playlists.first).map((s) => s.id).toList();
 
+AppProvider _manyPlaylists() => AppProvider()
+  ..loadForTest(
+    const [_a, _b, _c],
+    const [
+      Playlist(id: 'p1', name: 'Drive', stationIds: ['s1']),
+      Playlist(id: 'p2', name: 'News', stationIds: ['s2']),
+      Playlist(id: 'p3', name: 'Night', stationIds: ['s3']),
+    ],
+  );
+
 void main() {
+  // 20261005 gjw Two different orders, deliberately kept apart: the order OF
+  // the playlists, and the order of stations WITHIN one. The first is what
+  // the driver scrolls past in the car before reaching All Stations.
+
+  group('reorderPlaylist', () {
+    test('moves a playlist down', () async {
+      final provider = _manyPlaylists();
+
+      await provider.reorderPlaylist(0, 2);
+
+      expect(provider.playlists.map((p) => p.id), ['p2', 'p3', 'p1']);
+    });
+
+    test('moves a playlist up', () async {
+      final provider = _manyPlaylists();
+
+      await provider.reorderPlaylist(2, 0);
+
+      expect(provider.playlists.map((p) => p.id), ['p3', 'p1', 'p2']);
+    });
+
+    test('the stations inside are untouched', () async {
+      final provider = _manyPlaylists();
+
+      await provider.reorderPlaylist(0, 2);
+
+      expect(provider.playlists.firstWhere((p) => p.id == 'p1').stationIds, [
+        's1',
+      ]);
+    });
+
+    test('moving to the same place changes nothing', () async {
+      final provider = _manyPlaylists();
+
+      await provider.reorderPlaylist(1, 1);
+
+      expect(provider.playlists.map((p) => p.id), ['p1', 'p2', 'p3']);
+    });
+
+    test('an out of range index is ignored', () async {
+      final provider = _manyPlaylists();
+
+      await provider.reorderPlaylist(9, 0);
+
+      expect(provider.playlists.map((p) => p.id), ['p1', 'p2', 'p3']);
+    });
+  });
+
   group('reorderInPlaylist', () {
     test('moves a station down', () async {
       final provider = _provider();
