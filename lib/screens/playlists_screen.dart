@@ -59,7 +59,12 @@ class PlaylistsScreen extends StatelessWidget {
     return StartupOverlay(
       phase: provider.startupPhase,
       child: Scaffold(
-        body: provider.busy
+        // Blank while starting up: StartupOverlay already covers this with
+        // its own spinner and the scrim is translucent. See the longer note
+        // in stations_screen.dart.
+        body: provider.isStartingUp
+            ? const SizedBox.shrink()
+            : provider.busy
             ? const Center(child: CircularProgressIndicator())
             : provider.playlists.isEmpty
             ? _empty(context)

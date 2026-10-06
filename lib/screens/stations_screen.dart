@@ -102,7 +102,19 @@ class _StationsScreenState extends State<StationsScreen> {
             ),
           ),
           Expanded(
-            child: provider.busy
+            // 20261007 gjw NOTHING HERE WHILE STARTING UP. StartupOverlay is
+            // already drawing a spinner and a message over this, and its
+            // scrim is translucent, so a second indicator showed through it
+            // — lower on screen, because this one centres below the filter
+            // box. That was the double animation on launch.
+            //
+            // Blank rather than the empty state: "No stations yet" glowing
+            // through the scrim would be worse than the extra spinner, and
+            // is exactly what AppProvider.busy folds isStartingUp in to
+            // prevent.
+            child: provider.isStartingUp
+                ? const SizedBox.shrink()
+                : provider.busy
                 ? const Center(child: CircularProgressIndicator())
                 : visible.isEmpty
                 ? StationEmptyState(filtered: query.isNotEmpty)

@@ -288,6 +288,33 @@ void main() {
       expect(p.busy, isFalse);
     });
 
+    // 20261007 gjw The screens branch on isStartingUp FIRST and render
+    // nothing, because StartupOverlay is already drawing a spinner over
+    // them. That is only safe while every startup phase is also busy: if
+    // one were not, the screen would fall through to its empty state and
+    // "No stations yet" would glow through the overlay's translucent scrim.
+
+    test('every starting-up phase is also busy', () {
+      final p = _provider();
+
+      for (final phase in StartupPhase.values) {
+        p.setStartupPhase(phase);
+        if (p.isStartingUp) {
+          expect(p.busy, isTrue, reason: '$phase starts up but is not busy');
+        }
+      }
+    });
+
+    test('isStartingUp is false once ready, so screens draw again', () {
+      final p = _provider();
+
+      p.setStartupPhase(StartupPhase.ready);
+      expect(p.isStartingUp, isFalse);
+
+      p.setStartupPhase(StartupPhase.idle);
+      expect(p.isStartingUp, isFalse);
+    });
+
     test('setKeySaved notifies only on a real change', () {
       final p = _provider();
       var notifications = 0;

@@ -58,6 +58,14 @@ String startupPhaseMessage(StartupPhase phase) {
 /// Overlays a busy indicator over [child] while [phase] is unlocking/loading.
 ///
 /// When not starting up, [child] is shown unchanged.
+///
+/// 20261007 gjw THE CHILD MUST NOT DRAW ITS OWN BUSY INDICATOR while the
+/// phase is busy. The scrim below is deliberately translucent, at 0.85, so
+/// the app's chrome stays visible rather than popping in and out — which
+/// means whatever the child draws shows faintly THROUGH it. Both screens
+/// using this also had a `provider.busy` spinner inside, and on launch the
+/// two appeared together, the inner one sitting lower because it centres
+/// below the filter box. They now render nothing while isStartingUp.
 class StartupOverlay extends StatelessWidget {
   const StartupOverlay({super.key, required this.phase, required this.child});
 
