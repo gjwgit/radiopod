@@ -55,6 +55,25 @@ const playlistsFileName = 'playlists.ttl';
 const notificationChannelId = 'com.togaware.radiopod.channel.audio';
 const notificationChannelName = 'Radio playback';
 
+/// How long the sleep timer runs unless the listener picks otherwise.
+
+const sleepTimerDefault = Duration(minutes: 30);
+
+/// The choices offered when setting a sleep timer.
+///
+/// Short at the start for "I am nearly asleep already", and long enough at
+/// the end to cover an evening. [sleepTimerDefault] must be one of these, so
+/// the sheet can show it already selected.
+
+const sleepTimerChoices = <Duration>[
+  Duration(minutes: 15),
+  Duration(minutes: 30),
+  Duration(minutes: 45),
+  Duration(minutes: 60),
+  Duration(minutes: 90),
+  Duration(minutes: 120),
+];
+
 /// The Android applicationId, as set in android/app/build.gradle.kts.
 ///
 /// Needed in Dart to address StationIconProvider, whose authority the

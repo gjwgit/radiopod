@@ -34,6 +34,8 @@ import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/services/carplay_bridge.dart';
 import 'package:radiopod/services/local_store.dart';
 import 'package:radiopod/services/radio_audio_handler.dart';
+import 'package:radiopod/services/sleep_preference.dart';
+import 'package:radiopod/services/sleep_timer.dart';
 import 'package:radiopod/services/station_icon_cache.dart';
 import 'package:radiopod/utils/platform_io.dart'
     if (dart.library.js_interop) 'package:radiopod/utils/platform_web.dart';
@@ -49,6 +51,19 @@ class Player {
   Player._();
 
   static RadioAudioHandler? _handler;
+
+  static SleepTimer? _sleepTimer;
+
+  /// The sleep timer, which stops playback at a time the listener chose.
+  ///
+  /// Owned here rather than by a screen: the phone is put down and the
+  /// screen disposed long before it fires. Only valid after [init].
+
+  static SleepTimer get sleepTimer {
+    assert(_sleepTimer != null, 'Player.init() must be awaited in main().');
+
+    return _sleepTimer!;
+  }
 
   /// The audio handler. Only valid after [init] has completed.
 
@@ -115,6 +130,12 @@ class Player {
     // moment the list appears.
 
     CarPlayBridge.attach(_handler!);
+
+    // The timer stops playback and nothing else — see SleepTimer. Built here
+    // because the handler is what it acts on, and both outlive every screen.
+
+    _sleepTimer = SleepTimer(() => _handler!.stop());
+    _sleepTimer!.defaultDuration = await SleepPreference.load();
 
     final (stations, playlists) = await LocalStore.load();
 

@@ -35,7 +35,11 @@ then please show some ❤️ and tap on the star at
 This app is authored by [Graham
 Williams](https://togaware.com/Graham.Williams.html).
 
-## 1.3 Skip login is enabled by default
+## 1.4 Sleep timer
+
++ Sleep timer stops playback after a set time [1.4.0 20261006 gjw]
+
+## 1.3 Skip login is enabled by default and Android Auto is working
 
 + Fix the car dropping back to the list on Next [1.3.9 20261006 gjw]
 + Fix the car display stalling on a song change [1.3.8 20261006 gjw]

@@ -74,6 +74,10 @@ many more apps using the Solid ecosystem.
   infotainment system without touching the phone.
 + **Playback** with lock screen, notification and headset
   controls.
++ **Sleep timer**: tap the timer in the toolbar to keep playing for a
+  while and then stop. Half an hour by default, and you can choose
+  anything from fifteen minutes to two hours in Settings. Only
+  playback stops, so a station is one tap away again.
 + Runs on **Android, iOS, GNU/Linux, macOS, Windows and the web**.
 
 ## Privacy

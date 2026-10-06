@@ -69,7 +69,7 @@ class RadioBrowser {
   /// Identifies the app to Radio-Browser, as their terms of use require.
 
   static const _userAgent =
-      'RadioPod/1.3.9 (+https://github.com/gjwgit/radiopod)';
+      'RadioPod/1.4.0 (+https://github.com/gjwgit/radiopod)';
 
   /// Endpoint listing the currently available API mirrors.
 

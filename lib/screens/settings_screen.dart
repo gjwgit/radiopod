@@ -32,6 +32,7 @@ import 'package:provider/provider.dart';
 
 import 'package:radiopod/screens/settings_widgets/library_storage_section.dart';
 import 'package:radiopod/screens/settings_widgets/login_diagnostics_section.dart';
+import 'package:radiopod/screens/settings_widgets/sleep_timer_section.dart';
 import 'package:radiopod/services/app_provider.dart';
 
 /// Says plainly where RadioPod's data goes, and offers the levers the user
@@ -97,6 +98,9 @@ class SettingsScreen extends StatelessWidget {
             '${provider.stations.length} stations in '
             '${provider.playlists.length} playlists.',
           ),
+
+          // ── Sleep timer ─────────────────────────────────────────────
+          const SleepTimerSection(),
 
           // ── Login diagnostics ───────────────────────────────────────
           //

@@ -40,6 +40,8 @@ import 'package:radiopod/screens/stations_widgets/new_station_dialog.dart';
 import 'package:radiopod/screens/transfer_screen.dart';
 import 'package:radiopod/services/app_provider.dart'
     show AppProvider, StartupPhase;
+import 'package:radiopod/services/player.dart';
+import 'package:radiopod/utils/sleep_timer_text.dart';
 import 'package:radiopod/widgets/error_dialog.dart';
 import 'package:radiopod/widgets/pod_refresh_action.dart';
 
@@ -66,6 +68,14 @@ class _AppScaffoldState extends State<AppScaffold> {
   /// be undone when the now-playing bar was removed.
 
   int _tab = _stationsTab;
+
+  /// Whole minutes left on the sleep timer, or null when none is set.
+  ///
+  /// Mirrored into State so the app bar can show it. SleepTimer notifies
+  /// only when the MINUTE changes, so this rebuilds the scaffold once a
+  /// minute rather than once a second.
+
+  int? _sleepMinutes;
 
   /// Add a station by hand.
   ///
@@ -94,6 +104,35 @@ class _AppScaffoldState extends State<AppScaffold> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _initKeys());
+
+    _sleepMinutes = Player.sleepTimer.minutesLeft.value;
+    Player.sleepTimer.minutesLeft.addListener(_onSleepTick);
+  }
+
+  @override
+  void dispose() {
+    // The timer OUTLIVES this scaffold and keeps counting — that is the
+    // point of it. Only the listener goes.
+
+    Player.sleepTimer.minutesLeft.removeListener(_onSleepTick);
+    super.dispose();
+  }
+
+  void _toggleSleepTimer() {
+    final timer = Player.sleepTimer;
+    final started = timer.toggle();
+
+    showPositiveSnackBar(
+      context,
+      started
+          ? 'Playback will stop in ${sleepTimerLabel(timer.defaultDuration)}'
+          : 'Sleep timer turned off',
+    );
+  }
+
+  void _onSleepTick() {
+    if (!mounted) return;
+    setState(() => _sleepMinutes = Player.sleepTimer.minutesLeft.value);
   }
 
   Future<void> _initKeys() async {
@@ -284,6 +323,36 @@ class _AppScaffoldState extends State<AppScaffold> {
 
               ''',
               onPressed: _newStation,
+            ),
+            // 20261006 gjw A PLAIN ON/OFF SWITCH. How long it runs for is
+            // a Settings choice made once; deciding to sleep is nightly and
+            // costs one tap. The bar can only carry an icon, so the time
+            // remaining lives in the tooltip.
+            //
+            // A timer glyph, not a moon: bedtime_outlined read as the dark
+            // mode toggle sitting a few icons away.
+
+            SolidAppBarAction(
+              id: 'sleep-timer',
+              icon: _sleepMinutes == null ? Icons.timer_outlined : Icons.timer,
+              color: _sleepMinutes == null
+                  ? null
+                  : Theme.of(context).colorScheme.primary,
+              tooltip:
+                  '''
+
+              **Sleep timer**
+
+              Tap to keep playing for
+              ${sleepTimerLabel(Player.sleepTimer.defaultDuration)} and then
+              stop. Tap again to turn it off. Playback
+              ${sleepTimerSummary(Player.sleepTimer.remaining)}.
+
+              Change how long it runs in Settings. Only playback stops — the
+              app stays open, so a station is one tap away again.
+
+              ''',
+              onPressed: _toggleSleepTimer,
             ),
             buildPodRefreshAction(
               context: context,
