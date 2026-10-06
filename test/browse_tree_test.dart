@@ -171,7 +171,7 @@ void main() {
     // that file. These tests drive the cache through its test seam rather
     // than touching the filesystem.
 
-    test('a browse row keeps the station logo, not the chosen icon', () {
+    test('a chosen icon wins over the station logo, on every surface', () {
       StationIconCache.resetForTest();
       StationIconCache.debugSetPath('s1', '/tmp/station_icons/s1.png');
       addTearDown(StationIconCache.resetForTest);
@@ -182,16 +182,17 @@ void main() {
         url: 'https://live.example/a',
         favicon: 'https://logo.example/alpha.png',
       );
-      final item = stationMediaItem(station, browseAllStationsId);
 
-      // Android Auto fetches a browse row's icon in ITS process and cannot
-      // read our files, so the row must carry the fetchable logo. Preferring
-      // the chosen icon here left the car showing nothing at all.
+      // 20261006 gjw This asserted the OPPOSITE for a day, because a chosen
+      // icon was a file:// URI that Android Auto's own process could not
+      // read: preferring it on a browse row showed nothing at all, which was
+      // worse than the logo. StationIconProvider serves the icons as
+      // content://, so the row and the now playing item agree again.
 
-      expect(item.artUri.toString(), 'https://logo.example/alpha.png');
-
-      // The now playing item is loaded in our process, so it gets the icon.
-
+      expect(
+        stationMediaItem(station, browseAllStationsId).artUri,
+        sessionArtUri(station),
+      );
       expect(sessionArtUri(station)?.toFilePath(), '/tmp/station_icons/s1.png');
     });
 

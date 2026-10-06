@@ -152,29 +152,20 @@ MediaItem stationMediaItem(Station station, String parentId, {String? track}) =>
       title: station.name,
       artist: track ?? (station.subtitle.isEmpty ? null : station.subtitle),
       album: appName,
-      artUri: _artUri(station),
+      artUri: sessionArtUri(station),
       playable: true,
       isLive: true,
       extras: {'stationId': station.id, 'track': ?track},
     );
 
-/// The artwork for a station: the picture the user chose if there is one,
-/// otherwise the station's own logo.
+/// The station's OWN logo, as Radio-Browser gave it, or null.
 ///
-/// 20261005 gjw The user's choice WINS. They went out of their way to pick
-/// it, usually because the station's own logo was missing or wrong, so
-/// preferring the logo would undo the very thing they did.
+/// Only http and https pass. The value comes out of Pod data and could be
+/// anything; an odd scheme should not reach the media session, and a head
+/// unit would not fetch it anyway.
 ///
-/// [Station.icon] is base64 in the Pod data, not a URL, so there is nothing
-/// for a head unit to fetch — which is why these used to be invisible in the
-/// car while the UI showed them. StationIconCache writes it out and this
-/// returns a `file://` URI to it.
-///
-/// A file URI is fine here, contrary to what this function once assumed.
-/// audio_service turns it into an `artCacheFile` and loads the bitmap in
-/// THIS process, so the image travels inside the metadata and the car never
-/// opens our files. Still nothing else: an odd scheme out of Pod data should
-/// not reach the media session, and a head unit will not fetch it anyway.
+/// This is the FALLBACK. What a station actually shows is [sessionArtUri],
+/// which prefers a picture the user chose.
 
 Uri? _artUri(Station station) {
   final favicon = station.favicon;
@@ -185,34 +176,32 @@ Uri? _artUri(Station station) {
   return (uri.isScheme('http') || uri.isScheme('https')) ? uri : null;
 }
 
-/// Artwork for the NOW PLAYING item, where a chosen icon can be shown.
+/// Artwork for a station: the picture the user chose if there is one,
+/// otherwise the station's own logo.
 ///
-/// 20261005 gjw THE TWO LISTS ARE NOT THE SAME and cannot use the same URI.
+/// 20261005 gjw THE USER'S CHOICE WINS. They went out of their way to pick
+/// it, usually because the station's own logo was missing or wrong, so
+/// preferring the logo would undo the very thing they did.
 ///
-/// A browse row carries only a URI: audio_service builds a
-/// MediaDescriptionCompat with setIconUri (AudioServicePlugin.java:1174) and
-/// ANDROID AUTO'S OWN PROCESS fetches it. It cannot read our app-private
-/// files, so a file:// icon shows as nothing — which is why an https station
-/// logo appears in the car's list and a chosen icon does not.
+/// 20261006 gjw THIS IS NOW ONE RULE FOR EVERY SURFACE, which it could not
+/// be while a chosen icon was a file:// URI.
 ///
-/// The now playing item is different: audio_service loads the art IN THIS
-/// PROCESS and puts the bitmap into the metadata (AudioService.java:811), so
-/// a local file works there and the chosen icon displays.
+/// A browse row and the NARROW now-playing card beside the map carry only a
+/// URI: audio_service builds a MediaDescriptionCompat with setIconUri
+/// (AudioServicePlugin.java:1174) and ANDROID AUTO'S OWN PROCESS fetches it.
+/// It cannot read our app-private files, so a chosen icon was blank on both
+/// while an https station logo was not. Only the WIDE now-playing view
+/// worked, because that one draws the bitmap audio_service loads in our
+/// process (AudioService.java:811).
 ///
-/// Hence the split. Preferring the chosen icon everywhere made the car's
-/// list WORSE than before it existed: a station with both a chosen icon and
-/// a logo used to show the logo and then showed nothing at all.
-///
-/// Getting a chosen icon into the browse list needs a FileProvider and a
-/// content:// URI granted to the Auto host — and audio_service does not
-/// surface the client package name to Dart (its onGetRoot listener is
-/// commented out), so that needs native code.
+/// That is why this was split in two for a day: preferring the chosen icon
+/// everywhere made the car's list WORSE than before the feature existed, a
+/// station with both an icon and a logo going from showing the logo to
+/// showing nothing. StationIconProvider removes the reason for the split by
+/// serving the icons to Auto as content://, readable across processes —
+/// see StationIconCache.uriFor.
 
-Uri? sessionArtUri(Station station) {
-  final iconPath = StationIconCache.pathFor(station.id);
-  if (iconPath != null) return Uri.file(iconPath);
-
-  return _artUri(station);
-}
+Uri? sessionArtUri(Station station) =>
+    StationIconCache.uriFor(station.id) ?? _artUri(station);
 
 String _stationCount(int n) => '$n station${n == 1 ? '' : 's'}';

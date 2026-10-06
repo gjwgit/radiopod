@@ -107,6 +107,16 @@ bool get stopByPause => Platform.isLinux || Platform.isWindows;
 
 bool get showsMediaArt => !(Platform.isLinux || Platform.isWindows);
 
+/// Whether a chosen station icon is published as a `content://` URI rather
+/// than as `file://`.
+///
+/// 20261006 gjw Android only, because content:// is an Android scheme and
+/// StationIconProvider is what serves it. Everywhere else a file:// URI is
+/// read by the OS media layer in our own process and works as it stands —
+/// macOS and iOS both draw the chosen icon from one.
+
+bool get usesContentIcons => Platform.isAndroid;
+
 /// Force the C locale for numeric formatting on Linux.
 ///
 /// libmpv aborts the process with "Non-C locale detected" when LC_NUMERIC is

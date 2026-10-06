@@ -55,6 +55,13 @@ const playlistsFileName = 'playlists.ttl';
 const notificationChannelId = 'com.togaware.radiopod.channel.audio';
 const notificationChannelName = 'Radio playback';
 
+/// The Android applicationId, as set in android/app/build.gradle.kts.
+///
+/// Needed in Dart to address StationIconProvider, whose authority the
+/// manifest builds from `${applicationId}`. Change one and change the other.
+
+const androidApplicationId = 'com.togaware.radiopod';
+
 /// Root of the Android Auto browse tree, and the ids of its two branches.
 ///
 /// Android Auto asks the handler for the children of [browseRootId] and then

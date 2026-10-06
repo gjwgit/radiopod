@@ -52,6 +52,11 @@ bool get stopByPause => false;
 
 bool get showsMediaArt => false;
 
+/// The web has no content:// scheme, and no media session art at all — see
+/// showsMediaArt just above.
+
+bool get usesContentIcons => false;
+
 /// No-op on web: just_audio plays through the browser's own audio element,
 /// and the libmpv LC_NUMERIC workaround applies to native Linux only.
 ///

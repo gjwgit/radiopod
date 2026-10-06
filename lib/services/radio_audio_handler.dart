@@ -484,8 +484,13 @@ class RadioAudioHandler extends BaseAudioHandler {
     // A real stop also drops the connection, which is what a listener means
     // by Stop. Pausing keeps it open until the next play.
 
-    await _silence();
+    // _stopped is set BEFORE silencing, not after. _silence() makes the
+    // player go idle, the event listener reads _stopped to tell a real stop
+    // from a station switch, and setting it afterwards left that listener
+    // reporting a switch for the one case that genuinely is a stop.
+
     _stopped = true;
+    await _silence();
     playbackState.add(
       playbackState.value.copyWith(
         processingState: AudioProcessingState.idle,
@@ -734,12 +739,21 @@ class RadioAudioHandler extends BaseAudioHandler {
         ],
         systemActions: const {MediaAction.play, MediaAction.stop},
         androidCompactActionIndices: hasQueue ? const [0, 1, 2] : const [0],
-        processingState: _processingState[_player.processingState]!,
+        processingState: _reportedState,
         playing: playing,
         queueIndex: _queueIndex < 0 ? null : _queueIndex,
       ),
     );
   }
+
+  /// The player's state as the media session should hear it. The rule is
+  /// [reportedProcessingState] at the foot of this file, and it matters.
+
+  AudioProcessingState get _reportedState => reportedProcessingState(
+    _processingState[_player.processingState]!,
+    stopped: _stopped,
+    hasStation: _currentStation != null,
+  );
 
   static const _processingState = {
     ProcessingState.idle: AudioProcessingState.idle,
@@ -769,10 +783,54 @@ class RadioAudioHandler extends BaseAudioHandler {
 
 MediaItem _sessionItem(Station station, String parentId, {String? track}) {
   final item = stationMediaItem(station, parentId, track: track);
-  if (!showsMediaArt) return item.copyWith(artUri: null);
 
-  // The chosen icon only works HERE, where audio_service loads it for us.
-  // The browse rows keep the station's own logo — see sessionArtUri.
+  // 20261006 gjw Nothing more to do about WHICH image: stationMediaItem now
+  // picks a chosen icon over the station logo for every surface, so this is
+  // only the platform gate above.
 
-  return item.copyWith(artUri: sessionArtUri(station));
+  return showsMediaArt ? item : item.copyWith(artUri: null);
+}
+
+/// What the media session should be told, given the player's [state].
+///
+/// Pure, and public, so the rule below can be tested without a media
+/// session — the same reason [decideStreamEnd] lives apart from the handler.
+/// Getting it wrong costs nothing a desktop or a phone would show and breaks
+/// the car, which is the hardest place to notice anything.
+///
+/// IDLE IS NOT A STATE WE MAY PASS THROUGH. audio_service reads any
+/// transition into it as the session being finished:
+///
+///     if (oldProcessingState != idle && processingState == idle) {
+///         stop();                  // AudioService.java:565
+///     }
+///
+/// and that `stop()` is `deactivateMediaSession(); stopSelf();`
+/// (AudioService.java:355) — the whole media service goes down.
+///
+/// Changing station goes through idle on the way. playStation calls
+/// _silence(), which on everything but libmpv is a real `_player.stop()`,
+/// and just_audio reports idle until the next URL is open. So EVERY skip
+/// tore the service down and built it back up. On the phone that is a
+/// notification that blinks; in the car the now-playing screen loses its
+/// session and Android Auto drops the driver back to the station list —
+/// exactly the "momentarily shows the next station, then crashes back to
+/// the list" that pressing Next produced. It is also why logcat showed
+/// `No process com.togaware.radiopod ... for service AudioService` with no
+/// fatal exception anywhere: nothing crashed, the service was asked to stop.
+///
+/// So idle is reported only when playback really is finished — [stopped]
+/// after the user presses Stop, and no station at all before the first one
+/// plays. A switch reports `loading`, which is the truth and reaches the car
+/// as STATE_CONNECTING (AudioService.java:604).
+
+AudioProcessingState reportedProcessingState(
+  AudioProcessingState state, {
+  required bool stopped,
+  required bool hasStation,
+}) {
+  if (state != AudioProcessingState.idle) return state;
+  if (stopped || !hasStation) return state;
+
+  return AudioProcessingState.loading;
 }

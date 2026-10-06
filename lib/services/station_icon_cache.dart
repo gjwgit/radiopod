@@ -18,7 +18,10 @@ import 'package:flutter/foundation.dart';
 
 import 'package:path_provider/path_provider.dart';
 
+import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/models/station.dart';
+import 'package:radiopod/utils/platform_io.dart'
+    if (dart.library.js_interop) 'package:radiopod/utils/platform_web.dart';
 import 'package:radiopod/utils/station_icon.dart';
 
 /// 20261005 gjw Writes [Station.icon] out as a file so Android Auto and
@@ -68,6 +71,39 @@ class StationIconCache {
   /// user-chosen icon. Safe to call from synchronous code.
 
   static String? pathFor(String stationId) => _paths[stationId];
+
+  /// The URI to publish for [stationId]'s icon, or null when it has none.
+  ///
+  /// 20261006 gjw ANDROID GETS A content:// URI, and it matters which
+  /// surface is asking. The wide now-playing view draws the bitmap
+  /// audio_service loads in our own process, so a file:// URI has always
+  /// worked there. The browse list and the NARROW now-playing card beside
+  /// the map are rendered by Android Auto from the URI itself, and Auto
+  /// cannot read our app-private files — so those two showed a station's
+  /// own https logo and nothing at all for a picture the user chose.
+  ///
+  /// [StationIconProvider] serves this directory to the Auto host, so the
+  /// URI below is one Auto can actually open. Everywhere else the file URI
+  /// stands: the OS media layer reads it in our process and it displays.
+
+  static Uri? uriFor(String stationId) {
+    final path = _paths[stationId];
+    if (path == null) return null;
+    if (!usesContentIcons) return Uri.file(path);
+
+    // Matches android:authorities in AndroidManifest.xml and the
+    // <files-path name> in res/xml/station_icon_paths.xml. Station ids are
+    // uuids, so nothing here needs escaping, but pathSegments encodes
+    // anyway rather than relying on that.
+
+    return Uri(
+      scheme: 'content',
+      host: '$androidApplicationId.stationicons',
+      pathSegments: ['station_icons', _fileName(stationId)],
+    );
+  }
+
+  static String _fileName(String stationId) => '$stationId.png';
 
   /// Write out the icons for [stations], and forget any that have gone.
   ///

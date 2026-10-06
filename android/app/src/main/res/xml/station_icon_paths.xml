@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- The ONE directory StationIconProvider will serve.
+
+     files-path is getFilesDir(), which is where path_provider's
+     getApplicationSupportDirectory lands on Android
+     (path_provider_android_real.dart:28), and station_icons/ under it is
+     what StationIconCache writes to.
+
+     Deliberately narrow. Nothing else in the app's private storage is
+     reachable through this provider, and the station icons are pictures the
+     user picked for a station — no WebID, no security key, no Pod data. -->
+
+<paths>
+    <files-path name="station_icons" path="station_icons/" />
+</paths>
