@@ -34,8 +34,32 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   group('the starter stations themselves', () {
-    test('there are three', () {
-      expect(demoStations, hasLength(3));
+    test('there are five', () {
+      expect(demoStations, hasLength(5));
+    });
+
+    // 20261008 gjw THE ORDER IS THE ORDER SHOWN. There is no sort field and
+    // no alphabetical default (CLAUDE.md §5): the Stations screen lists these
+    // as written, the car's All Stations folder does too, and an export
+    // writes them this way. So the order is a decision, not an accident, and
+    // a reshuffle while editing the list would be silent without this.
+
+    test('they are in the intended order', () {
+      expect(demoStations.map((s) => s.name), [
+        'BBC World Service',
+        'ABC Lounge',
+        'Radio Paradise',
+        'MANGORADIO',
+        'Classic FM',
+      ]);
+    });
+
+    test('seeding preserves that order', () async {
+      final p = _provider();
+
+      await p.seedIfEmpty();
+
+      expect(p.stations.map((s) => s.name), demoStations.map((s) => s.name));
     });
 
     // 20261008 gjw These are written down rather than fetched, so nothing

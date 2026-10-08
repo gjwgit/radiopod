@@ -34,6 +34,17 @@ import 'package:radiopod/models/station.dart';
 ///     something to write into a constant;
 ///   - recognisable, since the whole job here is to show what the app does.
 ///
+/// They cover different ground on purpose — spoken news, eclectic music,
+/// chart pop, classical and lounge — so a first run shows the app doing more
+/// than one kind of thing, and whoever opens it finds at least one they might
+/// keep.
+///
+/// 20261008 gjw Classic FM and ABC Lounge were added after the first three,
+/// for something softer. ABC Lounge took some finding: its top-voted
+/// Radio-Browser entry now 404s and the entry that does still stream carries
+/// no logo, so the stream was taken from the low-voted record and the logo
+/// read off the station's own page.
+///
 /// Each stream and each favicon was fetched and checked before being listed.
 /// They will rot eventually, as station URLs do. That is survivable: these
 /// are a starting point the user is free to delete, not a fixed library.
@@ -54,6 +65,18 @@ const demoStations = <Station>[
     codec: 'MP3',
     bitrate: 96,
     tags: ['news', 'talk', 'world'],
+  ),
+  Station(
+    id: 'demo-abc-lounge',
+    name: 'ABC Lounge',
+    url: 'https://str1.openstream.co/589',
+    homepage: 'https://www.abc-lounge.com/',
+    favicon: 'https://www.abc-lounge.com/radio/wp-content/uploads/2019/11/cropped-Logo-DEF-600px-2019-192x192.png',
+    country: 'France',
+    language: 'french',
+    codec: 'MP3',
+    bitrate: 128,
+    tags: ['lounge', 'jazz', 'chillout'],
   ),
   Station(
     id: 'demo-radio-paradise',
@@ -79,5 +102,18 @@ const demoStations = <Station>[
     codec: 'MP3',
     bitrate: 128,
     tags: ['pop', 'charts'],
+  ),
+  Station(
+    id: 'demo-classic-fm',
+    name: 'Classic FM',
+    url: 'https://media-ice.musicradio.com/ClassicFMMP3',
+    homepage: 'https://www.classicfm.com/',
+    favicon:
+        'https://www.classicfm.com/assets_v4r/classic/img/favicon-196x196.png',
+    country: 'United Kingdom',
+    language: 'english',
+    codec: 'MP3',
+    bitrate: 128,
+    tags: ['classical', 'relaxing'],
   ),
 ];

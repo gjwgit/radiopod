@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.5 Starter stations
 
++ Starter stations now include lounge and classical [1.5.1 20261008 gjw]
 + An empty library starts with three popular stations [1.5.0 20261008 gjw]
 
 ## 1.4 Sleep timer
