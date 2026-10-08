@@ -10,8 +10,8 @@
 [![Github Last Updated](https://img.shields.io/github/last-commit/gjwgit/radiopod?label=last%20updated)](https://github.com/gjwgit/radiopod/commits/dev/)
 [![GitHub Issues](https://img.shields.io/github/issues/gjwgit/radiopod)](https://github.com/gjwgit/radiopod/issues)
 
-Privacy-first: your data encrypted to be securely and privately stored
-on your Solid Pod, not on our servers.
+Privacy-first: your data is encrypted for secure and private storage
+in your Pod on a Solid server of your choice. You choose, not us.
 
 [RadioPod](https://gjwgit.github.io/radiopod/) plays internet radio.
 It is a simple privacy-first alternative to apps like
@@ -21,7 +21,8 @@ community-run [Radio-Browser](https://www.radio-browser.info)
 database, group them into playlists, and listen — at your desk, on
 your phone, or in the car through Apple CarPlay or Android Auto.
 
-Your station library and your playlists are stored locally or else are
+Your station library and your playlists are stored locally by
+default. Once you are ready they can be
 encrypted and privately stored in your own personal online data store
 ([Pod](https://solidproject.org/about)) within a Data Vault hosted by
 a Solid Server of your choice.  Pod-stored data is available on any of
@@ -36,11 +37,12 @@ World Wide Web and is the latest innovation from the inventor of the
 WWW, Sir Tim Berners-Lee. Obtain a Pod for yourself on any Solid
 server and link it to your app. **You do not need a Solid Pod to use
 this app in local-only mode.** If you would like to register for a new
-Pod on a Solid server, choose a server and tap the Register button on
-starting up the app. You will be prompted for an email address
-(username) a password, and a pod name. On logging in to your Pod for
-the first time you will be asked for a security key to protect your
-data on the server.
+Pod on a Solid server, choose a server and tap the **Register** button
+on the **Login** screen (tap Logged Out in the footer or in the top
+left menu drawer). You will be prompted for an email address (username) a
+password, and a pod name. On logging in to your Pod for the first time
+you will be asked for a security key to protect your data on the
+server.
 
 The app is supported by [Togaware](https://togaware.com) and
 implemented by [Graham
@@ -78,6 +80,7 @@ many more apps using the Solid ecosystem.
   while and then stop. Half an hour by default, and you can choose
   anything from fifteen minutes to two hours in Settings. Only
   playback stops, so a station is one tap away again.
++ **Dark/Light** modes are supported.
 + Runs on **Android, iOS, GNU/Linux, macOS, Windows and the web**.
 
 ## Privacy
@@ -86,14 +89,13 @@ Visit our [privacy statement](https://gjwgit.github.io/radiopod/privacy.html).
 
 RadioPod is built to protect your privacy. The app maintains a list of
 radio stations you listen to and how they may be optionally organised
-into playlists of your choosing. In **local-only** mode (tap
-**Continue** on the login screen) all data remains on your
-device. When you **Login** to your Solid server hosting your Pod, your
-data is stored in your Pod and is accessible to your app running on
-any device through your security key. The security key is used to
-decrypt the data on your device so it is not accessible by anyone on
-the server. Your Solid server of choice may collect your login
-timestamp and other standard server logging of meta data.
+into playlists of your choosing. In **local-only** mode (default) all
+data remains on your device. When you **Login** to your Solid server
+hosting your Pod, your data is stored in your Pod and is accessible to
+your app running on any device through your security key. The security
+key is used to decrypt the data on your device so it is not accessible
+by anyone on the server. Your Solid server of choice may collect your
+login timestamp and other standard server logging of meta data.
 
 + Your stations and playlists are **encrypted before they leave your
   device** and written to your own Solid Pod. The server holding them,
@@ -122,11 +124,16 @@ leaves the device. **Settings** has a button to clear it.
 
 ## Installation
 
+You can install the released version of the app from different
+repositories including:
+
++ [SnapCraft](https://snapcraft.io/radiopod) for Linux.
+
 The latest version of the app can be run online at
 [radiopod.solidcommunity.au](https://radiopod.solidcommunity.au) with
 no installation required. Or else download and install for your
 platform from the [Solid Community AU](https://solidcommunity.au)
-repository or your platform store:
+repository:
 
 <!-- markdownlint-disable MD036 -->
 

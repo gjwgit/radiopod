@@ -33,8 +33,10 @@ import 'package:solidpod/solidpod.dart' show isUserLoggedIn;
 import 'package:uuid/uuid.dart';
 
 import 'package:radiopod/constants/app.dart';
+import 'package:radiopod/constants/demo_stations.dart';
 import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
+import 'package:radiopod/services/demo_seed.dart';
 import 'package:radiopod/services/local_store.dart';
 import 'package:radiopod/services/player.dart';
 import 'package:radiopod/services/pod_service.dart';
@@ -616,6 +618,13 @@ class AppProvider extends ChangeNotifier {
         _playlists = playlists;
       }
       await _pushToPlayer();
+
+      // INSIDE the try, so it runs only after a load that actually
+      // succeeded. A Pod that failed to answer also leaves _stations empty,
+      // and seeding there would drop three stations on top of a library
+      // that merely could not be reached.
+
+      if (!_testMode) await seedIfEmpty();
     } catch (e) {
       _error = _source == LibrarySource.pod
           ? 'Could not load your stations from the Pod.'
@@ -627,6 +636,46 @@ class AppProvider extends ChangeNotifier {
       _loading = false;
       notifyListeners();
     }
+  }
+
+  /// Put the starter stations into a library that has never had any.
+  ///
+  /// 20261008 gjw A first run opening on an empty list says nothing about
+  /// what the app is for. Three stations that play straight away do, and
+  /// they are the quickest way to see Playlists, the car and the sleep timer
+  /// doing something.
+  ///
+  /// Guarded on [DemoSeed], not merely on the list being empty: see there
+  /// for why deleting your last station must not bring them back.
+  ///
+  /// Goes through [_commit] like every other mutation (§5), so the stations
+  /// are written to wherever the library lives and reach the player — a car
+  /// browsing the tree sees them without a restart.
+
+  @visibleForTesting
+  Future<void> seedIfEmpty() async {
+    if (await DemoSeed.done) return;
+
+    // A library that HAS stations retires the offer for good. Otherwise
+    // someone who has had their own stations all along, and one day deletes
+    // the last of them, would be handed three of ours on the next start-up
+    // — exactly the resurrection DemoSeed exists to prevent. They have seen
+    // what the app does; they do not need the demonstration.
+
+    if (_stations.isNotEmpty) {
+      await DemoSeed.markDone();
+
+      return;
+    }
+
+    // Mark BEFORE adding. _commit can fail to reach a Pod, and a failure
+    // that left the flag unset would seed again on every start-up until a
+    // write happened to succeed.
+
+    await DemoSeed.markDone();
+
+    _stations = [...demoStations];
+    await _commit();
   }
 
   /// Reload and report whether anything actually changed, so the refresh

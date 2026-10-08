@@ -35,6 +35,10 @@ then please show some ❤️ and tap on the star at
 This app is authored by [Graham
 Williams](https://togaware.com/Graham.Williams.html).
 
+## 1.5 Starter stations
+
++ An empty library starts with three popular stations [1.5.0 20261008 gjw]
+
 ## 1.4 Sleep timer
 
 + Update solidui 1.4.5 no login flash when skipped [1.4.2 20261007 gjw]
