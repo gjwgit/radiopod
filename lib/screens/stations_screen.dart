@@ -29,6 +29,9 @@ import 'package:flutter/material.dart';
 
 import 'package:markdown_tooltip/markdown_tooltip.dart';
 import 'package:provider/provider.dart';
+// Only the breakpoint. A bare solidui import would collide with this file's
+// own showPositiveSnackBar.
+import 'package:solidui/solidui.dart' show NavigationConstants;
 
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/stations_widgets/add_to_playlist_sheet.dart';
@@ -165,7 +168,7 @@ class _StationsScreenState extends State<StationsScreen> {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _menu(provider, station),
+                _actions(provider, station),
                 if (reorderable) _dragHandle(i),
               ],
             ),
@@ -210,6 +213,86 @@ class _StationsScreenState extends State<StationsScreen> {
     child: const Padding(
       padding: EdgeInsets.symmetric(horizontal: 8),
       child: Icon(Icons.drag_handle),
+    ),
+  );
+
+  /// The row's actions: three buttons where there is room, else one menu.
+  ///
+  /// 20261008 gjw Measured against the SCREEN rather than the row, and
+  /// against solidui's own narrow/wide threshold, so the row changes at the
+  /// same width as the navigation does. Two breakpoints a hundred pixels
+  /// apart would read as a glitch while a window is dragged.
+  ///
+  /// The actions themselves are identical either way, and so are their
+  /// tooltips — only the number of taps to reach them differs.
+
+  Widget _actions(AppProvider provider, Station station) =>
+      rowShowsButtons(MediaQuery.sizeOf(context).width)
+      ? _buttons(provider, station)
+      : _menu(provider, station);
+
+  /// The same three actions, each on its own button.
+
+  Widget _buttons(AppProvider provider, Station station) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      _button(
+        icon: Icons.tune,
+        tooltip: '''
+
+        **Properties**
+
+        Rename this station, give it an icon, and say what should happen
+        when its stream ends.
+
+        ''',
+        onPressed: () => _editProperties(provider, station),
+      ),
+      _button(
+        icon: Icons.playlist_add,
+        tooltip: '''
+
+        **Add to playlist**
+
+        Put this station into one or more of your playlists. A station lives
+        once and is referenced from each playlist, so renaming it later
+        updates them all.
+
+        ''',
+        onPressed: () => _choosePlaylists(station),
+      ),
+      _button(
+        icon: Icons.delete_outline,
+        tooltip: '''
+
+        **Delete station**
+
+        Remove this station from your library and from every playlist it
+        appears in. You will be asked to confirm.
+
+        ''',
+        onPressed: () => _confirmDelete(provider, station),
+      ),
+    ],
+  );
+
+  /// One action button, sized so three of them fit where the menu was.
+  ///
+  /// visualDensity is tightened because the default IconButton is 48 wide:
+  /// three at that size push a long station name into an ellipsis on the
+  /// very screens that were supposed to have more room.
+
+  Widget _button({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+  }) => MarkdownTooltip(
+    message: tooltip,
+    child: IconButton(
+      icon: Icon(icon),
+      onPressed: onPressed,
+      visualDensity: VisualDensity.compact,
+      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
     ),
   );
 
@@ -313,3 +396,18 @@ class _StationsScreenState extends State<StationsScreen> {
     showPositiveSnackBar(context, 'Deleted ${station.name}.');
   }
 }
+
+/// Whether a station row has room to show its actions as separate buttons.
+///
+/// 20261008 gjw Pure, and tested, because the alternative is not testable at
+/// all: pumping StationsScreen needs a live Player, so a widget test cannot
+/// reach this decision.
+///
+/// The threshold is solidui's own narrow/wide one rather than a number
+/// chosen here, so the row's actions change at the same width as the
+/// navigation does. Two breakpoints a hundred pixels apart would read as a
+/// glitch while a window is being dragged, and this way the app has one
+/// answer to "is this a narrow screen".
+
+bool rowShowsButtons(double screenWidth) =>
+    screenWidth >= NavigationConstants.narrowScreenThreshold;
