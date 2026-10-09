@@ -79,7 +79,6 @@ class App extends StatelessWidget {
       // already-cached station must work in the car without a login prompt,
       // and the library only needs the Pod when it is read or written.
       home: SolidLogin(
-        required: false,
         skipLogin: true,
         appDirectory: appDirectory,
         title: appTitle.replaceAll(' - ', '\n'),
