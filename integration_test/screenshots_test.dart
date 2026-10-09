@@ -178,21 +178,42 @@ void main() {
     app.main();
     await _settle(tester);
 
-    // Tapping Continue is a supported way to run RadioPod, and it is the
-    // only way through the login screen without a Pod on a CI runner.
+    // 20261010 gjw THE LOGIN PAGE IS USUALLY NOT THERE ANY MORE, and this
+    // step used to insist on it.
+    //
+    // RadioPod sets `skipLogin: true`, and from solidui 1.4.5 that is
+    // honoured properly: the login page is never built, so the run lands
+    // straight in the app. Until then it was drawn for a few frames before
+    // being replaced — a bug, but one this test depended on. Fixing the
+    // flash broke the walk with
+    //
+    //     Found 0 widgets with text "Continue"
+    //
+    // Both paths have to work. Skipping is a device preference the user can
+    // turn off from the settings dialogue, and a runner where it is off must
+    // still reach the app, so Continue is tapped WHEN IT IS THERE rather
+    // than required.
 
     final continueButton = find.text('Continue');
 
+    if (continueButton.evaluate().isNotEmpty) {
+      await tester.tap(continueButton.first);
+      await _settle(tester);
+    }
+
+    // Either way the app itself must now be on screen. Checking for the
+    // Stations filter box rather than for the absence of the login page:
+    // this fails loudly if the walk is stuck anywhere at all, which is what
+    // the old expect was really guarding.
+
     expect(
-      continueButton,
+      find.text('Filter your stations'),
       findsWidgets,
       reason:
-          'No Continue button on the login screen — has solidui renamed '
-          'it? Without this the run cannot reach the app at all.',
+          'The app did not open. Either the login page was shown and its '
+          'Continue button has been renamed, or start-up stopped before the '
+          'Stations screen.',
     );
-
-    await tester.tap(continueButton.first);
-    await _settle(tester);
 
     // 20261001 gjw Android captures differently from iOS and has to be told
     // first. takeScreenshot() there reads back a surface that is not
