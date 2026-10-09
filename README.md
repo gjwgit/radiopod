@@ -38,11 +38,11 @@ WWW, Sir Tim Berners-Lee. Obtain a Pod for yourself on any Solid
 server and link it to your app. **You do not need a Solid Pod to use
 this app in local-only mode.** If you would like to register for a new
 Pod on a Solid server, choose a server and tap the **Register** button
-on the **Login** screen (tap Logged Out in the footer or in the top
-left menu drawer). You will be prompted for an email address (username) a
-password, and a pod name. On logging in to your Pod for the first time
-you will be asked for a security key to protect your data on the
-server.
+on the **Login** screen (tap Not Logged In in the footer or in the top
+left menu drawer). You will be prompted for an email address
+(username), a password, and a pod name. On logging in to your Pod for
+the first time you will be asked for a security key to protect your
+data on the server.
 
 The app is supported by [Togaware](https://togaware.com) and
 implemented by [Graham
