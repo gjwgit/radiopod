@@ -33,6 +33,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/utils/station_icon.dart';
 
+import 'support/debug_print_capture.dart';
+
 /// A real 4x4 PNG, produced by an image library rather than written out by
 /// hand — a hand-assembled one had a bad CRC and the codec rejected it,
 /// which looked exactly like the encoder being broken.
@@ -80,11 +82,23 @@ void main() {
     test('returns null for bytes that are not an image', () async {
       final junk = Uint8List.fromList(utf8.encode('<html>404</html>'));
 
-      expect(await encodeStationIcon(junk), isNull);
+      String? encoded = '';
+      final log = await captureDebugPrint(() async {
+        encoded = await encodeStationIcon(junk);
+      });
+
+      expect(encoded, isNull);
+      expect(log.single, startsWith('[StationIcon] not a usable image'));
     });
 
     test('returns null for empty bytes', () async {
-      expect(await encodeStationIcon(Uint8List(0)), isNull);
+      String? encoded = '';
+      final log = await captureDebugPrint(() async {
+        encoded = await encodeStationIcon(Uint8List(0));
+      });
+
+      expect(encoded, isNull);
+      expect(log.single, startsWith('[StationIcon] not a usable image'));
     });
   });
 
@@ -121,12 +135,18 @@ void main() {
       expect(decodeStationIcon(''), isNull);
     });
 
-    test('unreadable stored data is discarded, not thrown', () {
+    test('unreadable stored data is discarded, not thrown', () async {
       // The value comes from the Pod and may have been written by an older
       // version or edited by hand. A bad icon must not stop the station
       // appearing in the list.
 
-      expect(decodeStationIcon('not base64 at all !!'), isNull);
+      Uint8List? decoded = Uint8List(0);
+      final log = await captureDebugPrint(() {
+        decoded = decodeStationIcon('not base64 at all !!');
+      });
+
+      expect(decoded, isNull);
+      expect(log.single, startsWith('[StationIcon] discarding unreadable'));
     });
   });
 

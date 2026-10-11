@@ -33,6 +33,8 @@ import 'package:radiopod/models/station.dart';
 import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/services/local_store.dart';
 
+import 'support/debug_print_capture.dart';
+
 const _a = Station(id: 's1', name: 'Zulu FM', url: 'https://live.example/z');
 const _b = Station(id: 's2', name: 'Alpha FM', url: 'https://live.example/a');
 
@@ -78,10 +80,15 @@ void main() {
         'cached_playlists': '[]',
       });
 
-      final (stations, playlists) = await LocalStore.load();
+      late final List<Station> stations;
+      late final List<Playlist> playlists;
+      final log = await captureDebugPrint(() async {
+        (stations, playlists) = await LocalStore.load();
+      });
 
       expect(stations, isEmpty);
       expect(playlists, isEmpty);
+      expect(log.single, startsWith('[LocalStore] discarding unreadable'));
     });
 
     test('reads a library written under the pre-rename keys', () async {

@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.5 Starter stations
 
++ Bump solidui 1.5.4 solidpod 1.1.1 [1.5.4 20261011 gjw]
 + Update to solidui 1.5.3 Login and Register share a row [1.5.3 20261009 gjw]
 + Station actions become buttons on a wide screen [1.5.2 20261008 gjw]
 + Starter stations now include lounge and classical [1.5.1 20261008 gjw]
