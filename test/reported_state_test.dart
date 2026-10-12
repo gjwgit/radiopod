@@ -71,10 +71,22 @@ void main() {
         expect(_reported(state), state);
       });
 
+      if (state == AudioProcessingState.ready) continue;
+
       test('${state.name} is untouched after a stop', () {
         expect(_reported(state, stopped: true), state);
       });
     }
+  });
+
+  // On libmpv Stop pauses, leaving the player ready. Reported as such it
+  // read as Paused, and the Stop button never turned into Play.
+
+  test('a stop that paused reports idle, not ready', () {
+    expect(
+      _reported(AudioProcessingState.ready, stopped: true),
+      AudioProcessingState.idle,
+    );
   });
 
   // A stream that ENDS reports completed, not idle. That must keep reaching

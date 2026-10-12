@@ -42,6 +42,7 @@ import 'package:radiopod/services/player.dart';
 import 'package:radiopod/widgets/app_snack_bar.dart';
 import 'package:radiopod/widgets/error_dialog.dart';
 import 'package:radiopod/widgets/now_playing.dart';
+import 'package:radiopod/widgets/now_playing_stop_button.dart';
 import 'package:radiopod/widgets/startup_overlay.dart';
 import 'package:radiopod/widgets/station_tile.dart';
 
@@ -87,21 +88,29 @@ class _StationsScreenState extends State<StationsScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: TextField(
-              controller: _filter,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.filter_list),
-                hintText: 'Filter your stations',
-                border: const OutlineInputBorder(),
-                isDense: true,
-                suffixIcon: _filter.text.isEmpty
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () => setState(_filter.clear),
-                      ),
-              ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _filter,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.filter_list),
+                      hintText: 'Filter your stations',
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                      suffixIcon: _filter.text.isEmpty
+                          ? null
+                          : IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () => setState(_filter.clear),
+                            ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                NowPlayingStopButton(stations: provider.stations),
+              ],
             ),
           ),
           Expanded(

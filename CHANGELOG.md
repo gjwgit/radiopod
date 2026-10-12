@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.5 Starter stations
 
++ Stop and Play button beside Filter and Search [1.5.6 20261013 gjw]
 + Optionally start the sleep timer on playing [1.5.5 20261013 gjw]
 + Bump solidui 1.5.4 solidpod 1.1.1 [1.5.4 20261011 gjw]
 + Update to solidui 1.5.3 Login and Register share a row [1.5.3 20261009 gjw]

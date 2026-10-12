@@ -40,6 +40,7 @@ import 'package:radiopod/services/view_prefs.dart';
 import 'package:radiopod/widgets/app_snack_bar.dart';
 import 'package:radiopod/widgets/error_dialog.dart';
 import 'package:radiopod/widgets/now_playing.dart';
+import 'package:radiopod/widgets/now_playing_stop_button.dart';
 import 'package:radiopod/widgets/station_tile.dart';
 
 /// Search Radio-Browser by station name or by genre.
@@ -94,32 +95,46 @@ class _SearchScreenState extends State<SearchScreen> {
                 onSelectionChanged: _setField,
               ),
               const Gap(12),
-              TextField(
-                controller: _query,
-                textInputAction: TextInputAction.search,
-                onSubmitted: (_) => _search(),
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.search),
-                  hintText: _field == SearchField.name
-                      ? 'Station name, e.g. ABC Classic'
-                      : 'Genre, e.g. jazz',
-                  border: const OutlineInputBorder(),
-                  isDense: true,
-                  suffixIcon: MarkdownTooltip(
-                    message: '''
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _query,
+                      textInputAction: TextInputAction.search,
+                      onSubmitted: (_) => _search(),
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.search),
+                        hintText: _field == SearchField.name
+                            ? 'Station name, e.g. ABC Classic'
+                            : 'Genre, e.g. jazz',
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                        suffixIcon: MarkdownTooltip(
+                          message: '''
 
-                    **Search**
+                          **Search**
 
-                    Ask the community-run Radio-Browser database for matching
-                    stations. Only your search text and the app name are sent.
+                          Ask the community-run Radio-Browser database for
+                          matching stations. Only your search text and the
+                          app name are sent.
 
-                    ''',
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_forward),
-                      onPressed: _searching ? null : _search,
+                          ''',
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_forward),
+                            onPressed: _searching ? null : _search,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  const Gap(8),
+                  NowPlayingStopButton(
+                    stations: [
+                      ..._results,
+                      ...context.watch<AppProvider>().stations,
+                    ],
+                  ),
+                ],
               ),
             ],
           ),

@@ -840,12 +840,22 @@ MediaItem _sessionItem(Station station, String parentId, {String? track}) {
 /// after the user presses Stop, and no station at all before the first one
 /// plays. A switch reports `loading`, which is the truth and reaches the car
 /// as STATE_CONNECTING (AudioService.java:604).
+///
+/// 20261013 gjw The other way round too: a STOP that is really a pause
+/// (libmpv, see stopByPause) leaves the player `ready`, which read as
+/// Paused, so the Stop button stayed Stop rather than offering Play. It
+/// also raced the idle that stop() pushes, so a second tap sometimes
+/// showed Play and sometimes did not. After a stop, ready is reported as
+/// idle. Elsewhere a stop is real and the player is idle anyway.
 
 AudioProcessingState reportedProcessingState(
   AudioProcessingState state, {
   required bool stopped,
   required bool hasStation,
 }) {
+  if (stopped && state == AudioProcessingState.ready) {
+    return AudioProcessingState.idle;
+  }
   if (state != AudioProcessingState.idle) return state;
   if (stopped || !hasStation) return state;
 
