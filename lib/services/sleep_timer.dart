@@ -66,6 +66,23 @@ class SleepTimer {
 
   Duration defaultDuration = sleepTimerDefault;
 
+  /// Whether starting playback from silence switches the timer on, as
+  /// chosen in Settings. Loaded and saved like [defaultDuration].
+
+  bool startOnPlay = false;
+
+  /// Playback has just begun with nothing else playing.
+  ///
+  /// 20261013 gjw For listening that is always about falling asleep, the
+  /// timer then needs no tap at all. Switching stations is NOT a start from
+  /// silence, so a timer the listener turned off stays off while they hunt
+  /// for something to hear. A timer already running is left alone rather
+  /// than restarted, so a pause and resume does not add time.
+
+  void onPlaybackStarted() {
+    if (startOnPlay && !isRunning) start(defaultDuration);
+  }
+
   /// Turn the timer on for [defaultDuration], or off if it is already on.
   ///
   /// 20261006 gjw The app bar icon is a plain ON/OFF switch — one tap, no

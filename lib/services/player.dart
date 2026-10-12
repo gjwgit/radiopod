@@ -136,6 +136,12 @@ class Player {
 
     _sleepTimer = SleepTimer(() => _handler!.stop());
     _sleepTimer!.defaultDuration = await SleepPreference.load();
+    _sleepTimer!.startOnPlay = await SleepPreference.loadStartOnPlay();
+
+    // 20261013 gjw Hooked in the HANDLER rather than the station list, so a
+    // start from the car, the lock screen or the notification counts too.
+
+    _handler!.onPlayFromSilence = _sleepTimer!.onPlaybackStarted;
 
     final (stations, playlists) = await LocalStore.load();
 

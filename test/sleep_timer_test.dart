@@ -52,6 +52,14 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getInt('sleep_timer_minutes'), 45);
     });
+
+    test('starting on play is off until Settings turns it on', () async {
+      SharedPreferences.setMockInitialValues({});
+      expect(await SleepPreference.loadStartOnPlay(), isFalse);
+
+      await SleepPreference.saveStartOnPlay(true);
+      expect(await SleepPreference.loadStartOnPlay(), isTrue);
+    });
   });
 
   group('SleepTimer', () {
@@ -201,6 +209,39 @@ void main() {
         timer.toggle();
 
         expect(timer.minutesLeft.value, 30);
+      });
+    });
+
+    test('playback starting does nothing unless Settings asks', () {
+      withFakeClock((async, timer, fired) {
+        timer.onPlaybackStarted();
+
+        expect(timer.isRunning, isFalse);
+      });
+    });
+
+    test('playback starting turns the timer on when asked', () {
+      withFakeClock((async, timer, fired) {
+        timer
+          ..startOnPlay = true
+          ..defaultDuration = const Duration(minutes: 45)
+          ..onPlaybackStarted();
+
+        expect(timer.minutesLeft.value, 45);
+      });
+    });
+
+    // A resume after Pause must not hand back time already spent.
+
+    test('playback starting leaves a running timer alone', () {
+      withFakeClock((async, timer, fired) {
+        timer
+          ..startOnPlay = true
+          ..onPlaybackStarted();
+        async.elapse(const Duration(minutes: 10));
+        timer.onPlaybackStarted();
+
+        expect(timer.minutesLeft.value, 20);
       });
     });
 

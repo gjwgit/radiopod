@@ -80,4 +80,32 @@ class SleepPreference {
       debugPrint('[SleepPreference] could not write: $e');
     }
   }
+
+  static const _startOnPlayKey = 'sleep_timer_start_on_play';
+
+  /// Whether playing a station from silence turns the timer on. Off unless
+  /// the listener asked for it in Settings.
+
+  static Future<bool> loadStartOnPlay() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      return prefs.getBool(_startOnPlayKey) ?? false;
+    } on Object catch (e) {
+      debugPrint('[SleepPreference] could not read: $e');
+
+      return false;
+    }
+  }
+
+  /// Remember whether playing a station turns the timer on.
+
+  static Future<void> saveStartOnPlay(bool value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_startOnPlayKey, value);
+    } on Object catch (e) {
+      debugPrint('[SleepPreference] could not write: $e');
+    }
+  }
 }

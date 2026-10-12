@@ -68,6 +68,14 @@ class _SleepTimerSectionState extends State<SleepTimerSection> {
     await SleepPreference.save(duration);
   }
 
+  bool _startOnPlay = Player.sleepTimer.startOnPlay;
+
+  Future<void> _setStartOnPlay(bool value) async {
+    setState(() => _startOnPlay = value);
+    Player.sleepTimer.startOnPlay = value;
+    await SleepPreference.saveStartOnPlay(value);
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -103,6 +111,16 @@ class _SleepTimerSectionState extends State<SleepTimerSection> {
               ],
             ),
           ],
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          value: _startOnPlay,
+          onChanged: _setStartOnPlay,
+          title: const Text('Start the timer when playback starts'),
+          subtitle: const Text(
+            'Turn the sleep timer on whenever a station starts playing and '
+            'nothing else was. Switching stations leaves the timer as it is.',
+          ),
         ),
       ],
     );

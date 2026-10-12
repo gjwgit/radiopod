@@ -109,6 +109,12 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   static const _openTimeout = Duration(seconds: 30);
 
+  /// Called when playback begins while nothing was playing — a first start,
+  /// or a resume after Stop or Pause, but not a switch between stations or
+  /// an automatic reconnect. Player.init points it at the sleep timer.
+
+  void Function()? onPlayFromSilence;
+
   Station? _currentStation;
   String? _currentTrack;
 
@@ -351,6 +357,11 @@ class RadioAudioHandler extends BaseAudioHandler {
     List<Station>? queue,
     String parentId = browseAllStationsId,
   }) async {
+    // Read BEFORE _silence() below, which leaves the player not playing
+    // even when this is a switch from one station to another.
+
+    final fromSilence = !_player.playing;
+
     _queueStations = (queue == null || queue.isEmpty) ? [station] : queue;
     _queueParentId = parentId;
     _queueIndex = _queueStations.indexWhere((s) => s.id == station.id);
@@ -397,6 +408,11 @@ class RadioAudioHandler extends BaseAudioHandler {
       // show the error and be tapped again.
 
       await _player.setUrl(station.url).timeout(_openTimeout);
+
+      // 20261013 gjw BEFORE play(), not after: just_audio's play() future
+      // completes only when playback later pauses or stops.
+
+      if (fromSilence) onPlayFromSilence?.call();
       await _player.play();
     } catch (e) {
       debugPrint('[RadioAudioHandler] cannot play ${station.url}: $e');
@@ -438,6 +454,7 @@ class RadioAudioHandler extends BaseAudioHandler {
       return;
     }
 
+    if (!_player.playing) onPlayFromSilence?.call();
     await _player.play();
   }
 
