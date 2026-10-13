@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.5 Starter stations
 
++ Fill in hand-added station details from Radio-Browser [1.5.10 20261014 gjw]
 + Explain a station that refuses your country [1.5.9 20261014 gjw]
 + Sleep timer fades out over its last 30 seconds [1.5.8 20261013 gjw]
 + Keep the security key after a Session Expired login [1.5.7 20261013 gjw]

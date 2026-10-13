@@ -123,6 +123,10 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   Stream<GeoBlock> get geoBlocks => _geoBlocks.stream;
 
+  /// Stations whose headers have been checked this session.
+
+  final _geoChecked = <String>{};
+
   Station? _currentStation;
   String? _currentTrack;
 
@@ -284,6 +288,12 @@ class RadioAudioHandler extends BaseAudioHandler {
   /// looks exactly like a broken one.
 
   Future<void> _reportGeoBlock(Station station) async {
+    // 20261014 gjw Once per station a session. A server's country rule does
+    // not change between breaks, and a station like ABC National Radio that
+    // breaks often should not open a second connection at every one.
+
+    if (!_geoChecked.add(station.id)) return;
+
     final country = await probeGeoBlock(station.url);
     if (country == null) return;
 

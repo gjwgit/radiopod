@@ -35,6 +35,7 @@ import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/stations_widgets/station_details.dart';
 import 'package:radiopod/screens/stations_widgets/station_icon_field.dart';
 import 'package:radiopod/services/radio_browser.dart';
+import 'package:radiopod/services/station_lookup.dart';
 import 'package:radiopod/utils/station_icon.dart';
 
 /// What a freshly fetched record becomes once the listener's own choices
@@ -221,19 +222,14 @@ class _DialogState extends State<_StationPropertiesDialog> {
 
   /// The control for bringing the details up to date.
   ///
-  /// Offered only for a station that came from Search, since the lookup is by
-  /// the Radio-Browser id and one imported from a playlist file has none. A
-  /// button that could only ever fail is worse than no button, so it is
-  /// disabled and the reason given.
+  /// 20261014 gjw Offered for EVERY station. One from Search is looked up by
+  /// its Radio-Browser id; one added by hand or imported from a playlist file
+  /// has none, so it is looked up by its address instead, which often finds
+  /// it. It used to be disabled for those, which left a hand-added station
+  /// with a bare subtitle for good.
 
   Widget _refreshControl(ColorScheme cs) {
-    final known = widget.station.stationUuid != null;
-    final note =
-        _refreshMessage ??
-        (known
-            ? null
-            : 'This station was not found through Search, so Radio-Browser '
-                  'has no record to update it from.');
+    final note = _refreshMessage;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,7 +243,7 @@ class _DialogState extends State<_StationPropertiesDialog> {
                 )
               : const Icon(Icons.sync, size: 18),
           label: const Text('Update from Radio-Browser'),
-          onPressed: known && !_refreshing ? _refresh : null,
+          onPressed: _refreshing ? null : _refresh,
         ),
         if (note != null) ...[
           const Gap(6),
@@ -277,10 +273,14 @@ class _DialogState extends State<_StationPropertiesDialog> {
   /// The name goes into the text field rather than being applied silently,
   /// so a station renamed to something personal is not quietly reverted
   /// without the user seeing it happen.
+  ///
+  /// A station with no Radio-Browser id is found by its address instead,
+  /// and then keeps its address and name: the address is how it was found,
+  /// and the name was typed by the listener.
 
   Future<void> _refresh() async {
     final uuid = widget.station.stationUuid;
-    if (uuid == null) return;
+    if (uuid == null) return _refreshByUrl();
 
     setState(() {
       _refreshing = true;
@@ -316,6 +316,32 @@ class _DialogState extends State<_StationPropertiesDialog> {
       setState(() {
         _refreshMessage = 'Could not reach Radio-Browser. $e';
       });
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
+  }
+
+  Future<void> _refreshByUrl() async {
+    setState(() {
+      _refreshing = true;
+      _refreshMessage = null;
+    });
+    try {
+      final found = await RadioBrowser.byUrl(widget.station.url);
+      if (!mounted) return;
+
+      setState(() {
+        if (found == null) {
+          _refreshMessage = 'Radio-Browser has no station at this address.';
+
+          return;
+        }
+        _station = withRadioBrowserDetails(widget.station, found);
+        _refreshMessage = 'Updated from Radio-Browser. Save to keep it.';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _refreshMessage = 'Could not reach Radio-Browser. $e');
     } finally {
       if (mounted) setState(() => _refreshing = false);
     }

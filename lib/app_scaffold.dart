@@ -25,6 +25,8 @@
 
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
@@ -41,6 +43,7 @@ import 'package:radiopod/screens/transfer_screen.dart';
 import 'package:radiopod/services/app_provider.dart'
     show AppProvider, StartupPhase;
 import 'package:radiopod/services/player.dart';
+import 'package:radiopod/services/station_lookup.dart';
 import 'package:radiopod/utils/sleep_timer_text.dart';
 import 'package:radiopod/widgets/error_dialog.dart';
 import 'package:radiopod/widgets/pod_refresh_action.dart';
@@ -93,6 +96,7 @@ class _AppScaffoldState extends State<AppScaffold> {
     if (station == null || !mounted) return;
 
     await provider.addStation(station);
+    unawaited(fillFromRadioBrowser(provider, station.id));
     if (!mounted) return;
     showPositiveSnackBar(
       context,

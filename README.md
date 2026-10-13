@@ -101,10 +101,12 @@ login timestamp and other standard server logging of meta data.
   device** and written to your own Solid Pod. The server holding them,
   and its administrators, cannot read your stations and playlists.
 + The **only third party contacted is Radio-Browser** and only when
-  you use the **Search** functionality. It is sent your search text
-  and the app name and versions (e.g., RadioPod 1.1.21). It is not
-  sent your WebID, your Pod address, nor your library. The relevant
-  code can be found in `lib/services/radio_browser.dart`.
+  you use the **Search** functionality, add a station by hand, or
+  refresh a station's details. It is sent your search text, the
+  stream address you typed, or the station's Radio-Browser id, and
+  the app name and versions (e.g., RadioPod 1.1.21). It is not sent
+  your WebID, your Pod address, nor your library. The relevant code
+  can be found in `lib/services/radio_browser.dart`.
 + Radio-Browser offers a click-reporting endpoint that apps call to
   feed its popularity ranking. **RadioPod does not call it.** Nothing
   about what you listen to leaves the device.

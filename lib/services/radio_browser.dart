@@ -56,9 +56,10 @@ enum SearchField {
 /// Read-only client for the Radio-Browser API.
 ///
 /// PRIVACY. This is the one service in RadioPod that talks to a third party,
-/// and it is only reached when the user actively searches. Exactly two things
-/// leave the device: the search text and the User-Agent naming the app, which
-/// the Radio-Browser terms of use require. No WebID, no Pod address, no
+/// and it is only reached when the user actively searches, adds a station by
+/// hand, or refreshes one. Exactly two things leave the device: the search
+/// text (or the typed address, or the station's Radio-Browser id) and the
+/// User-Agent naming the app, which the Radio-Browser terms of use require. No WebID, no Pod address, no
 /// station library, and no listening history is ever sent. The `/json/url/`
 /// click-reporting endpoint, which tells Radio-Browser what is being played,
 /// is deliberately NOT called — RadioPod contributes no telemetry.
@@ -210,6 +211,40 @@ class RadioBrowser {
         .cast<Map<String, dynamic>>();
 
     return records.isEmpty ? null : _toStation(records.first);
+  }
+
+  /// Find the record for the stream at [url], or null when none lists it.
+  ///
+  /// 20261014 gjw For a station added by hand. Its typed address is often in
+  /// the database, and the record supplies the country, language, codec and
+  /// bitrate the listener had no way to enter, and a [Station.stationUuid] so
+  /// Refresh in Properties works for it from then on.
+  ///
+  /// PRIVACY. Sends the address the listener typed, the same kind of thing a
+  /// search sends. Nothing about playback is reported.
+  ///
+  /// Throws on a network or server failure, as [lookup] does.
+
+  static Future<Station?> byUrl(String url) async {
+    final host = await _resolveHost();
+    final uri = Uri.https(host, '/json/stations/byurl');
+
+    final res = await http
+        .post(uri, headers: {'User-Agent': _userAgent}, body: {'url': url})
+        .timeout(const Duration(seconds: 20));
+
+    if (res.statusCode != 200) {
+      throw http.ClientException(
+        'Radio-Browser returned ${res.statusCode}.',
+        uri,
+      );
+    }
+
+    return (jsonDecode(utf8.decode(res.bodyBytes)) as List)
+        .cast<Map<String, dynamic>>()
+        .map(_toStation)
+        .nonNulls
+        .firstOrNull;
   }
 
   /// Convert one Radio-Browser record to a [Station], or null if unusable.
