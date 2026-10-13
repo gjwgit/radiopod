@@ -461,6 +461,12 @@ class RadioAudioHandler extends BaseAudioHandler {
   @override
   Future<void> pause() => _player.pause();
 
+  /// Set the volume from 0 to 1, for the sleep timer's fade. It carries
+  /// over a change of station, which is what lets a fade continue across
+  /// one.
+
+  Future<void> setVolume(double volume) => _player.setVolume(volume);
+
   /// Silence the player the way this platform needs.
   ///
   /// Shared by [stop] and by [playStation], because switching station has

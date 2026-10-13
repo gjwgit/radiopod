@@ -345,7 +345,8 @@ class _AppScaffoldState extends State<AppScaffold> {
 
               Tap to keep playing for
               ${sleepTimerLabel(Player.sleepTimer.defaultDuration)} and then
-              stop. Tap again to turn it off. Playback
+              fade out and stop. Tap again to turn it off, which also brings
+              back the volume if it is already fading. Playback
               ${sleepTimerSummary(Player.sleepTimer.remaining)}.
 
               Change how long it runs in Settings. Only playback stops — the

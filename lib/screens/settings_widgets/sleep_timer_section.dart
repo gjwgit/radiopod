@@ -88,8 +88,9 @@ class _SleepTimerSectionState extends State<SleepTimerSection> {
         const Gap(8),
         Text(
           'Tap the timer in the toolbar to keep playing for a while and then '
-          'stop. Only playback stops: the app stays open and your library is '
-          'untouched, so a station is one tap away again.',
+          'stop, fading out gently over the last 30 seconds. Only playback '
+          'stops: the app stays open and your library is untouched, so a '
+          'station is one tap away again.',
           style: TextStyle(color: cs.onSurfaceVariant),
         ),
         const Gap(12),

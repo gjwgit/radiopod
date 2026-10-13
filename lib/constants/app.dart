@@ -59,6 +59,11 @@ const notificationChannelName = 'Radio playback';
 
 const sleepTimerDefault = Duration(minutes: 30);
 
+/// How long the sleep timer spends fading the station out before it stops.
+/// Part of the timer's length, not added to it.
+
+const sleepFadeDuration = Duration(seconds: 30);
+
 /// The choices offered when setting a sleep timer.
 ///
 /// Short at the start for "I am nearly asleep already", and long enough at

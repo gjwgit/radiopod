@@ -40,7 +40,14 @@ import 'package:radiopod/constants/app.dart';
 /// wake lock of its own, nothing to ask the user's permission for.
 ///
 /// It does ONE thing when it fires: calls the callback it was given, which
-/// is the handler's stop(). It does not pause, fade, or close the app.
+/// is the handler's stop(). It does not pause or close the app.
+///
+/// 20261013 gjw The last [sleepFadeDuration] of the countdown fades the
+/// volume down, so the station drifts off rather than cutting out — a
+/// sudden silence can wake someone just dropping off. Turning the timer off
+/// or setting it again during the fade restores the volume at once. After
+/// the stop the volume goes back to full, AFTER rather than before so the
+/// last moment is not a burst of sound, and the next play starts normally.
 ///
 /// AN ELAPSED TIMER IS NOT A STOPPED PLAYER. The two are deliberately kept
 /// apart: starting another station does not cancel the timer, because "stop
@@ -48,15 +55,23 @@ import 'package:radiopod/constants/app.dart';
 /// Only the listener cancels it, or its own firing.
 
 class SleepTimer {
-  SleepTimer(this._onExpire);
+  SleepTimer(this._onExpire, {required this.setVolume});
 
   /// What to do when the time is up. Called once, after which the timer is
   /// no longer running.
 
   final Future<void> Function() _onExpire;
 
+  /// Set the player's volume, from 0 to 1, for the fade.
+
+  final void Function(double) setVolume;
+
   Timer? _ticker;
   DateTime? _endsAt;
+
+  /// Whether the fade has lowered the volume, so it is restored only once.
+
+  bool _faded = false;
 
   /// How long [toggle] runs for, as chosen in Settings.
   ///
@@ -138,34 +153,63 @@ class SleepTimer {
     _publish();
 
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (remaining == Duration.zero) {
+      final left = remaining!;
+      if (left == Duration.zero) {
         _fire();
       } else {
+        _fade(left);
         _publish();
       }
     });
   }
 
-  /// Stop counting down. Playback is untouched.
+  /// Lower the volume once [left] is inside the fade.
+  ///
+  /// Squared rather than linear: hearing is roughly logarithmic, so a
+  /// linear fade sounds nearly unchanged until it drops away at the end.
+
+  void _fade(Duration left) {
+    if (left >= sleepFadeDuration) return;
+
+    final t = left.inMilliseconds / sleepFadeDuration.inMilliseconds;
+    setVolume(t * t);
+    _faded = true;
+  }
+
+  void _restoreVolume() {
+    if (!_faded) return;
+    _faded = false;
+    setVolume(1);
+  }
+
+  /// Stop counting down, and undo any fade. Playback is untouched.
 
   void cancel() {
+    _stopTicking();
+    _restoreVolume();
+  }
+
+  void _stopTicking() {
     _ticker?.cancel();
     _ticker = null;
     _endsAt = null;
     _publish();
   }
 
-  /// Time is up: stop the timer FIRST, then stop playback.
+  /// Time is up: stop the timer FIRST, then stop playback, then put the
+  /// volume back.
   ///
-  /// In that order so a stop that throws still leaves the timer finished.
+  /// Timer first so a stop that throws still leaves the timer finished.
   /// Otherwise a failing stop would be retried every second for ever.
 
   void _fire() {
-    cancel();
+    _stopTicking();
     unawaited(
-      _onExpire().catchError((Object e) {
-        debugPrint('[SleepTimer] could not stop playback: $e');
-      }),
+      _onExpire()
+          .catchError((Object e) {
+            debugPrint('[SleepTimer] could not stop playback: $e');
+          })
+          .whenComplete(_restoreVolume),
     );
   }
 

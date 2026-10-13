@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.5 Starter stations
 
++ Sleep timer fades out over its last 30 seconds [1.5.8 20261013 gjw]
 + Keep the security key after a Session Expired login [1.5.7 20261013 gjw]
 + Stop and Play button beside Filter and Search [1.5.6 20261013 gjw]
 + Optionally start the sleep timer on playing [1.5.5 20261013 gjw]

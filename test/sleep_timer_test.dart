@@ -65,6 +65,10 @@ void main() {
   group('SleepTimer', () {
     tearDown(() => SleepTimer.nowForTest = DateTime.now);
 
+    /// Every stop and volume change, in order, as 'stop' or the volume.
+
+    late List<Object> events;
+
     /// Run [body] with both the clock and the timer under test control.
     ///
     /// SleepTimer reads the wall clock to work out what is left, and uses a
@@ -79,7 +83,11 @@ void main() {
         SleepTimer.nowForTest = () => start.add(async.elapsed);
 
         final fired = <int>[];
-        final timer = SleepTimer(() async => fired.add(1));
+        events = [];
+        final timer = SleepTimer(() async {
+          fired.add(1);
+          events.add('stop');
+        }, setVolume: events.add);
         addTearDown(timer.dispose);
 
         body(async, timer, fired);
@@ -209,6 +217,75 @@ void main() {
         timer.toggle();
 
         expect(timer.minutesLeft.value, 30);
+      });
+    });
+
+    test('the volume is untouched until the last 30 seconds', () {
+      withFakeClock((async, timer, fired) {
+        timer.start(const Duration(minutes: 5));
+        async.elapse(const Duration(minutes: 4, seconds: 30));
+
+        expect(events, isEmpty);
+      });
+    });
+
+    test('the last 30 seconds fade down, ever more quietly', () {
+      withFakeClock((async, timer, fired) {
+        timer.start(const Duration(minutes: 1));
+        async.elapse(const Duration(seconds: 59));
+
+        final volumes = events.cast<double>();
+        expect(volumes, isNotEmpty);
+        for (var i = 1; i < volumes.length; i++) {
+          expect(volumes[i], lessThan(volumes[i - 1]));
+        }
+        expect(volumes.first, lessThan(1));
+        expect(volumes.last, lessThan(0.01));
+      });
+    });
+
+    // Restoring the volume BEFORE the stop would end the night on a burst
+    // of full-volume sound.
+
+    test('stops, and only then restores the volume', () {
+      withFakeClock((async, timer, fired) {
+        timer.start(const Duration(minutes: 1));
+        async.elapse(const Duration(minutes: 1));
+
+        expect(events.sublist(events.length - 2), ['stop', 1.0]);
+        expect(timer.isRunning, isFalse);
+      });
+    });
+
+    test('turning the timer off mid-fade restores the volume', () {
+      withFakeClock((async, timer, fired) {
+        timer.start(const Duration(minutes: 1));
+        async.elapse(const Duration(seconds: 45));
+        timer.toggle();
+
+        expect(events.last, 1.0);
+        async.elapse(const Duration(minutes: 5));
+        expect(fired, isEmpty);
+      });
+    });
+
+    test('setting the timer again mid-fade restores the volume', () {
+      withFakeClock((async, timer, fired) {
+        timer.start(const Duration(minutes: 1));
+        async.elapse(const Duration(seconds: 45));
+        timer.start(const Duration(minutes: 30));
+
+        expect(events.last, 1.0);
+      });
+    });
+
+    test('a timer cancelled before the fade never touches the volume', () {
+      withFakeClock((async, timer, fired) {
+        timer.start(const Duration(minutes: 30));
+        async.elapse(const Duration(minutes: 10));
+        timer.cancel();
+
+        expect(events, isEmpty);
       });
     });
 

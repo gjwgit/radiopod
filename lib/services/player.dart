@@ -25,6 +25,8 @@
 
 library;
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import 'package:audio_service/audio_service.dart';
@@ -131,10 +133,14 @@ class Player {
 
     CarPlayBridge.attach(_handler!);
 
-    // The timer stops playback and nothing else — see SleepTimer. Built here
-    // because the handler is what it acts on, and both outlive every screen.
+    // The timer fades and stops playback and nothing else — see SleepTimer.
+    // Built here because the handler is what it acts on, and both outlive
+    // every screen.
 
-    _sleepTimer = SleepTimer(() => _handler!.stop());
+    _sleepTimer = SleepTimer(
+      () => _handler!.stop(),
+      setVolume: (v) => unawaited(_handler!.setVolume(v)),
+    );
     _sleepTimer!.defaultDuration = await SleepPreference.load();
     _sleepTimer!.startOnPlay = await SleepPreference.loadStartOnPlay();
 
