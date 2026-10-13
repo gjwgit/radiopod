@@ -38,6 +38,7 @@ import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/services/browse_tree.dart';
 import 'package:radiopod/services/carplay_bridge.dart';
+import 'package:radiopod/services/geo_block.dart';
 import 'package:radiopod/services/icy_reader.dart';
 import 'package:radiopod/services/stream_end_policy.dart';
 import 'package:radiopod/utils/platform_io.dart'
@@ -114,6 +115,13 @@ class RadioAudioHandler extends BaseAudioHandler {
   /// an automatic reconnect. Player.init points it at the sleep timer.
 
   void Function()? onPlayFromSilence;
+
+  final _geoBlocks = StreamController<GeoBlock>.broadcast();
+
+  /// A station that ended early because its server refuses our country.
+  /// The app shows each one in a dialog — see [_reportGeoBlock].
+
+  Stream<GeoBlock> get geoBlocks => _geoBlocks.stream;
 
   Station? _currentStation;
   String? _currentTrack;
@@ -248,6 +256,8 @@ class RadioAudioHandler extends BaseAudioHandler {
       '-> ${decision.action.name}',
     );
 
+    if (played < realListenTime) unawaited(_reportGeoBlock(_currentStation!));
+
     // A reconnect happens AT ONCE. This is a station that was playing
     // happily a moment ago, so every extra second is an audible hole where
     // there used to be well under one.
@@ -264,6 +274,20 @@ class RadioAudioHandler extends BaseAudioHandler {
     // never be mistaken for time spent playing.
 
     _endTimer = Timer(resumeGrace, () => _carryOut(decision.action));
+  }
+
+  /// Find out whether [station] ended early because it refuses our country.
+  ///
+  /// 20261014 gjw Asked only after a QUICK end, so a station that plays
+  /// normally never costs a second connection. The queue still moves on as
+  /// before; this only explains why, since a blocked station otherwise
+  /// looks exactly like a broken one.
+
+  Future<void> _reportGeoBlock(Station station) async {
+    final country = await probeGeoBlock(station.url);
+    if (country == null) return;
+
+    _geoBlocks.add((station: station.name, country: country));
   }
 
   /// Open the current station again after a break in transmission.

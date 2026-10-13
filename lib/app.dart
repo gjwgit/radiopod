@@ -32,6 +32,8 @@ import 'package:solidui/solidui.dart';
 
 import 'package:radiopod/app_scaffold.dart';
 import 'package:radiopod/constants/app.dart';
+import 'package:radiopod/services/player.dart';
+import 'package:radiopod/widgets/geo_block_listener.dart';
 
 // 20260921 gjw This widget is the root of the application. On startup it will
 // call upon [SolidLogin] to connect to the user's Pod stored within the user's
@@ -96,8 +98,16 @@ class App extends StatelessWidget {
         // exists for the dialog and the listener outlives individual screens.
         // It reports Pod writes that nothing awaits — saving a station found
         // in Search, say — which would otherwise fail silently.
+        //
+        // 20261014 gjw GeoBlockListener sits here for the same reasons: a
+        // Navigator for its dialog, and a life as long as the player's.
 
-        child: const SolidWriteFailureListener(child: appScaffold),
+        child: SolidWriteFailureListener(
+          child: GeoBlockListener(
+            blocks: Player.handler.geoBlocks,
+            child: appScaffold,
+          ),
+        ),
       ),
     );
   }
