@@ -43,7 +43,7 @@ import 'package:radiopod/widgets/now_playing.dart';
 import 'package:radiopod/widgets/now_playing_stop_button.dart';
 import 'package:radiopod/widgets/station_tile.dart';
 
-/// Search Radio-Browser by station name or by genre.
+/// Search Radio-Browser by station name, genre or location.
 ///
 /// Results are not saved anywhere until the user taps Save on one. Tapping a
 /// result plays it straight away without saving, so a station can be
@@ -67,9 +67,20 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    ViewPrefs.getBool(ViewPrefs.searchByGenre, orElse: false).then((byGenre) {
-      if (mounted && byGenre) setState(() => _field = SearchField.tag);
-    });
+    _restoreField();
+  }
+
+  Future<void> _restoreField() async {
+    final byGenre = await ViewPrefs.getBool(
+      ViewPrefs.searchByGenre,
+      orElse: false,
+    );
+    final name = await ViewPrefs.getString(
+      ViewPrefs.searchField,
+      orElse: byGenre ? SearchField.tag.name : SearchField.name.name,
+    );
+    final field = SearchField.values.asNameMap()[name] ?? SearchField.name;
+    if (mounted) setState(() => _field = field);
   }
 
   @override
@@ -104,9 +115,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       onSubmitted: (_) => _search(),
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.search),
-                        hintText: _field == SearchField.name
-                            ? 'Station name, e.g. ABC Classic'
-                            : 'Genre, e.g. jazz',
+                        hintText: _field.hint,
                         border: const OutlineInputBorder(),
                         isDense: true,
                         suffixIcon: MarkdownTooltip(
@@ -117,6 +126,16 @@ class _SearchScreenState extends State<SearchScreen> {
                           Ask the community-run Radio-Browser database for
                           matching stations. Only your search text and the
                           app name are sent.
+
+                          Put **@** before a place to search only there, as
+                          in `@sydney news`. The other words then match the
+                          station name on *Name*, the genre on *Genre*, and
+                          either on *Location*. A place of several words
+                          needs quotes: `@"new york" jazz`.
+
+                          On *Location* the text without an **@** is the
+                          place: a country such as `Australia` or a region
+                          such as `Victoria`.
 
                           ''',
                           child: IconButton(
@@ -152,7 +171,8 @@ class _SearchScreenState extends State<SearchScreen> {
         message:
             'No stations matched. Try a shorter or more general search — '
             'Radio-Browser matches on part of a name, so "classic" finds '
-            'more than "ABC Classic FM".',
+            'more than "ABC Classic FM". With an @place, check the place '
+            'is spelt as Radio-Browser has it, e.g. @germany, not @deutschland.',
       );
     }
 
@@ -211,7 +231,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _setField(Set<SearchField> selection) {
     setState(() => _field = selection.first);
-    ViewPrefs.setBool(ViewPrefs.searchByGenre, _field == SearchField.tag);
+    ViewPrefs.setString(ViewPrefs.searchField, _field.name);
     if (_searched) _search();
   }
 

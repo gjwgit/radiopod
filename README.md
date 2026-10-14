@@ -61,7 +61,7 @@ many more apps using the Solid ecosystem.
 
 + **Search** the community-run
   [Radio-Browser](https://www.radio-browser.info) database of internet
-  radio stations, by station name or by genre.
+  radio stations, by station name, by genre, or by location.
 + **Save** the stations you like into a library that is stored locally
   or encrypted on your Pod.
 + **Playlists** group your stations. They are also the folders you
@@ -250,7 +250,10 @@ copy what you have collected up to your Pod.
 search](assets/screenshots/radiopod_search.png)
 
 You can search the community-run Radio-Browser database by station
-name or by genre. The screen explains what leaves the device, because
+name, by genre, or by location, which matches the country or the
+region a station is listed under. Put `@` before a place to combine
+it with other words: `@sydney news` finds news stations in Sydney,
+and a place of several words goes in quotes, as in `@"new york" jazz`. The screen explains what leaves the device, because
 this is the one place in RadioPod where any data does leave the app to
 another service. What is shared is your search text and the name of
 the app, and nothing else.

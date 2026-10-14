@@ -40,8 +40,13 @@ class ViewPrefs {
 
   static const stationsFilterPlaylist = 'stations_filter_playlist';
 
-  /// Search screen: whether the last search matched on genre rather than
-  /// name, so the segmented control comes back where it was left.
+  /// Search screen: the name of the `SearchField` last chosen, so the
+  /// segmented control comes back where it was left.
+
+  static const searchField = 'search_field';
+
+  /// The bool [searchField] replaced when Location made three choices. Read
+  /// only as a fallback, so a Genre choice made before then is kept.
 
   static const searchByGenre = 'search_by_genre';
 

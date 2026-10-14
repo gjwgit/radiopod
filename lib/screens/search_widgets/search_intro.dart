@@ -42,7 +42,7 @@ class SearchIntro extends StatelessWidget {
 
   static const _default =
       'Search the community-run Radio-Browser database of internet radio '
-      'stations by name or genre.\n\n'
+      'stations by name, genre or location.\n\n'
       'Nothing is sent until you search, and all that is sent then is your '
       'search text and the name of this app. RadioPod does not report what '
       'you listen to, here or anywhere else.';
