@@ -1,7 +1,7 @@
 name: radiopod
 description: "Radio Pod - Internet Radio with Secure and Private Storage"
 publish_to: 'none'
-version: 1.5.10+32
+version: 1.5.11+33
 
 environment:
   sdk: ^3.13.4
@@ -70,7 +70,7 @@ dependencies:
   rxdart: ^0.28.0
   shared_preferences: ^2.5.5
   solidpod: ^1.1.2
-  solidui: ^1.5.6
+  solidui: ^1.5.7
 
   # 20260925 gjw Declared directly, though solidui already pulls it in, so
   # the station properties dialog can open a station's homepage and hand its

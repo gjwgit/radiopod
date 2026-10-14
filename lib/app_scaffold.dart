@@ -229,6 +229,15 @@ class _AppScaffoldState extends State<AppScaffold> {
         if (!await KeyManager.hasSecurityKey()) {
           provider.declineKeyPrompt();
           if (!mounted) return;
+        } else {
+          // 20261014 gjw Tell the footer NOW. solidui checks the key once as
+          // the scaffold is first drawn, before the prompt has been answered,
+          // so it reads "not saved" and lagged until some later check. The
+          // provider is set first so its onKeyStatusChanged sees no change
+          // and does not start a second load alongside the one below.
+
+          provider.setKeySaved(true);
+          securityKeyNotifier.updateStatus(true);
         }
       }
 
