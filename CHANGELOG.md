@@ -37,7 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.5 Starter stations
 
-+ Show the saved security key in the footer at once, solidui 1.5.7 [1.5.11 20261014 gjw]
++ Show saved security key in footer early, solidui 1.5.7 [1.5.11 20261014 gjw]
 + Fill in hand-added station details from Radio-Browser [1.5.10 20261014 gjw]
 + Explain a station that refuses your country [1.5.9 20261014 gjw]
 + Sleep timer fades out over its last 30 seconds [1.5.8 20261013 gjw]
