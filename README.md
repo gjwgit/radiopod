@@ -251,12 +251,13 @@ search](assets/screenshots/radiopod_search.png)
 
 You can search the community-run Radio-Browser database by station
 name, by genre, or by location, which matches the country or the
-region a station is listed under. Put `@` before a place to combine
-it with other words: `@sydney news` finds news stations in Sydney,
-and a place of several words goes in quotes, as in `@"new york" jazz`. The screen explains what leaves the device, because
-this is the one place in RadioPod where any data does leave the app to
-another service. What is shared is your search text and the name of
-the app, and nothing else.
+region a station is listed under. Put `@` before a place to combine it
+with other words: `@sydney news` finds news stations in Sydney, and a
+place of several words goes in quotes, as in `@"new york" jazz`. The
+screen explains what leaves the device, because this is the one place
+in RadioPod where any data does leave the app to another service. What
+is shared is your search text and the name of the app, and nothing
+else.
 
 ![Search results for
 ABC](assets/screenshots/radiopod_search_abc.png)
