@@ -609,9 +609,10 @@ class AppProvider extends ChangeNotifier {
         );
 
         // Refresh the device mirror so the car can browse the Pod library
-        // before the next login completes.
+        // before the next login completes. A library saved here while logged
+        // out is held back first, not overwritten; see LocalStore.
 
-        await LocalStore.save(_stations, _playlists);
+        await LocalStore.save(_stations, _playlists, fromPod: true);
       } else {
         final (stations, playlists) = await LocalStore.load();
         _stations = stations;
@@ -698,8 +699,9 @@ class AppProvider extends ChangeNotifier {
   Future<String?> saveAll() async {
     if (_testMode) return null;
 
-    await LocalStore.save(_stations, _playlists);
-    if (_source == LibrarySource.local) return null;
+    final onPod = _source == LibrarySource.pod;
+    await LocalStore.save(_stations, _playlists, fromPod: onPod);
+    if (!onPod) return null;
 
     final stationsErr = await PodService.save(
       stationsFileName,
@@ -736,7 +738,7 @@ class AppProvider extends ChangeNotifier {
       return (0, 'Log in to your Pod first.');
     }
 
-    final (localStations, localPlaylists) = await LocalStore.load();
+    final (localStations, localPlaylists) = await LocalStore.loadHeld();
     final byUrl = {for (final s in _stations) s.url: s};
     final idMap = <String, String>{};
     final added = <Station>[];
@@ -764,12 +766,21 @@ class AppProvider extends ChangeNotifier {
           ),
     ];
 
-    if (added.isEmpty && newPlaylists.isEmpty) return (0, null);
+    if (added.isEmpty && newPlaylists.isEmpty) {
+      await LocalStore.clearHeld();
+
+      return (0, null);
+    }
 
     _stations = [..._stations, ...added];
     _playlists = [..._playlists, ...newPlaylists];
 
-    return (added.length, await _commit());
+    // Kept until the Pod has them: a failed write must leave them to retry.
+
+    final error = await _commit();
+    if (error == null) await LocalStore.clearHeld();
+
+    return (added.length, error);
   }
 
   /// How many device-held stations are not yet on the Pod.
@@ -778,7 +789,7 @@ class AppProvider extends ChangeNotifier {
 
   Future<int> localOnlyCount() async {
     if (_testMode || _source != LibrarySource.pod) return 0;
-    final (localStations, _) = await LocalStore.load();
+    final (localStations, _) = await LocalStore.loadHeld();
     final urls = {for (final s in _stations) s.url};
 
     return localStations.where((s) => !urls.contains(s.url)).length;

@@ -45,6 +45,7 @@ import 'package:radiopod/services/app_provider.dart'
 import 'package:radiopod/services/player.dart';
 import 'package:radiopod/services/station_lookup.dart';
 import 'package:radiopod/utils/sleep_timer_text.dart';
+import 'package:radiopod/widgets/copy_to_pod_offer.dart';
 import 'package:radiopod/widgets/error_dialog.dart';
 import 'package:radiopod/widgets/pod_refresh_action.dart';
 
@@ -447,7 +448,9 @@ class _AppScaffoldState extends State<AppScaffold> {
                 // its keychain access, because the answer has genuinely
                 // changed and the user is already in a login flow.
 
-                provider.resolveSource().then((_) => provider.load());
+                provider.resolveSource().then((_) => provider.load()).then((_) {
+                  if (mounted) offerCopyToPod(this.context);
+                });
               }
             },
           ),

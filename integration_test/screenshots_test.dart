@@ -173,7 +173,7 @@ void main() {
     // LocalStore is the library when nobody is logged in (CLAUDE.md §4), so
     // writing it here is all the setup a fresh simulator needs.
 
-    await LocalStore.save(_stations, _playlists);
+    await LocalStore.save(_stations, _playlists, fromPod: false);
 
     app.main();
     await _settle(tester);

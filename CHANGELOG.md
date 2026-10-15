@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 1.5 Starter stations
 
++ Keep stations saved before login, offer to copy them to Pod [1.5.13 20261015 gjw]
 + Search by location, @sydney news to combine with keywords [1.5.12 20261015 gjw]
 + Show saved security key in footer early, solidui 1.5.7 [1.5.11 20261014 gjw]
 + Fill in hand-added station details from Radio-Browser [1.5.10 20261014 gjw]
