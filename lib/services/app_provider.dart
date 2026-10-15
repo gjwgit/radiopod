@@ -772,7 +772,10 @@ class AppProvider extends ChangeNotifier {
       return (0, null);
     }
 
-    _stations = [..._stations, ...added];
+    // On top, as Save from Search puts a station, and in the order they had
+    // on the device: just copied, they are the ones the listener looks for.
+
+    _stations = [...added, ..._stations];
     _playlists = [..._playlists, ...newPlaylists];
 
     // Kept until the Pod has them: a failed write must leave them to retry.
