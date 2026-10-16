@@ -376,6 +376,7 @@ class _AppScaffoldState extends State<AppScaffold> {
             buildPodRefreshAction(
               context: context,
               onRefresh: context.read<AppProvider>().refreshFromPod,
+              isOnPod: () => !context.read<AppProvider>().isLocal,
             ),
           ],
         ),

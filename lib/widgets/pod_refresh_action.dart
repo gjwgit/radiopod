@@ -1,6 +1,6 @@
 /// Reusable "refresh from Pod" app bar action.
 ///
-/// Copyright (C) 2026, Togaware Pty Ltd
+// Time-stamp: <Friday 2026-10-16 06:00:00 +1100 Graham Williams>
 ///
 /// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
@@ -49,15 +49,23 @@ import 'package:solidui/solidui.dart';
 ///
 /// [onRefresh] reloads the in-memory data from the Pod and returns true if the
 /// data changed (the Pod had been updated elsewhere), false if already current.
+///
+/// [isOnPod], when given, says whether a Pod is in use at the moment of the
+/// tap. See [handlePodRefresh].
 SolidAppBarAction buildPodRefreshAction({
   required BuildContext context,
   required Future<bool> Function() onRefresh,
+  bool Function()? isOnPod,
   String tooltip = 'Refresh from Pod',
 }) {
   return SolidAppBarAction(
     icon: Icons.refresh,
     tooltip: tooltip,
-    onPressed: () => handlePodRefresh(context: context, onRefresh: onRefresh),
+    onPressed: () => handlePodRefresh(
+      context: context,
+      onRefresh: onRefresh,
+      isOnPod: isOnPod,
+    ),
   );
 }
 
@@ -65,9 +73,16 @@ SolidAppBarAction buildPodRefreshAction({
 ///
 /// Kept public and separate from [buildPodRefreshAction] so it can also be
 /// triggered from elsewhere (e.g. a menu item or pull-to-refresh).
+///
+/// 20261016 gjw With no login, [onRefresh] reloads only the device's own
+/// copy, and the dialog used to say the data was up to date with the Pod —
+/// which hid that the Pod was never asked, and left podcasts saved on
+/// another device missing with no explanation. When [isOnPod] says no Pod
+/// is in use, the refresh still runs and the dialog says so instead.
 Future<void> handlePodRefresh({
   required BuildContext context,
   required Future<bool> Function() onRefresh,
+  bool Function()? isOnPod,
 }) async {
   bool changed;
   try {
@@ -85,6 +100,21 @@ Future<void> handlePodRefresh({
   }
 
   if (!context.mounted) return;
+
+  if (isOnPod != null && !isOnPod()) {
+    await _showRefreshDialog(
+      context,
+      title: 'Not logged in',
+      message:
+          'This app is not logged in to a Pod, so the library shown is the '
+          'one kept on this device. Nothing was read from a Pod.\n\n'
+          'To see what is saved on your Pod, log in from the profile menu.',
+      icon: Icons.cloud_off_outlined,
+      iconColor: Colors.orange,
+    );
+
+    return;
+  }
 
   if (changed) {
     await _showRefreshDialog(
