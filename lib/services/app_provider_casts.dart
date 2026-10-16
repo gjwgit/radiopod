@@ -84,6 +84,45 @@ extension PodcastLibrary on AppProvider {
     return refreshPodcast(podcast.id);
   }
 
+  /// Add the podcasts an OPML file lists, returning how many were new.
+  ///
+  /// As [importEntries] does for stations: matched on feed URL so a podcast
+  /// already saved is not saved twice, and appended rather than put on top,
+  /// so a file of fifty does not bury a curated list. The new feeds are then
+  /// fetched one at a time in the background; the rows fill in their counts
+  /// as they arrive, and a feed that fails waits for the next refresh.
+
+  Future<(int, String?)> importPodcasts(List<OpmlFeed> feeds) async {
+    final urls = {for (final s in _stations) s.url};
+    final added = [
+      for (final f in feeds)
+        if (urls.add(f.url))
+          Station(
+            id: _uuid.v4(),
+            name: f.title,
+            url: f.url,
+            homepage: f.homepage,
+            isPodcast: true,
+          ),
+    ];
+    if (added.isEmpty) return (0, null);
+
+    _stations = [..._stations, ...added];
+    final error = await _commit();
+    if (!_testMode) {
+      unawaited(Future.forEach(added, (p) => refreshPodcast(p.id)));
+    }
+
+    return (added.length, error);
+  }
+
+  /// The library's podcasts as OPML entries, in the list's order.
+
+  List<OpmlFeed> get podcastFeeds => [
+    for (final s in _stations)
+      if (s.isPodcast) (title: s.name, url: s.url, homepage: s.homepage),
+  ];
+
   /// Play one particular cast, then carry on backwards from it.
 
   Future<void> playCast(String podcastId, String guid) async {

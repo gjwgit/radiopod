@@ -1,4 +1,4 @@
-# RadioPod - Privacy-First Internet Radio
+# RadioPod - Privacy-First Internet Radio and Podcast Player
 
 [![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
@@ -13,14 +13,13 @@
 Privacy-first: your data is encrypted for secure and private storage
 in your Pod on a Solid server of your choice. You choose, not us.
 
-[RadioPod](https://gjwgit.github.io/radiopod/) plays internet radio.
-It is a simple privacy-first alternative to apps like
-[Transistor](https://f-droid.org/packages/org.y20k.transistor/) and
-[Shortwave](https://snapcraft.io/shortwave). Find stations in the
+[RadioPod](https://gjwgit.github.io/radiopod/) plays internet radio
+and podcasts.  It is a simple privacy-first alternative to the many
+internet radio and podcast apps available. Find stations in the
 community-run [Radio-Browser](https://www.radio-browser.info)
-database, follow podcasts from the open
-[Podcast Index](https://podcastindex.org), group them into playlists,
-and listen — at your desk, on your phone, or in the car through Apple
+database, follow podcasts from the open [Podcast
+Index](https://podcastindex.org), group them into playlists, and
+listen — at your desk, on your phone, or in the car through Apple
 CarPlay or Android Auto.
 
 Your station library and your playlists are stored locally by
@@ -32,7 +31,8 @@ your devices to share your station library and playlists while being
 protected against server administrator access and server breaches.
 
 Playlists can be imported and exported using the M3U or PLS open
-formats that every other radio player reads and writes.
+formats that every other radio player reads and writes, and podcasts
+using OPML, which every podcast app reads and writes.
 
 Solid Pods are a new approach to handling your personal data on the
 World Wide Web and is the latest innovation from the inventor of the
@@ -78,6 +78,8 @@ many more apps using the Solid ecosystem.
   formats every other radio player reads and writes, so your
   collection is never locked in and you can share your playlists with
   others.
++ **Import and export podcasts as OPML**, to bring the podcasts you
+  follow from another podcast app, or take them with you.
 + **Android Auto**: browse your playlists and stations on the car's
   infotainment system without touching the phone.
 + **Apple Car Play**: browse your playlists and stations on the car's
@@ -368,6 +370,12 @@ playlist named with the name of the file. Any stream address you
 already have is reused rather than duplicated. The Export saves the
 whole library or a single playlist into a text file with a format that
 can be read by other apps.
+
+Podcasts are moved as OPML instead, the subscription list every
+podcast app exports. The Import adds any podcast you do not already
+have to the end of your Stations and fetches its episodes. The Export
+saves all your podcasts in a single file. Only the list of podcasts
+moves; what you have listened to stays in RadioPod.
 
 ### Settings
 

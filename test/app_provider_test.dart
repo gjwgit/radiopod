@@ -226,6 +226,49 @@ void main() {
     });
   });
 
+  group('importPodcasts', () {
+    const saved = Station(
+      id: 'p1',
+      name: 'Future Tense',
+      url: 'https://feeds.example/ft',
+      isPodcast: true,
+    );
+
+    test('adds new podcasts at the end and skips one already saved', () async {
+      final p = _provider(stations: const [_a, saved]);
+      final (added, error) = await p.importPodcasts(const [
+        (
+          title: 'Future Tense',
+          url: 'https://feeds.example/ft',
+          homepage: null,
+        ),
+        (title: 'Up First', url: 'https://feeds.example/uf', homepage: null),
+        (title: 'Up First', url: 'https://feeds.example/uf', homepage: null),
+      ]);
+
+      expect(error, isNull);
+      expect(added, 1);
+      expect(p.stations.map((s) => s.name), [
+        'Zulu FM',
+        'Future Tense',
+        'Up First',
+      ]);
+      expect(p.stations.last.isPodcast, isTrue);
+    });
+
+    test('podcastFeeds lists only podcasts, in list order', () {
+      final p = _provider(stations: const [_a, saved, _b]);
+
+      expect(p.podcastFeeds, [
+        (
+          title: 'Future Tense',
+          url: 'https://feeds.example/ft',
+          homepage: null,
+        ),
+      ]);
+    });
+  });
+
   group('importEntries', () {
     const entries = <PlaylistEntry>[
       (name: 'Zulu FM', url: 'https://live.example/z'),

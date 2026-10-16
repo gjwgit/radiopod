@@ -37,10 +37,12 @@ import 'package:radiopod/screens/transfer_widgets/export_choice_sheet.dart';
 import 'package:radiopod/screens/transfer_widgets/import_action_card.dart';
 import 'package:radiopod/screens/transfer_widgets/import_message_banner.dart';
 import 'package:radiopod/screens/transfer_widgets/playlist_file_export.dart';
+import 'package:radiopod/screens/transfer_widgets/podcast_transfer_section.dart';
 import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/utils/playlist_file.dart';
 
-/// Move playlists in and out of RadioPod in the open M3U and PLS formats.
+/// Move playlists in and out of RadioPod in the open M3U and PLS formats,
+/// and podcasts in OPML.
 ///
 /// These are the formats every other radio app reads, which is the point: a
 /// library kept here is not trapped here. Import merges into the existing
@@ -134,7 +136,7 @@ class _TransferScreenState extends State<TransferScreen> {
                 'file. Both are plain text formats that every other radio player '
                 'reads, so nothing you collect here is locked in. Podcasts '
                 'are left out: those formats hold audio streams, and a '
-                'podcast is a feed of episodes.',
+                'podcast is a feed of episodes. Export them as OPML below.',
                 style: TextStyle(color: cs.onSurfaceVariant),
               ),
               if (_exportMessage != null) ...[
@@ -156,6 +158,10 @@ class _TransferScreenState extends State<TransferScreen> {
                 loading: _loading,
                 onTap: () => _export(provider),
               ),
+
+              // ── Podcasts ────────────────────────────────────────────────
+              const Gap(32),
+              const PodcastTransferSection(),
             ],
           ),
         ),

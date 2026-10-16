@@ -35,13 +35,14 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 
 import 'package:radiopod/models/station.dart';
+import 'package:radiopod/utils/opml.dart';
 import 'package:radiopod/utils/playlist_file.dart';
 
 /// Write [stations] as a [format] playlist to a user-chosen file.
 ///
 /// 20261016 gjw Podcasts are left out. Their address is an RSS feed, not
-/// audio, and an M3U or PLS player handed one would play nothing. A podcast
-/// app reads OPML, which RadioPod does not write yet.
+/// audio, and an M3U or PLS player handed one would play nothing. They go
+/// to [saveOpmlFile] instead, which is what a podcast app reads.
 ///
 /// Returns the saved path, or null if the user cancelled. [name] seeds the
 /// suggested filename, sanitised so a playlist called "Drive / Work" cannot
@@ -63,6 +64,22 @@ Future<String?> savePlaylistFile({
     bytes: utf8.encode(content),
     type: FileType.custom,
     allowedExtensions: [format.extension],
+  );
+
+  return fileUri?.path;
+}
+
+/// Write [feeds] as an OPML subscription list to a user-chosen file.
+///
+/// Returns the saved path, or null if the user cancelled.
+
+Future<String?> saveOpmlFile(List<OpmlFeed> feeds) async {
+  final fileUri = await FilePicker.saveFile(
+    dialogTitle: 'Save podcasts as OPML',
+    fileName: 'radiopod_podcasts.opml',
+    bytes: utf8.encode(writeOpml(feeds, title: 'RadioPod podcasts')),
+    type: FileType.custom,
+    allowedExtensions: const ['opml'],
   );
 
   return fileUri?.path;

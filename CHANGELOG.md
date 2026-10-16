@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.0 Podcasts
 
++ Import and export podcasts as OPML [2.0.4 20261016 gjw]
 + Show what is playing in the empty Stations filter box [2.0.3 20261016 gjw]
 + Resume a cast 5 seconds back from where it was left [2.0.2 20261016 gjw]
 + Skip all, or unskip all, of a podcast's casts [2.0.1 20261016 gjw]
