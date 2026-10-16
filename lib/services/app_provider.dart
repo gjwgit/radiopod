@@ -177,6 +177,11 @@ class AppProvider extends ChangeNotifier {
 
   bool _castsDirty = false;
 
+  /// The refresh of every podcast under way, if one is. See
+  /// [PodcastLibrary.refreshAllPodcasts].
+
+  Future<PodcastRefresh>? _podcastRefresh;
+
   // ── Getters ───────────────────────────────────────────────────────────────
 
   List<Station> get stations => _stations;
@@ -496,7 +501,7 @@ class AppProvider extends ChangeNotifier {
 
     try {
       // 20260922 gjw Uses the source ALREADY resolved, and does not ask
-      // solidpod again. load() runs at startup, on the refresh button and
+      // solidpod again. load() runs at startup, on Refresh from Pod and
       // after every login change; re-resolving here meant a keychain probe
       // each time, which on a macOS build with no provisioning profile is a
       // keychain password prompt each time. The login state is settled once,

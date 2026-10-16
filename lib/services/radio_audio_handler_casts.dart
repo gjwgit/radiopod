@@ -78,9 +78,9 @@ extension CastHandling on RadioAudioHandler {
     if (cast == null) {
       throw StateError(
         casts.isEmpty
-            ? '${podcast.name} has no casts yet. Refresh it from its Casts '
+            ? '${podcast.name} has no episodes yet. Refresh it from its Episodes '
                   'page.'
-            : 'Every cast of ${podcast.name} has been played or switched off.',
+            : 'Every episode of ${podcast.name} has been played or switched off.',
       );
     }
 

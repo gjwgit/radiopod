@@ -76,7 +76,7 @@ void main() {
       );
       expect(
         podcastDetails(_podcast, toPlay: 0, total: 0),
-        'Podcast · ABC Australia · no casts yet',
+        'Podcast · ABC Australia · no episodes yet',
       );
     });
 

@@ -66,7 +66,7 @@ many more apps using the Solid ecosystem.
   radio stations, by station name, by genre, or by location.
 + **Podcasts** sit in your Stations list beside the radio. A tap plays
   the latest episode you have not heard, then each older one in turn,
-  resuming any you stopped part-way. A podcast's Casts page lists its
+  resuming any you stopped part-way. A podcast's Episodes page lists its
   episodes with their show notes; heard ones stay listed, greyed, and
   any you switch off are skipped. Search them in the open
   [Podcast Index](https://podcastindex.org).

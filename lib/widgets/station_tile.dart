@@ -251,7 +251,7 @@ String podcastDetails(
   required int total,
 }) {
   final count = total == 0
-      ? 'no casts yet'
+      ? 'no episodes yet'
       : toPlay == 0
       ? 'all $total heard'
       : '$toPlay to play of $total';

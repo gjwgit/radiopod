@@ -47,7 +47,7 @@ import 'package:radiopod/services/station_lookup.dart';
 import 'package:radiopod/utils/sleep_timer_text.dart';
 import 'package:radiopod/widgets/copy_to_pod_offer.dart';
 import 'package:radiopod/widgets/error_dialog.dart';
-import 'package:radiopod/widgets/pod_refresh_action.dart';
+import 'package:radiopod/widgets/podcast_refresh_action.dart';
 
 const appScaffold = AppScaffold();
 
@@ -253,12 +253,16 @@ class _AppScaffoldState extends State<AppScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    // Only rebuild this scaffold when isKeySaved itself changes — not on every
-    // AppProvider notify, which happens on loads, edits and imports.
+    // Only rebuild this scaffold when isKeySaved, or whether there are any
+    // podcasts to refresh, changes — not on every AppProvider notify, which
+    // happens on loads, edits and imports. A record compares by value.
 
-    return Selector<AppProvider, bool>(
-      selector: (_, p) => p.isKeySaved,
-      builder: (context, isKeySaved, _) => SolidScaffold(
+    return Selector<AppProvider, ({bool isKeySaved, bool hasPodcasts})>(
+      selector: (_, p) => (
+        isKeySaved: p.isKeySaved,
+        hasPodcasts: p.stations.any((s) => s.isPodcast),
+      ),
+      builder: (context, state, _) => SolidScaffold(
         aboutConfig: SolidAboutConfig(
           applicationName: appName,
           applicationIcon: Image.asset(
@@ -318,6 +322,10 @@ class _AppScaffoldState extends State<AppScaffold> {
             changelogUrl:
                 'https://github.com/gjwgit/radiopod/blob/dev/CHANGELOG.md',
           ),
+          // 20261017 gjw Refresh from Pod lives in the profile menu, offered
+          // only while logged in, above Change POD Password.
+
+          onRefreshFromPod: context.read<AppProvider>().refreshFromPod,
           actions: [
             // 20260925 gjw Hidden with `visible` rather than left out of the
             // list, as SolidAppBarAction documents: that keeps its id
@@ -373,10 +381,9 @@ class _AppScaffoldState extends State<AppScaffold> {
               ''',
               onPressed: _toggleSleepTimer,
             ),
-            buildPodRefreshAction(
+            buildPodcastRefreshAction(
               context: context,
-              onRefresh: context.read<AppProvider>().refreshFromPod,
-              isOnPod: () => !context.read<AppProvider>().isLocal,
+              visible: state.hasPodcasts,
             ),
           ],
         ),
@@ -436,7 +443,7 @@ class _AppScaffoldState extends State<AppScaffold> {
             serverUri: SolidConfig.defaultServerUrl,
           ),
           securityKeyStatus: SolidSecurityKeyStatus(
-            isKeySaved: isKeySaved,
+            isKeySaved: state.isKeySaved,
             title: 'RadioPod Security Keys',
             tooltip:
                 '**Security Keys**\n\n'

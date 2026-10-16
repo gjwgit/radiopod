@@ -292,7 +292,7 @@ class _SearchScreenState extends State<SearchScreen> {
           title: 'Saved, but no episodes yet',
           message:
               '${station.name} is in your library, but its episodes could '
-              'not be fetched. Refresh it from its Casts page later.\n\n'
+              'not be fetched. Refresh it from its Episodes page later.\n\n'
               '$error',
         );
 

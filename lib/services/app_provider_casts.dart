@@ -33,6 +33,11 @@ part of 'app_provider.dart';
 /// Cast changes save only the casts: rewriting the station library for a
 /// ticked switch would be a Pod write for nothing.
 
+/// What a refresh of every podcast found: how many podcasts were checked,
+/// how many casts were new, and the names of any whose feed failed.
+
+typedef PodcastRefresh = ({int podcasts, int newCasts, List<String> failed});
+
 extension PodcastLibrary on AppProvider {
   /// One podcast's casts, newest first.
 
@@ -190,14 +195,34 @@ extension PodcastLibrary on AppProvider {
     }
   }
 
-  /// Refresh every podcast's feed, quietly. Run after a load, so new casts
-  /// appear without the listener asking. Failures leave the stored casts.
+  /// Refresh every podcast's feed: after a load, so new casts appear without
+  /// the listener asking, and from the toolbar's Refresh podcasts.
+  ///
+  /// One run at a time. A tap while the run after a load is still going
+  /// waits for that run rather than fetching every feed twice. A feed that
+  /// fails leaves its stored casts as they were and is named in the result.
 
-  Future<void> refreshAllPodcasts() async {
-    if (_testMode) return;
-    for (final p in _stations.where((s) => s.isPodcast).toList()) {
-      await refreshPodcast(p.id);
+  Future<PodcastRefresh> refreshAllPodcasts() => _podcastRefresh ??=
+      _refreshEachPodcast().whenComplete(() => _podcastRefresh = null);
+
+  Future<PodcastRefresh> _refreshEachPodcast() async {
+    final podcasts = _stations.where((s) => s.isPodcast).toList();
+    if (_testMode) {
+      return (podcasts: podcasts.length, newCasts: 0, failed: <String>[]);
     }
+
+    var newCasts = 0;
+    final failed = <String>[];
+    for (final p in podcasts) {
+      final before = {for (final c in castsOf(p.id)) c.guid};
+      if (await refreshPodcast(p.id) != null) {
+        failed.add(p.name);
+        continue;
+      }
+      newCasts += castsOf(p.id).where((c) => !before.contains(c.guid)).length;
+    }
+
+    return (podcasts: podcasts.length, newCasts: newCasts, failed: failed);
   }
 
   Future<String?> _changeCast(

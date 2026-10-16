@@ -1197,10 +1197,10 @@ packages:
     dependency: "direct main"
     description:
       name: solidui
-      sha256: "795ecdb09011bfcf9e78d474f738687804ea8044836142c3c266e2585cfe4130"
+      sha256: "4a4a96e40cf17b7e50ebbacf782247864ce8406c714f8b59e5d16c9a17955b40"
       url: "https://pub.dev"
     source: hosted
-    version: "1.5.8"
+    version: "1.5.9"
   source_span:
     dependency: transitive
     description:

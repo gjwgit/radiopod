@@ -91,7 +91,7 @@ class _PodcastScreenState extends State<PodcastScreen> {
             **Refresh**
 
             Fetch this podcast's feed from its publisher now, to pick up any
-            new casts. Your progress and skipped casts are kept.
+            new episodes. Your progress and skipped episodes are kept.
 
             ''',
             child: IconButton(
@@ -166,16 +166,16 @@ class _PodcastScreenState extends State<PodcastScreen> {
 
             **Unskip all**
 
-            Put every cast back in the podcast's turn, so it plays them
-            again, newest first. Casts already heard stay heard.
+            Put every episode back in the podcast's turn, so it plays them
+            again, newest first. Episodes already heard stay heard.
 
             '''
           : '''
 
             **Skip all**
 
-            Skip every cast listed here, so the podcast plays none of them
-            and waits for the next new one. A tap on a cast still plays it.
+            Skip every episode listed here, so the podcast plays none of them
+            and waits for the next new one. A tap on an episode still plays it.
 
             ''',
       child: TextButton.icon(
@@ -204,7 +204,9 @@ class _PodcastScreenState extends State<PodcastScreen> {
     }
     showPositiveSnackBar(
       context,
-      skip ? 'Every cast of ${podcast.name} is skipped.' : 'No casts skipped.',
+      skip
+          ? 'Every episode of ${podcast.name} is skipped.'
+          : 'No episodes skipped.',
     );
   }
 
@@ -228,10 +230,10 @@ class _PodcastScreenState extends State<PodcastScreen> {
           const Gap(4),
           Text(
             casts.isEmpty
-                ? 'No casts yet. Refresh to fetch them from the publisher.'
-                : 'Tap the podcast in Stations to play the latest cast still '
-                      'to hear, then each older one in turn. Played casts '
-                      'stay here, greyed, as do skipped casts.',
+                ? 'No episodes yet. Refresh to fetch them from the publisher.'
+                : 'Tap the podcast in Stations to play the latest episode still '
+                      'to hear, then each older one in turn. Played episodes '
+                      'stay here, greyed, as do skipped episodes.',
             style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
           ),
         ],
@@ -246,7 +248,7 @@ class _PodcastScreenState extends State<PodcastScreen> {
       if (!mounted) return;
       await showErrorDialog(
         context,
-        title: 'Cannot play this cast',
+        title: 'Cannot play this episode',
         message:
             'The publisher\'s server did not deliver it. It may have been '
             'withdrawn; Refresh fetches the current list.\n\n$e',
@@ -264,11 +266,11 @@ class _PodcastScreenState extends State<PodcastScreen> {
       await showErrorDialog(
         context,
         title: 'Could not refresh',
-        message: 'The casts below are as they were.\n\n$error',
+        message: 'The episodes below are as they were.\n\n$error',
       );
 
       return;
     }
-    showPositiveSnackBar(context, 'Casts are up to date.');
+    showPositiveSnackBar(context, 'Episodes are up to date.');
   }
 }

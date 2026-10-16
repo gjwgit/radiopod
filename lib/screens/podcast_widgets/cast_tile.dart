@@ -119,16 +119,16 @@ class _CastTileState extends State<CastTile> {
             MarkdownTooltip(
               message: '''
 
-              **Play this cast**
+              **Play this episode**
 
-              On, this cast is played when the podcast works through its
-              casts. Off, it is skipped, though a tap still plays it.
+              On, this episode is played in its turn, newest first. Off, it
+              is skipped, though a tap still plays it.
 
               ''',
               child: Switch(value: !c.disabled, onChanged: widget.onEnabled),
             ),
             PopupMenuButton<bool>(
-              tooltip: 'Cast actions',
+              tooltip: 'Episode actions',
               onSelected: widget.onPlayed,
               itemBuilder: (_) => [
                 c.played

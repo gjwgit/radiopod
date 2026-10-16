@@ -277,7 +277,7 @@ class _StationsScreenState extends State<StationsScreen> {
           icon: Icons.list_alt,
           tooltip: '''
 
-          **Casts**
+          **Episodes**
 
           See this podcast's episodes: what each is about, how long it runs
           and how far you got. Skip any you never want to hear.
@@ -363,7 +363,7 @@ class _StationsScreenState extends State<StationsScreen> {
       },
       itemBuilder: (context) => [
         if (station.isPodcast)
-          const PopupMenuItem(value: 'casts', child: Text('Casts…')),
+          const PopupMenuItem(value: 'casts', child: Text('Episodes…')),
         const PopupMenuItem(value: 'properties', child: Text('Properties…')),
         const PopupMenuItem(
           value: 'playlists',
