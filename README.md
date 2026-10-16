@@ -115,11 +115,12 @@ login timestamp and other standard server logging of meta data.
   station by hand, or refresh a station's details. Podcast Index is
   asked only when you search for a podcast; it is sent your search
   text and the app name, and the code is in
-  `lib/services/podcast_index.dart`. For Radio-Browser: It is sent your search text, the
-  stream address you typed, or the station's Radio-Browser id, and
-  the app name and versions (e.g., RadioPod 1.1.21). It is not sent
-  your WebID, your Pod address, nor your library. The relevant code
-  can be found in `lib/services/radio_browser.dart`.
+  `lib/services/podcast_index.dart`. For Radio-Browser: It is sent
+  your search text, the stream address you typed, or the station's
+  Radio-Browser id, and the app name and versions (e.g., RadioPod
+  1.1.21). It is not sent your WebID, your Pod address, nor your
+  library. The relevant code can be found in
+  `lib/services/radio_browser.dart`.
 + Radio-Browser offers a click-reporting endpoint that apps call to
   feed its popularity ranking. **RadioPod does not call it.** Nothing
   about what you listen to leaves the device.

@@ -1,6 +1,8 @@
 /// Reusable "refresh from Pod" app bar action.
 ///
-// Time-stamp: <Friday 2026-10-16 06:00:00 +1100 Graham Williams>
+// Time-stamp: <Saturday 2026-10-17 05:21:09 +1100 Graham Williams>
+///
+/// Copyright (C) 2026, Togaware Pty Ltd
 ///
 /// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
