@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.0 Podcasts
 
++ Split the provider and audio handler to keep under 300 lines [2.0.6 20261017 gjw]
 + Refresh says when not logged in rather than up to date [2.0.5 20261016 gjw]
 + Import and export podcasts as OPML [2.0.4 20261016 gjw]
 + Show what is playing in the empty Stations filter box [2.0.3 20261016 gjw]

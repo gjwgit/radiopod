@@ -56,7 +56,7 @@ const castsFileName = 'casts.ttl';
 /// Podcast Index and each podcast's own feed. Radio-Browser's terms of use
 /// require it. Bump the version with the app's.
 
-const userAgent = 'RadioPod/2.0.5 (+https://github.com/gjwgit/radiopod)';
+const userAgent = 'RadioPod/2.0.6 (+https://github.com/gjwgit/radiopod)';
 
 /// Notification channel identity for the Android media notification.
 ///
