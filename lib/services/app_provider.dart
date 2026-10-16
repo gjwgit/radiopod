@@ -25,6 +25,7 @@
 
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -34,14 +35,20 @@ import 'package:uuid/uuid.dart';
 
 import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/constants/demo_stations.dart';
+import 'package:radiopod/models/cast.dart';
 import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
+import 'package:radiopod/services/cast_store.dart';
 import 'package:radiopod/services/demo_seed.dart';
 import 'package:radiopod/services/local_store.dart';
 import 'package:radiopod/services/player.dart';
 import 'package:radiopod/services/pod_service.dart';
+import 'package:radiopod/services/podcast_feed.dart';
 import 'package:radiopod/services/station_icon_cache.dart';
+import 'package:radiopod/utils/cast_merge.dart';
 import 'package:radiopod/utils/playlist_file.dart';
+
+part 'app_provider_casts.dart';
 
 const _uuid = Uuid();
 
@@ -81,6 +88,31 @@ enum LibrarySource {
 /// about it.
 
 class AppProvider extends ChangeNotifier {
+  AppProvider() {
+    // 20261016 gjw The audio handler records each cast's progress straight
+    // into CastStore. Listening here keeps the counts on the podcast rows
+    // current, and carries that progress to the Pod — after a pause in
+    // the changes, so a cast playing does not mean a Pod write every
+    // fifteen seconds.
+
+    _castChanges = CastStore.changes.listen((_) {
+      _castsDirty = true;
+      notifyListeners();
+      _castPodWrite?.cancel();
+      _castPodWrite = Timer(const Duration(seconds: 60), _saveCastsToPod);
+    });
+  }
+
+  late final StreamSubscription<String> _castChanges;
+  Timer? _castPodWrite;
+
+  @override
+  void dispose() {
+    _castChanges.cancel();
+    _castPodWrite?.cancel();
+    super.dispose();
+  }
+
   List<Station> _stations = [];
   List<Playlist> _playlists = [];
   bool _loading = false;
@@ -136,6 +168,12 @@ class AppProvider extends ChangeNotifier {
   /// WebID the user was supposedly logged in as.
 
   bool _sessionExpired = false;
+
+  /// True when the casts have changed since `casts.ttl` was last written.
+  /// The cast list is the largest thing RadioPod stores, so it is written to
+  /// the Pod only when it has actually changed, not on every station edit.
+
+  bool _castsDirty = false;
 
   // ── Getters ───────────────────────────────────────────────────────────────
 
@@ -618,6 +656,7 @@ class AppProvider extends ChangeNotifier {
         _stations = stations;
         _playlists = playlists;
       }
+      await _loadCasts();
       await _pushToPlayer();
 
       // INSIDE the try, so it runs only after a load that actually
@@ -626,6 +665,12 @@ class AppProvider extends ChangeNotifier {
       // that merely could not be reached.
 
       if (!_testMode) await seedIfEmpty();
+
+      // New casts arrive without the listener asking. Not awaited: the
+      // list is drawn from the stored casts at once, and the counts update
+      // as each feed answers.
+
+      if (!_testMode) unawaited(refreshAllPodcasts());
     } catch (e) {
       _error = _source == LibrarySource.pod
           ? 'Could not load your stations from the Pod.'
@@ -711,7 +756,7 @@ class AppProvider extends ChangeNotifier {
       playlistsFileName,
       jsonEncode([for (final p in _playlists) p.toJson()]),
     );
-    final err = stationsErr ?? playlistsErr;
+    final err = stationsErr ?? playlistsErr ?? await _saveCastsToPod();
     if (err != null) {
       _error = err;
       notifyListeners();
@@ -817,6 +862,11 @@ class AppProvider extends ChangeNotifier {
 
   /// Publish a change: tell the UI, then the media session, then the store.
 
+  /// For the podcast part, whose extension cannot call the protected
+  /// [notifyListeners] itself.
+
+  void _notify() => notifyListeners();
+
   Future<String?> _commit() async {
     notifyListeners();
     await _pushToPlayer();
@@ -851,7 +901,8 @@ class AppProvider extends ChangeNotifier {
   /// Stable content signature for change detection.
 
   String _signature() => [
-    for (final s in _stations) '${s.id}:${s.name}:${s.url}',
+    for (final s in _stations)
+      '${s.id}:${s.name}:${s.url}:${CastStore.of(s.id).length}',
     for (final p in _playlists) '${p.id}:${p.name}:${p.stationIds.join('|')}',
   ].join(',');
 

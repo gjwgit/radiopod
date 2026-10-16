@@ -34,12 +34,14 @@ import 'package:provider/provider.dart';
 import 'package:solidui/solidui.dart' show NavigationConstants;
 
 import 'package:radiopod/models/station.dart';
+import 'package:radiopod/screens/podcast_screen.dart';
 import 'package:radiopod/screens/stations_widgets/add_to_playlist_sheet.dart';
 import 'package:radiopod/screens/stations_widgets/station_empty_state.dart';
 import 'package:radiopod/screens/stations_widgets/station_properties_dialog.dart';
 import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/services/player.dart';
 import 'package:radiopod/widgets/app_snack_bar.dart';
+import 'package:radiopod/widgets/cast_controls.dart';
 import 'package:radiopod/widgets/error_dialog.dart';
 import 'package:radiopod/widgets/now_playing.dart';
 import 'package:radiopod/widgets/now_playing_stop_button.dart';
@@ -113,6 +115,7 @@ class _StationsScreenState extends State<StationsScreen> {
               ],
             ),
           ),
+          const CastControls(),
           Expanded(
             // 20261007 gjw NOTHING HERE WHILE STARTING UP. StartupOverlay is
             // already drawing a spinner and a message over this, and its
@@ -169,6 +172,13 @@ class _StationsScreenState extends State<StationsScreen> {
             paused: now.paused,
             failed: now.failed,
             track: now.track,
+            details: station.isPodcast
+                ? podcastDetails(
+                    station,
+                    toPlay: provider.castsToPlay(station.id),
+                    total: provider.castsOf(station.id).length,
+                  )
+                : null,
 
             // Tapping the station on air toggles it; tapping any other row
             // switches to that station.
@@ -245,6 +255,19 @@ class _StationsScreenState extends State<StationsScreen> {
   Widget _buttons(AppProvider provider, Station station) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
+      if (station.isPodcast)
+        _button(
+          icon: Icons.list_alt,
+          tooltip: '''
+
+          **Casts**
+
+          See this podcast's episodes: what each is about, how long it runs
+          and how far you got. Switch off any you never want to hear.
+
+          ''',
+          onPressed: () => _openCasts(station),
+        ),
       _button(
         icon: Icons.tune,
         tooltip: '''
@@ -316,15 +339,29 @@ class _StationsScreenState extends State<StationsScreen> {
     ''',
     child: PopupMenuButton<String>(
       onSelected: (value) => switch (value) {
+        'casts' => _openCasts(station),
         'properties' => _editProperties(provider, station),
         'playlists' => _choosePlaylists(station),
         _ => _confirmDelete(provider, station),
       },
-      itemBuilder: (context) => const [
-        PopupMenuItem(value: 'properties', child: Text('Properties…')),
-        PopupMenuItem(value: 'playlists', child: Text('Add to playlist…')),
-        PopupMenuItem(value: 'delete', child: Text('Delete station')),
+      itemBuilder: (context) => [
+        if (station.isPodcast)
+          const PopupMenuItem(value: 'casts', child: Text('Casts…')),
+        const PopupMenuItem(value: 'properties', child: Text('Properties…')),
+        const PopupMenuItem(
+          value: 'playlists',
+          child: Text('Add to playlist…'),
+        ),
+        const PopupMenuItem(value: 'delete', child: Text('Delete station')),
       ],
+    ),
+  );
+
+  /// A podcast's page of casts.
+
+  Future<void> _openCasts(Station podcast) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => PodcastScreen(podcastId: podcast.id),
     ),
   );
 

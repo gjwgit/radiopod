@@ -34,6 +34,8 @@ import 'package:audio_session/audio_session.dart';
 
 import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/services/carplay_bridge.dart';
+import 'package:radiopod/services/cast_playback.dart';
+import 'package:radiopod/services/cast_store.dart';
 import 'package:radiopod/services/local_store.dart';
 import 'package:radiopod/services/radio_audio_handler.dart';
 import 'package:radiopod/services/sleep_preference.dart';
@@ -102,6 +104,11 @@ class Player {
         // that the two are not both set.
         androidStopForegroundOnPause: false,
 
+        // 20261016 gjw What a cast's back and forward buttons jump by, on the
+        // notification, the lock screen and the car alike.
+        fastForwardInterval: castSkipForward,
+        rewindInterval: castSkipBack,
+
         // 20260923 gjw Ask Android Auto for SCROLLABLE LISTS rather than
         // grids of tiles. A list shows each station's full name, fits more
         // rows on a head unit, and scrolls; a grid is only worth it when
@@ -150,6 +157,11 @@ class Player {
     _handler!.onPlayFromSilence = _sleepTimer!.onPlaybackStarted;
 
     final (stations, playlists) = await LocalStore.load();
+
+    // The car can ask for a podcast before any screen exists, so its casts
+    // must be in memory from the start, just as the stations are.
+
+    await CastStore.load();
 
     // 20261006 gjw Write the chosen station icons out HERE as well as in
     // AppProvider._pushToPlayer().

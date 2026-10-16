@@ -45,6 +45,10 @@ class ViewPrefs {
 
   static const searchField = 'search_field';
 
+  /// Search screen: radio or podcasts, by `SearchKind` name.
+
+  static const searchKind = 'search_kind';
+
   /// The bool [searchField] replaced when Location made three choices. Read
   /// only as a fallback, so a Genre choice made before then is kept.
 

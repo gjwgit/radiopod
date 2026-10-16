@@ -282,6 +282,8 @@ class _AppScaffoldState extends State<AppScaffold> {
           ### Key features
 
           - Search the community-run Radio-Browser station database
+          - Follow podcasts from the open Podcast Index, resuming each episode
+            where you left off
           - Save stations and group them into playlists
           - Import and export M3U and PLS playlist files
           - Android Auto and Apple CarPlay support for browsing and playing
@@ -293,12 +295,14 @@ class _AppScaffoldState extends State<AppScaffold> {
 
           ### Privacy
 
-          RadioPod collects nothing and reports nothing. The only third party
-          it contacts is Radio-Browser, and only when you search — the search
-          text and an app name are all that are sent. RadioPod deliberately
-          does not call the Radio-Browser click-reporting endpoint, so no
-          record of what you listen to leaves your device. Your stations,
-          playlists and listening are never shared.
+          RadioPod collects nothing and reports nothing. The only third
+          parties it contacts are Radio-Browser and Podcast Index, and only
+          when you search — the search text and an app name are all that are
+          sent. RadioPod deliberately does not call the Radio-Browser
+          click-reporting endpoint, so no record of what you listen to leaves
+          your device. Stations and podcasts are played straight from the
+          broadcaster or publisher. Your stations, podcasts, playlists and
+          listening are never shared.
 
           For more information, visit the
           [RadioPod](https://github.com/gjwgit/radiopod) GitHub repository and

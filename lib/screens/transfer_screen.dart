@@ -132,7 +132,9 @@ class _TransferScreenState extends State<TransferScreen> {
               Text(
                 'Save your whole library, or any one playlist, as an M3U or PLS '
                 'file. Both are plain text formats that every other radio player '
-                'reads, so nothing you collect here is locked in.',
+                'reads, so nothing you collect here is locked in. Podcasts '
+                'are left out: those formats hold audio streams, and a '
+                'podcast is a feed of episodes.',
                 style: TextStyle(color: cs.onSurfaceVariant),
               ),
               if (_exportMessage != null) ...[
@@ -261,7 +263,8 @@ class _TransferScreenState extends State<TransferScreen> {
       );
       if (path == null) return;
       _setExportMsg(
-        'Saved ${choice.stations.length} stations as '
+        'Saved ${choice.stations.where((s) => !s.isPodcast).length} '
+        'stations as '
         '${choice.format.label} to $path',
       );
     } catch (e, st) {

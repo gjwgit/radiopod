@@ -97,9 +97,10 @@
 
   <h2>What RadioPod stores</h2>
   <p>
-    RadioPod keeps a list of the radio stations you have saved and the
-    playlists you have organised them into. That is the whole of the app's
-    data. It is stored in one of two places, and you choose which.
+    RadioPod keeps a list of the radio stations and podcasts you have
+    saved, the playlists you have organised them into, and, for each
+    podcast, which episodes you have heard or switched off and how far into
+    each you got. That is the whole of the app's data. It is stored in one of two places, and you choose which.
   </p>
   <ul>
     <li>
@@ -130,17 +131,24 @@
     car has something to show.
   </p>
   <p>
-    It holds no more than an ordinary playlist file would. It never contains
+    It holds no more than an ordinary playlist file would, plus your place
+    in each podcast episode, so the car can resume one. It never contains
     your security key or your WebID, and it never leaves the device.
     <strong>Settings</strong> has a button to clear it.
   </p>
 
-  <h2>The one third party</h2>
+  <h2>The two directories</h2>
   <p>
-    The only third party RadioPod contacts beyond a Solid server (if
-    you are logged in), is the community-run
-    <a href="https://www.radio-browser.info/">Radio-Browser</a> database, and
-    only when you use <strong>Search</strong>.
+    The only third parties RadioPod contacts beyond a Solid server (if
+    you are logged in) are two directories, and only when you use
+    <strong>Search</strong>: the community-run
+    <a href="https://www.radio-browser.info/">Radio-Browser</a> database of
+    stations, and the open <a href="https://podcastindex.org/">Podcast
+    Index</a>, asked only when you search for a podcast. Podcast Index is
+    sent your search text and the app's name, and nothing else; that code
+    is
+    <a href="https://github.com/gjwgit/radiopod/blob/dev/lib/services/podcast_index.dart"><code>lib/services/podcast_index.dart</code></a>.
+    For Radio-Browser:
   </p>
   <ul>
     <li>
@@ -165,13 +173,16 @@
     and you are welcome to read it.
   </p>
 
-  <h2>Playing a station</h2>
+  <h2>Playing a station or a podcast</h2>
   <p>
     Playing a station connects directly to that station's stream, so the
     broadcaster sees a connection from your network, exactly as it would
-    from any other radio player or a web browser. RadioPod adds nothing to
-    that request. What the broadcaster does with that connection is covered
-    by their privacy policy, not ours.
+    from any other radio player or a web browser. A podcast is the same: its
+    list of episodes, and each episode, are fetched straight from its
+    publisher, as any podcast app fetches them. RadioPod adds nothing to
+    those requests and never reports which episodes you have heard. What a
+    broadcaster or publisher does with the connection is covered by their
+    privacy policy, not ours.
   </p>
 
   <h2>Children</h2>

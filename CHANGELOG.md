@@ -35,6 +35,10 @@ then please show some ❤️ and tap on the star at
 This app is authored by [Graham
 Williams](https://togaware.com/Graham.Williams.html).
 
+## 2.0 Podcasts
+
++ Podcasts: Podcast Index, tap to play, resume, skip, seek [2.0.0 20261016 gjw]
+
 ## 1.5 Starter stations
 
 + Keep stations saved before login, offer to copy them to Pod [1.5.13 20261015 gjw]

@@ -66,11 +66,12 @@ class SettingsScreen extends StatelessWidget {
           const Gap(8),
           _paragraph(
             cs,
-            'RadioPod contacts exactly one third party and only when you '
-            'use Search. This is the community-run Radio-Browser database at '
-            'all.api.radio-browser.info. It is sent your search text and the '
+            'RadioPod contacts two directories, and only when you use '
+            'Search: the community-run Radio-Browser database of stations at '
+            'all.api.radio-browser.info, and the open Podcast Index at '
+            'api.podcastindex.org. Each is sent your search text and the '
             'name of this app, and nothing else — no WebID, no Pod address, '
-            'no station library.',
+            'no library.',
           ),
           const Gap(12),
           _paragraph(
@@ -85,8 +86,11 @@ class SettingsScreen extends StatelessWidget {
             cs,
             "Playing a station connects directly to that station's stream, "
             'so the broadcaster sees a connection from your network, exactly '
-            'as it would from any radio player or web browser. RadioPod adds '
-            'nothing to that request.',
+            'as it would from any radio player or web browser. A podcast '
+            'works the same way: its list of episodes and the episodes '
+            'themselves come straight from its publisher. RadioPod adds '
+            'nothing to those requests, and never reports which episodes you '
+            'have heard; that is kept with your library, on your Pod.',
           ),
 
           // ── Library size ────────────────────────────────────────────
@@ -95,8 +99,10 @@ class SettingsScreen extends StatelessWidget {
           const Gap(8),
           _paragraph(
             cs,
-            '${provider.stations.length} stations in '
-            '${provider.playlists.length} playlists.',
+            '${provider.stations.where((s) => !s.isPodcast).length} '
+            'stations and '
+            '${provider.stations.where((s) => s.isPodcast).length} podcasts '
+            'in ${provider.playlists.length} playlists.',
           ),
 
           // ── Sleep timer ─────────────────────────────────────────────

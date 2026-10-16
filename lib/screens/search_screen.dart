@@ -27,14 +27,15 @@ library;
 
 import 'package:flutter/material.dart';
 
-import 'package:gap/gap.dart';
 import 'package:markdown_tooltip/markdown_tooltip.dart';
 import 'package:provider/provider.dart';
 
 import 'package:radiopod/models/station.dart';
+import 'package:radiopod/screens/search_widgets/search_controls.dart';
 import 'package:radiopod/screens/search_widgets/search_intro.dart';
 import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/services/player.dart';
+import 'package:radiopod/services/podcast_index.dart';
 import 'package:radiopod/services/radio_browser.dart';
 import 'package:radiopod/services/view_prefs.dart';
 import 'package:radiopod/widgets/app_snack_bar.dart';
@@ -43,7 +44,8 @@ import 'package:radiopod/widgets/now_playing.dart';
 import 'package:radiopod/widgets/now_playing_stop_button.dart';
 import 'package:radiopod/widgets/station_tile.dart';
 
-/// Search Radio-Browser by station name, genre or location.
+/// Search Radio-Browser for stations, by name, genre or location, or
+/// Podcast Index for podcasts.
 ///
 /// Results are not saved anywhere until the user taps Save on one. Tapping a
 /// result plays it straight away without saving, so a station can be
@@ -59,6 +61,7 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final _query = TextEditingController();
 
+  SearchKind _kind = SearchKind.radio;
   SearchField _field = SearchField.name;
   List<Station> _results = [];
   bool _searching = false;
@@ -80,7 +83,17 @@ class _SearchScreenState extends State<SearchScreen> {
       orElse: byGenre ? SearchField.tag.name : SearchField.name.name,
     );
     final field = SearchField.values.asNameMap()[name] ?? SearchField.name;
-    if (mounted) setState(() => _field = field);
+    final kindName = await ViewPrefs.getString(
+      ViewPrefs.searchKind,
+      orElse: SearchKind.radio.name,
+    );
+    final kind = SearchKind.values.asNameMap()[kindName] ?? SearchKind.radio;
+    if (mounted) {
+      setState(() {
+        _field = field;
+        _kind = kind;
+      });
+    }
   }
 
   @override
@@ -95,67 +108,17 @@ class _SearchScreenState extends State<SearchScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Column(
-            children: [
-              SegmentedButton<SearchField>(
-                segments: [
-                  for (final f in SearchField.values)
-                    ButtonSegment(value: f, label: Text(f.label)),
-                ],
-                selected: {_field},
-                onSelectionChanged: _setField,
-              ),
-              const Gap(12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _query,
-                      textInputAction: TextInputAction.search,
-                      onSubmitted: (_) => _search(),
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.search),
-                        hintText: _field.hint,
-                        border: const OutlineInputBorder(),
-                        isDense: true,
-                        suffixIcon: MarkdownTooltip(
-                          message: '''
-
-                          **Search**
-
-                          Ask the community-run Radio-Browser database for
-                          matching stations. Only your search text and the
-                          app name are sent.
-
-                          Put **@** before a place to search only there, as
-                          in `@sydney news`. The other words then match the
-                          station name on *Name*, the genre on *Genre*, and
-                          either on *Location*. A place of several words
-                          needs quotes: `@"new york" jazz`.
-
-                          On *Location* the text without an **@** is the
-                          place: a country such as `Australia` or a region
-                          such as `Victoria`.
-
-                          ''',
-                          child: IconButton(
-                            icon: const Icon(Icons.arrow_forward),
-                            onPressed: _searching ? null : _search,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const Gap(8),
-                  NowPlayingStopButton(
-                    stations: [
-                      ..._results,
-                      ...context.watch<AppProvider>().stations,
-                    ],
-                  ),
-                ],
-              ),
-            ],
+          child: SearchControls(
+            kind: _kind,
+            field: _field,
+            controller: _query,
+            searching: _searching,
+            onKind: _setKind,
+            onField: _setField,
+            onSearch: _search,
+            trailing: NowPlayingStopButton(
+              stations: [..._results, ...context.watch<AppProvider>().stations],
+            ),
           ),
         ),
         Expanded(child: _body()),
@@ -166,6 +129,13 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _body() {
     if (_searching) return const Center(child: CircularProgressIndicator());
     if (!_searched) return const SearchIntro();
+    if (_results.isEmpty && _kind == SearchKind.podcast) {
+      return const SearchIntro(
+        message:
+            'No podcasts matched. Try fewer words, or the name of the '
+            'person or organisation that makes it.',
+      );
+    }
     if (_results.isEmpty) {
       return const SearchIntro(
         message:
@@ -203,8 +173,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
                   **Already saved**
 
-                  This station is in your library. Find it on the Stations
-                  screen to play it or add it to a playlist.
+                  This is in your library. Find it on the Stations screen to
+                  play it or add it to a playlist.
 
                   ''',
                     child: Icon(Icons.check),
@@ -214,8 +184,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
                   **Save**
 
-                  Add this station to your library. It is written encrypted to
-                  your Solid Pod.
+                  Add this to your library, at the top of your Stations. It is
+                  written encrypted to your Solid Pod when you are logged in.
 
                   ''',
                     child: IconButton(
@@ -229,8 +199,18 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  void _setField(Set<SearchField> selection) {
-    setState(() => _field = selection.first);
+  void _setKind(SearchKind kind) {
+    setState(() {
+      _kind = kind;
+      _results = [];
+      _searched = false;
+    });
+    ViewPrefs.setString(ViewPrefs.searchKind, kind.name);
+    if (_query.text.trim().isNotEmpty) _search();
+  }
+
+  void _setField(SearchField field) {
+    setState(() => _field = field);
     ViewPrefs.setString(ViewPrefs.searchField, _field.name);
     if (_searched) _search();
   }
@@ -244,18 +224,34 @@ class _SearchScreenState extends State<SearchScreen> {
       _searched = true;
     });
     try {
-      final results = await RadioBrowser.search(query, field: _field);
+      final podcasts = _kind == SearchKind.podcast;
+      final results = podcasts
+          ? await PodcastIndex.search(query)
+          : await RadioBrowser.search(query, field: _field);
       if (!mounted) return;
       setState(() => _results = results);
-    } catch (e) {
+    } on StateError catch (e) {
       if (!mounted) return;
       setState(() => _results = []);
       await showErrorDialog(
         context,
+        title: 'Podcast search unavailable',
+        message:
+            '${e.message} Podcasts already in your library still play and '
+            'refresh as usual.',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _results = []);
+      final where = _kind == SearchKind.podcast
+          ? 'the Podcast Index directory'
+          : 'the Radio-Browser database';
+      await showErrorDialog(
+        context,
         title: 'Search failed',
         message:
-            'Could not reach the Radio-Browser database. Check your network '
-            'connection and try again.\n\n$e',
+            'Could not reach $where. Check your network connection and try '
+            'again.\n\n$e',
       );
     } finally {
       if (mounted) setState(() => _searching = false);
@@ -265,22 +261,46 @@ class _SearchScreenState extends State<SearchScreen> {
   /// Play a result without saving it, so it can be auditioned first.
 
   Future<void> _preview(Station station) async {
+    final provider = context.read<AppProvider>();
     try {
-      await context.read<AppProvider>().play(station);
+      if (station.isPodcast) {
+        await provider.previewPodcast(station);
+      } else {
+        await provider.play(station);
+      }
     } catch (e) {
       if (!mounted) return;
       await showErrorDialog(
         context,
         title: 'Cannot play ${station.name}',
-        message:
-            'Radio-Browser lists this station but its stream could not be '
-            'reached. It may be off the air.\n\n$e',
+        message: station.isPodcast
+            ? 'Its episodes could not be fetched or played. The podcast '
+                  'may have moved or stopped publishing.\n\n$e'
+            : 'Radio-Browser lists this station but its stream could not be '
+                  'reached. It may be off the air.\n\n$e',
       );
     }
   }
 
   Future<void> _save(AppProvider provider, Station station) async {
-    await provider.addStation(station);
+    if (station.isPodcast) {
+      final error = await provider.addPodcast(station);
+      if (!mounted) return;
+      if (error != null) {
+        await showErrorDialog(
+          context,
+          title: 'Saved, but no episodes yet',
+          message:
+              '${station.name} is in your library, but its episodes could '
+              'not be fetched. Refresh it from its Casts page later.\n\n'
+              '$error',
+        );
+
+        return;
+      }
+    } else {
+      await provider.addStation(station);
+    }
     if (!mounted) return;
     showPositiveSnackBar(
       context,

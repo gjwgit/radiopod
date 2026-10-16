@@ -105,11 +105,17 @@ List<MediaItem> browseRoot(List<Playlist> playlists) => [
 /// can ask for a folder that has since been deleted, and an empty folder is
 /// the honest answer.
 
+///
+/// [detailsOf] may supply a row's second line in place of the station's
+/// own details; the handler uses it to give each podcast its count of casts
+/// still to hear, which this pure function has no way to know.
+
 List<MediaItem> browseChildren(
   String parentId,
   List<Station> stations,
-  List<Playlist> playlists,
-) {
+  List<Playlist> playlists, {
+  String? Function(Station)? detailsOf,
+}) {
   if (parentId == browseRootId) return browseRoot(playlists);
 
   // 20260922 gjw Library order, NOT alphabetical. The user arranges the
@@ -118,7 +124,10 @@ List<MediaItem> browseChildren(
   // driver wants first in the car. Re-sorting here would throw that away.
 
   if (parentId == browseAllStationsId) {
-    return [for (final s in stations) stationMediaItem(s, parentId)];
+    return [
+      for (final s in stations)
+        stationMediaItem(s, parentId, details: detailsOf?.call(s)),
+    ];
   }
 
   if (!parentId.startsWith(browsePlaylistPrefix)) return [];
@@ -134,7 +143,12 @@ List<MediaItem> browseChildren(
 
   return [
     for (final id in playlist.stationIds)
-      if (byId[id] != null) stationMediaItem(byId[id]!, parentId),
+      if (byId[id] != null)
+        stationMediaItem(
+          byId[id]!,
+          parentId,
+          details: detailsOf?.call(byId[id]!),
+        ),
   ];
 }
 
@@ -146,17 +160,26 @@ List<MediaItem> browseChildren(
 /// bitrate; the station details stand in whenever it is not. The track is
 /// also carried in extras so the UI can tell the two apart.
 
-MediaItem stationMediaItem(Station station, String parentId, {String? track}) =>
-    MediaItem(
-      id: stationMediaId(parentId, station.id),
-      title: station.name,
-      artist: track ?? (station.subtitle.isEmpty ? null : station.subtitle),
-      album: appName,
-      artUri: sessionArtUri(station),
-      playable: true,
-      isLive: true,
-      extras: {'stationId': station.id, 'track': ?track},
-    );
+///
+/// [details], when given, stands in for the station's own details. A podcast
+/// is not live: it is a row that plays recorded casts.
+
+MediaItem stationMediaItem(
+  Station station,
+  String parentId, {
+  String? track,
+  String? details,
+}) => MediaItem(
+  id: stationMediaId(parentId, station.id),
+  title: station.name,
+  artist:
+      track ?? details ?? (station.subtitle.isEmpty ? null : station.subtitle),
+  album: appName,
+  artUri: sessionArtUri(station),
+  playable: true,
+  isLive: !station.isPodcast,
+  extras: {'stationId': station.id, 'track': ?track},
+);
 
 /// The station's OWN logo, as Radio-Browser gave it, or null.
 ///
@@ -205,3 +228,9 @@ Uri? sessionArtUri(Station station) =>
     StationIconCache.uriFor(station.id) ?? _artUri(station);
 
 String _stationCount(int n) => '$n station${n == 1 ? '' : 's'}';
+
+/// A podcast row's second line in the car: short, because a head unit
+/// gives it little room.
+
+String podcastCarDetails(int toPlay) =>
+    toPlay == 0 ? 'Podcast · all heard' : 'Podcast · $toPlay to play';

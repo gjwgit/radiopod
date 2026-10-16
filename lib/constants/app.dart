@@ -47,6 +47,17 @@ const stationsFileName = 'stations.ttl';
 
 const playlistsFileName = 'playlists.ttl';
 
+/// Pod filename for every podcast's casts and the listener's progress
+/// through them, keyed by the podcast's station id.
+
+const castsFileName = 'casts.ttl';
+
+/// Names the app to every server it asks for something: Radio-Browser,
+/// Podcast Index and each podcast's own feed. Radio-Browser's terms of use
+/// require it. Bump the version with the app's.
+
+const userAgent = 'RadioPod/2.0.0 (+https://github.com/gjwgit/radiopod)';
+
 /// Notification channel identity for the Android media notification.
 ///
 /// Also the channel Android Auto surfaces the app under, so it must be

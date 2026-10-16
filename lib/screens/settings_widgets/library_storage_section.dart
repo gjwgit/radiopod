@@ -32,6 +32,7 @@ import 'package:markdown_tooltip/markdown_tooltip.dart';
 import 'package:provider/provider.dart';
 
 import 'package:radiopod/services/app_provider.dart';
+import 'package:radiopod/services/cast_store.dart';
 import 'package:radiopod/services/local_store.dart';
 import 'package:radiopod/widgets/app_snack_bar.dart';
 import 'package:radiopod/widgets/error_dialog.dart';
@@ -259,6 +260,7 @@ class _LibraryStorageSectionState extends State<LibraryStorageSection> {
     }
 
     await LocalStore.clear();
+    await (local ? CastStore.clear() : CastStore.clearDevice());
     if (!mounted) return;
 
     // When the device IS the library, the in-memory copy has to go too or

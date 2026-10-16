@@ -32,6 +32,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
+import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/utils/search_query.dart';
 
@@ -89,8 +90,7 @@ class RadioBrowser {
 
   /// Identifies the app to Radio-Browser, as their terms of use require.
 
-  static const _userAgent =
-      'RadioPod/1.5.13 (+https://github.com/gjwgit/radiopod)';
+  static const _userAgent = userAgent;
 
   /// Endpoint listing the currently available API mirrors.
 

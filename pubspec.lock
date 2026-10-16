@@ -13,10 +13,10 @@ packages:
     dependency: transitive
     description:
       name: android_file_picker
-      sha256: "0aac28063a1b19893f02a55dc8e2318799814881b7f920df2d12d0d043c8fbbb"
+      sha256: e94229cc41c4bb5fb6a2254146340a8b650664c99b5c93b9001f66c3375d0060
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.0"
+    version: "2.1.1"
   archive:
     dependency: transitive
     description:
@@ -178,7 +178,7 @@ packages:
     source: hosted
     version: "0.3.5+5"
   crypto:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: crypto
       sha256: c8ea0233063ba03258fbcf2ca4d6dadfefe14f02fab57702265467a19f27fadf
@@ -285,10 +285,10 @@ packages:
     dependency: transitive
     description:
       name: file_picker_darwin
-      sha256: "576ed6c1148a466913ceef8c19aed71011402351de46acd97732c50e5392f21e"
+      sha256: a5a48960703e7faa880544ef188491f442a93959b6afb5cae57575e5dc836589
       url: "https://pub.dev"
     source: hosted
-    version: "2.3.1"
+    version: "2.3.2"
   file_picker_linux:
     dependency: transitive
     description:
@@ -309,10 +309,10 @@ packages:
     dependency: transitive
     description:
       name: file_picker_web
-      sha256: "32af8262aca907b02b8970b32328b0312db0b42ba6f930be6d27fde179d59b7d"
+      sha256: a2288008280aabe371aff029466b3405e60838e0a1d714767488c59b926c8b8c
       url: "https://pub.dev"
     source: hosted
-    version: "4.1.0"
+    version: "4.2.0"
   fixnum:
     dependency: transitive
     description:
@@ -1197,10 +1197,10 @@ packages:
     dependency: "direct main"
     description:
       name: solidui
-      sha256: "9e50848b6770e9dd6b61210b2ff08093f38057d04899daab0e265da932499417"
+      sha256: "795ecdb09011bfcf9e78d474f738687804ea8044836142c3c266e2585cfe4130"
       url: "https://pub.dev"
     source: hosted
-    version: "1.5.7"
+    version: "1.5.8"
   source_span:
     dependency: transitive
     description:
@@ -1429,10 +1429,10 @@ packages:
     dependency: transitive
     description:
       name: vm_service
-      sha256: "5f37239c4851efcef929cea7824e76df7f2f0970aef85d66bbc430afa40e72f0"
+      sha256: "89b11d62e1040ee681af3b4f1c97a803ecbf010c6e8b9c5896ee5b08c3bf7b78"
       url: "https://pub.dev"
     source: hosted
-    version: "15.3.0"
+    version: "15.4.0"
   web:
     dependency: transitive
     description:
@@ -1498,7 +1498,7 @@ packages:
     source: hosted
     version: "1.1.0"
   xml:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: xml
       sha256: "0fe8cc98946def31cbcbc8734aa4067031e6f65ea3a78a508060bfed2200bfeb"

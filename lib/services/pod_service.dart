@@ -52,12 +52,14 @@ class PodService {
 
   // ── Turtle helpers ────────────────────────────────────────────────────────
 
-  static String _buildTtl(String fileName, String json) =>
+  @visibleForTesting
+  static String buildTtl(String fileName, String json) =>
       '$_prefixes\n'
       'radiopod:${fileName.replaceAll('.', '_')} a radiopod:DataFile ;\n'
       '  radiopod:data """$json""" .\n';
 
-  static String? _extractJson(String ttl) {
+  @visibleForTesting
+  static String? extractJson(String ttl) {
     final match = RegExp(
       r'radiopod:data\s+"""(.*?)"""',
       dotAll: true,
@@ -76,7 +78,7 @@ class PodService {
 
   static Future<String?> save(String fileName, String json) async {
     try {
-      final ttl = _buildTtl(fileName, json);
+      final ttl = buildTtl(fileName, json);
       await SolidPendingWrites.track(writePod(fileName, ttl, overwrite: true));
 
       return null;
@@ -99,7 +101,7 @@ class PodService {
       final ttl = await readPod(fileName);
       if (ttl.isEmpty) return null;
 
-      return _extractJson(ttl);
+      return extractJson(ttl);
     } catch (e) {
       debugPrint('[PodService] load error ($fileName): $e');
 

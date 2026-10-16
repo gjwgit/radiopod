@@ -43,6 +43,10 @@ class NowPlaying {
 
   final String? track;
 
+  /// The guid of the cast on air, when the station is a podcast.
+
+  final String? castGuid;
+
   final bool playing;
 
   /// Opening the connection to the stream.
@@ -62,6 +66,7 @@ class NowPlaying {
   const NowPlaying({
     this.stationId,
     this.track,
+    this.castGuid,
     this.playing = false,
     this.connecting = false,
     this.loading = false,
@@ -73,6 +78,10 @@ class NowPlaying {
 
   bool isCurrent(String id) => stationId != null && stationId == id;
 
+  /// True when [guid] is the cast on air.
+
+  bool isCurrentCast(String guid) => castGuid != null && castGuid == guid;
+
   // 20260923 gjw Value equality exists so the stream below can be made
   // `distinct`. Without it the whole station list rebuilt on every playback
   // event — several a second while buffering — for a snapshot that had not
@@ -83,6 +92,7 @@ class NowPlaying {
       other is NowPlaying &&
       other.stationId == stationId &&
       other.track == track &&
+      other.castGuid == castGuid &&
       other.playing == playing &&
       other.connecting == connecting &&
       other.loading == loading &&
@@ -93,6 +103,7 @@ class NowPlaying {
   int get hashCode => Object.hash(
     stationId,
     track,
+    castGuid,
     playing,
     connecting,
     loading,
@@ -155,6 +166,7 @@ class NowPlayingBuilder extends StatelessWidget {
       return NowPlaying(
         stationId: stationId,
         track: item?.extras?['track'] as String?,
+        castGuid: item?.extras?['castGuid'] as String?,
         playing: state.playing,
         connecting: processing == AudioProcessingState.loading,
         loading: processing == AudioProcessingState.buffering && !_started,

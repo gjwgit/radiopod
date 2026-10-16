@@ -18,8 +18,10 @@ It is a simple privacy-first alternative to apps like
 [Transistor](https://f-droid.org/packages/org.y20k.transistor/) and
 [Shortwave](https://snapcraft.io/shortwave). Find stations in the
 community-run [Radio-Browser](https://www.radio-browser.info)
-database, group them into playlists, and listen — at your desk, on
-your phone, or in the car through Apple CarPlay or Android Auto.
+database, follow podcasts from the open
+[Podcast Index](https://podcastindex.org), group them into playlists,
+and listen — at your desk, on your phone, or in the car through Apple
+CarPlay or Android Auto.
 
 Your station library and your playlists are stored locally by
 default. Once you are ready they can be
@@ -62,6 +64,12 @@ many more apps using the Solid ecosystem.
 + **Search** the community-run
   [Radio-Browser](https://www.radio-browser.info) database of internet
   radio stations, by station name, by genre, or by location.
++ **Podcasts** sit in your Stations list beside the radio. A tap plays
+  the latest episode you have not heard, then each older one in turn,
+  resuming any you stopped part-way. A podcast's Casts page lists its
+  episodes with their show notes; heard ones stay listed, greyed, and
+  any you switch off are skipped. Search them in the open
+  [Podcast Index](https://podcastindex.org).
 + **Save** the stations you like into a library that is stored locally
   or encrypted on your Pod.
 + **Playlists** group your stations. They are also the folders you
@@ -100,9 +108,12 @@ login timestamp and other standard server logging of meta data.
 + Your stations and playlists are **encrypted before they leave your
   device** and written to your own Solid Pod. The server holding them,
   and its administrators, cannot read your stations and playlists.
-+ The **only third party contacted is Radio-Browser** and only when
-  you use the **Search** functionality, add a station by hand, or
-  refresh a station's details. It is sent your search text, the
++ The **only third parties contacted are Radio-Browser and Podcast
+  Index**, and only when you use the **Search** functionality, add a
+  station by hand, or refresh a station's details. Podcast Index is
+  asked only when you search for a podcast; it is sent your search
+  text and the app name, and the code is in
+  `lib/services/podcast_index.dart`. For Radio-Browser: It is sent your search text, the
   stream address you typed, or the station's Radio-Browser id, and
   the app name and versions (e.g., RadioPod 1.1.21). It is not sent
   your WebID, your Pod address, nor your library. The relevant code
@@ -110,6 +121,10 @@ login timestamp and other standard server logging of meta data.
 + Radio-Browser offers a click-reporting endpoint that apps call to
   feed its popularity ranking. **RadioPod does not call it.** Nothing
   about what you listen to leaves the device.
++ A podcast's episode list and its episodes come straight from its
+  publisher, as any podcast app fetches them. Which episodes you have
+  heard, and how far into each, is kept with your library — encrypted
+  on your Pod, and on the device for the car — and is never reported.
 + Playing a station connects directly to that station's stream, so the
   broadcaster sees a connection from your network, as it would from
   any radio player or web browser. RadioPod adds nothing to that

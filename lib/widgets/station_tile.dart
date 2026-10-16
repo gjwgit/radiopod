@@ -73,6 +73,11 @@ class StationTile extends StatelessWidget {
 
   final String? track;
 
+  /// The second line when nothing is playing, in place of the station's own
+  /// details. A podcast row uses it for its count of casts still to hear.
+
+  final String? details;
+
   final VoidCallback? onTap;
   final Widget? trailing;
 
@@ -86,6 +91,7 @@ class StationTile extends StatelessWidget {
     this.paused = false,
     this.failed = false,
     this.track,
+    this.details,
     this.onTap,
     this.trailing,
   });
@@ -173,7 +179,9 @@ class StationTile extends StatelessWidget {
       if (playing && track != null) return track;
     }
 
-    return station.subtitle.isEmpty ? null : station.subtitle;
+    final shown = details ?? station.subtitle;
+
+    return shown.isEmpty ? null : shown;
   }
 
   /// The station logo, falling back to a radio icon.
@@ -184,7 +192,10 @@ class StationTile extends StatelessWidget {
   /// takes over silently.
 
   Widget _logo(ColorScheme cs) {
-    final fallback = Icon(Icons.radio, color: cs.primary);
+    final fallback = Icon(
+      station.isPodcast ? Icons.podcasts : Icons.radio,
+      color: cs.primary,
+    );
 
     // A stored icon wins: it was chosen or downloaded deliberately, it
     // cannot rot the way the advertised URL does, and it needs no network.
@@ -229,4 +240,25 @@ class StationTile extends StatelessWidget {
     height: 40,
     child: ClipRRect(borderRadius: BorderRadius.circular(6), child: child),
   );
+}
+
+/// The second line of a podcast's row: what it is, who makes it, and how
+/// many of its casts are still to be heard.
+
+String podcastDetails(
+  Station podcast, {
+  required int toPlay,
+  required int total,
+}) {
+  final count = total == 0
+      ? 'no casts yet'
+      : toPlay == 0
+      ? 'all $total heard'
+      : '$toPlay to play of $total';
+
+  return [
+    'Podcast',
+    if (podcast.author != null && podcast.author!.isNotEmpty) podcast.author!,
+    count,
+  ].join(' · ');
 }

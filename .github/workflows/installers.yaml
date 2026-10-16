@@ -128,7 +128,16 @@ jobs:
         run: flutter config --enable-linux-desktop
 
       - name: Build Flutter Linux app
-        run: flutter build linux --release
+        # 20261016 gjw The Podcast Index pair is scrambled into dart_defines.json
+        # (support/scramble_defines.dart) and the build obfuscated, so neither
+        # secret sits in the binary as plain text.
+        run: |
+          flutter pub get
+          dart run support/scramble_defines.dart
+          flutter build linux --release --dart-define-from-file=dart_defines.json --obfuscate --split-debug-info=build/symbols
+        env:
+          PODCAST_INDEX_KEY: ${{ secrets.PODCAST_INDEX_KEY }}
+          PODCAST_INDEX_SECRET: ${{ secrets.PODCAST_INDEX_SECRET }}
 
       # Package as DEB
 
@@ -252,7 +261,16 @@ jobs:
         run: flutter config --enable-linux-desktop
 
       - name: Build Flutter Linux app
-        run: flutter build linux --release
+        # 20261016 gjw The Podcast Index pair is scrambled into dart_defines.json
+        # (support/scramble_defines.dart) and the build obfuscated, so neither
+        # secret sits in the binary as plain text.
+        run: |
+          flutter pub get
+          dart run support/scramble_defines.dart
+          flutter build linux --release --dart-define-from-file=dart_defines.json --obfuscate --split-debug-info=build/symbols
+        env:
+          PODCAST_INDEX_KEY: ${{ secrets.PODCAST_INDEX_KEY }}
+          PODCAST_INDEX_SECRET: ${{ secrets.PODCAST_INDEX_SECRET }}
 
       # Package as ZIP
 
@@ -479,8 +497,16 @@ jobs:
       # by the codesign step further below.
 
       - name: Build Flutter macOS app
-        run: flutter build macos --release
+        # 20261016 gjw The Podcast Index pair is scrambled into dart_defines.json
+        # (support/scramble_defines.dart) and the build obfuscated, so neither
+        # secret sits in the binary as plain text.
+        run: |
+          flutter pub get
+          dart run support/scramble_defines.dart
+          flutter build macos --release --dart-define-from-file=dart_defines.json --obfuscate --split-debug-info=build/symbols
         env:
+          PODCAST_INDEX_KEY: ${{ secrets.PODCAST_INDEX_KEY }}
+          PODCAST_INDEX_SECRET: ${{ secrets.PODCAST_INDEX_SECRET }}
           FLUTTER_XCODE_CODE_SIGN_STYLE: Manual
           FLUTTER_XCODE_CODE_SIGN_IDENTITY: "-"
           FLUTTER_XCODE_DEVELOPMENT_TEAM: ""
@@ -945,7 +971,16 @@ jobs:
         # Connect refuses a number it has seen before, so that increment is
         # what makes a second upload possible. Nothing is passed here: one
         # source of truth, and `flutter build` already reads it.
-        run: flutter build ipa --export-options-plist=ios/GithubActionsExportOptions.plist
+        # 20261016 gjw The Podcast Index pair is scrambled into dart_defines.json
+        # (support/scramble_defines.dart) and the build obfuscated, so neither
+        # secret sits in the binary as plain text.
+        run: |
+          flutter pub get
+          dart run support/scramble_defines.dart
+          flutter build ipa --export-options-plist=ios/GithubActionsExportOptions.plist --dart-define-from-file=dart_defines.json --obfuscate --split-debug-info=build/symbols
+        env:
+          PODCAST_INDEX_KEY: ${{ secrets.PODCAST_INDEX_KEY }}
+          PODCAST_INDEX_SECRET: ${{ secrets.PODCAST_INDEX_SECRET }}
 
       - name: Note the xcarchive created
         run: |
@@ -1090,7 +1125,16 @@ jobs:
         run: flutter config --enable-windows-desktop
 
       - name: Build Flutter Windows app
-        run: flutter build windows --release
+        # 20261016 gjw The Podcast Index pair is scrambled into dart_defines.json
+        # (support/scramble_defines.dart) and the build obfuscated, so neither
+        # secret sits in the binary as plain text.
+        run: |
+          flutter pub get
+          dart run support/scramble_defines.dart
+          flutter build windows --release --dart-define-from-file=dart_defines.json --obfuscate --split-debug-info=build/symbols
+        env:
+          PODCAST_INDEX_KEY: ${{ secrets.PODCAST_INDEX_KEY }}
+          PODCAST_INDEX_SECRET: ${{ secrets.PODCAST_INDEX_SECRET }}
 
       # Package as ZIP
 

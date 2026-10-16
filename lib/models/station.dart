@@ -106,6 +106,20 @@ class Station {
 
   final String? icon;
 
+  /// True when this entry is a podcast rather than a live station.
+  ///
+  /// 20261016 gjw A podcast lives in the same list as the stations, and is
+  /// one, as far as the list, the playlists and the car are concerned: it
+  /// has a name, artwork and a place in the user's order. Its [url] is the
+  /// RSS FEED, never audio. The episodes — casts — are fetched from that
+  /// feed and kept apart, in `casts.ttl`, with the listener's progress.
+
+  final bool isPodcast;
+
+  /// Who makes the podcast, from the feed's `itunes:author`.
+
+  final String? author;
+
   const Station({
     required this.id,
     required this.name,
@@ -122,6 +136,8 @@ class Station {
     this.reconnectOnEnd = false,
     this.isHls = false,
     this.icon,
+    this.isPodcast = false,
+    this.author,
   });
 
   // ── Derived properties ────────────────────────────────────────────────────
@@ -133,6 +149,8 @@ class Station {
   /// row of separators.
 
   String get subtitle => [
+    if (isPodcast) 'Podcast',
+    if (author != null && author!.isNotEmpty) author,
     if (country != null && country!.isNotEmpty) country,
     if (language != null && language!.isNotEmpty) language,
     if (codec != null && codec!.isNotEmpty) codec,
@@ -158,6 +176,8 @@ class Station {
     if (reconnectOnEnd) 'reconnectOnEnd': true,
     if (isHls) 'isHls': true,
     if (icon != null) 'icon': icon,
+    if (isPodcast) 'isPodcast': true,
+    if (author != null) 'author': author,
   };
 
   factory Station.fromJson(Map<String, dynamic> j) => Station(
@@ -176,6 +196,8 @@ class Station {
     reconnectOnEnd: j['reconnectOnEnd'] as bool? ?? false,
     isHls: j['isHls'] as bool? ?? false,
     icon: j['icon'] as String?,
+    isPodcast: j['isPodcast'] as bool? ?? false,
+    author: j['author'] as String?,
   );
 
   Station copyWith({
@@ -194,6 +216,8 @@ class Station {
     bool? reconnectOnEnd,
     bool? isHls,
     Object? icon = _sentinel,
+    bool? isPodcast,
+    Object? author = _sentinel,
   }) => Station(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -212,6 +236,8 @@ class Station {
     reconnectOnEnd: reconnectOnEnd ?? this.reconnectOnEnd,
     isHls: isHls ?? this.isHls,
     icon: icon == _sentinel ? this.icon : icon as String?,
+    isPodcast: isPodcast ?? this.isPodcast,
+    author: author == _sentinel ? this.author : author as String?,
   );
 }
 

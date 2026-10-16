@@ -39,6 +39,10 @@ import 'package:radiopod/utils/playlist_file.dart';
 
 /// Write [stations] as a [format] playlist to a user-chosen file.
 ///
+/// 20261016 gjw Podcasts are left out. Their address is an RSS feed, not
+/// audio, and an M3U or PLS player handed one would play nothing. A podcast
+/// app reads OPML, which RadioPod does not write yet.
+///
 /// Returns the saved path, or null if the user cancelled. [name] seeds the
 /// suggested filename, sanitised so a playlist called "Drive / Work" cannot
 /// produce a path separator.
@@ -49,7 +53,8 @@ Future<String?> savePlaylistFile({
   required PlaylistFormat format,
 }) async {
   final content = writePlaylist([
-    for (final s in stations) (name: s.name, url: s.url),
+    for (final s in stations)
+      if (!s.isPodcast) (name: s.name, url: s.url),
   ], format);
 
   final fileUri = await FilePicker.saveFile(

@@ -34,15 +34,21 @@ import 'package:just_audio/just_audio.dart';
 import 'package:rxdart/rxdart.dart';
 
 import 'package:radiopod/constants/app.dart';
+import 'package:radiopod/models/cast.dart';
 import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/services/browse_tree.dart';
 import 'package:radiopod/services/carplay_bridge.dart';
+import 'package:radiopod/services/cast_playback.dart';
+import 'package:radiopod/services/cast_store.dart';
 import 'package:radiopod/services/geo_block.dart';
 import 'package:radiopod/services/icy_reader.dart';
 import 'package:radiopod/services/stream_end_policy.dart';
+import 'package:radiopod/utils/cast_merge.dart';
 import 'package:radiopod/utils/platform_io.dart'
     if (dart.library.js_interop) 'package:radiopod/utils/platform_web.dart';
+
+part 'radio_audio_handler_casts.dart';
 
 /// The single audio handler, shared by the Flutter UI, the system
 /// notification, the lock screen, headset buttons and Android Auto.
@@ -55,6 +61,12 @@ import 'package:radiopod/utils/platform_io.dart'
 /// deliberately does NOT mix in SeekHandler and does not offer fast-forward
 /// or rewind. Stations are switched with Next and Previous instead, moving
 /// through whichever playlist the station was started from.
+///
+/// 20261016 gjw A PODCAST'S CAST DOES HAVE A TIMELINE, so while one plays —
+/// and only then — the session offers pause, seek, back 15 s and forward
+/// 30 s, publishes the position, and Next and Previous move to the older or
+/// newer cast. Radio is unchanged. The cast logic lives in
+/// radio_audio_handler_casts.dart.
 
 class RadioAudioHandler extends BaseAudioHandler {
   final _player = AudioPlayer();
@@ -130,6 +142,31 @@ class RadioAudioHandler extends BaseAudioHandler {
   Station? _currentStation;
   String? _currentTrack;
 
+  /// The cast on air when [_currentStation] is a podcast, else null. Its
+  /// listener state is the store's; this copy supplies title and length.
+
+  Cast? _currentCast;
+
+  /// Whether the podcast on air has an older or a newer cast to skip to,
+  /// worked out when the cast starts rather than on every state event.
+
+  bool _castHasOlder = false;
+  bool _castHasNewer = false;
+
+  /// Saves the cast's place every [castSaveEvery] while it plays.
+
+  Timer? _castSaveTimer;
+
+  /// True while a finished cast is handing over to the next, so a second
+  /// `completed` report does not start a second hand-over.
+
+  bool _castEnding = false;
+
+  /// The counts the car's rows last showed, to tell a change that matters
+  /// to them from one that does not.
+
+  String _lastCastCounts = '';
+
   /// The desktop track reader for the current station, cancelled whenever
   /// playback moves on so only one stream is ever being polled.
 
@@ -165,6 +202,8 @@ class RadioAudioHandler extends BaseAudioHandler {
 
     _player.icyMetadataStream.listen(_broadcastTrack);
 
+    _watchCasts();
+
     // 20260922 gjw Most internet radio is an endless stream, but not all of
     // it: NPR and other bulletin feeds genuinely END when the bulletin is
     // over, and a dropped connection arrives here the same way, because
@@ -181,7 +220,10 @@ class RadioAudioHandler extends BaseAudioHandler {
 
     _player.playerStateStream.listen((s) {
       if (s.processingState == ProcessingState.completed && s.playing) {
-        _onStreamEnded();
+        // A cast that reaches its end has been heard; a stream that does has
+        // dropped or finished, which is a different question entirely.
+
+        _currentCast != null ? unawaited(_onCastEnded()) : _onStreamEnded();
       } else if (_resumed) {
         // The stream picked itself back up. Call off any pending advance.
 
@@ -375,7 +417,12 @@ class RadioAudioHandler extends BaseAudioHandler {
     // 20260929 tc CarPlay does not browse through audio_service, so its
     // native lists are handed the same library here.
 
-    CarPlayBridge.publishLibrary(stations, playlists);
+    CarPlayBridge.publishLibrary(
+      stations,
+      playlists,
+      detailsOf: _podcastDetails,
+    );
+    _lastCastCounts = _castCounts();
   }
 
   // ── Playback ──────────────────────────────────────────────────────────────
@@ -386,15 +433,28 @@ class RadioAudioHandler extends BaseAudioHandler {
   /// view, or just the one station. Passing it explicitly keeps the skip
   /// behaviour the same whether playback started in the app or in the car.
 
+  ///
+  /// For a podcast, [castGuid] names the cast to play; otherwise the newest
+  /// still to hear. Throws [StateError] when the podcast has none left.
+
   Future<void> playStation(
     Station station, {
     List<Station>? queue,
     String parentId = browseAllStationsId,
+    String? castGuid,
   }) async {
     // Read BEFORE _silence() below, which leaves the player not playing
     // even when this is a switch from one station to another.
 
     final fromSilence = !_player.playing;
+
+    // Resolve the cast first, so a podcast with nothing left to play fails
+    // before the station on air is disturbed. Then save the place in
+    // whatever cast is being left.
+
+    final cast = station.isPodcast ? _castToPlay(station, castGuid) : null;
+    await _saveCastPlace();
+    _castSaveTimer?.cancel();
 
     _queueStations = (queue == null || queue.isEmpty) ? [station] : queue;
     _queueParentId = parentId;
@@ -410,6 +470,9 @@ class RadioAudioHandler extends BaseAudioHandler {
 
     _currentStation = station;
     _currentTrack = null;
+    _currentCast = cast;
+    _castEnding = false;
+    if (cast != null) _findCastNeighbours(station, cast);
     _startedAt = DateTime.now();
     _stopped = false;
 
@@ -420,7 +483,7 @@ class RadioAudioHandler extends BaseAudioHandler {
     _watchTrack(station);
 
     _publishQueue();
-    mediaItem.add(_sessionItem(station, parentId));
+    mediaItem.add(_nowItem());
 
     try {
       // Silence whatever is on BEFORE opening the next station.
@@ -441,11 +504,20 @@ class RadioAudioHandler extends BaseAudioHandler {
       // with no way back. Failing is better than hanging: the row can then
       // show the error and be tapped again.
 
-      await _player.setUrl(station.url).timeout(_openTimeout);
+      // A cast resumes where the listener left it, unless it was heard to
+      // the end and is being played again on purpose.
+
+      await _player
+          .setUrl(
+            cast?.audioUrl ?? station.url,
+            initialPosition: cast == null || cast.played ? null : cast.position,
+          )
+          .timeout(_openTimeout);
 
       // 20261013 gjw BEFORE play(), not after: just_audio's play() future
       // completes only when playback later pauses or stops.
 
+      if (cast != null) _startCastSaving();
       if (fromSilence) onPlayFromSilence?.call();
       await _player.play();
     } catch (e) {
@@ -483,6 +555,7 @@ class RadioAudioHandler extends BaseAudioHandler {
         station,
         queue: _queueStations,
         parentId: _queueParentId,
+        castGuid: _currentCast?.guid,
       );
 
       return;
@@ -493,7 +566,19 @@ class RadioAudioHandler extends BaseAudioHandler {
   }
 
   @override
-  Future<void> pause() => _player.pause();
+  Future<void> pause() async {
+    await _player.pause();
+    await _saveCastPlace();
+  }
+
+  @override
+  Future<void> seek(Duration position) => _seekCast(position);
+
+  @override
+  Future<void> fastForward() => _seekCast(_player.position + castSkipForward);
+
+  @override
+  Future<void> rewind() => _seekCast(_player.position - castSkipBack);
 
   /// Set the volume from 0 to 1, for the sleep timer's fade. It carries
   /// over a change of station, which is what lets a fade continue across
@@ -546,6 +631,11 @@ class RadioAudioHandler extends BaseAudioHandler {
     // from a station switch, and setting it afterwards left that listener
     // reporting a switch for the one case that genuinely is a stop.
 
+    // Keep the place in a cast before the player lets go of it.
+
+    await _saveCastPlace();
+    _castSaveTimer?.cancel();
+
     _stopped = true;
     await _silence();
     playbackState.add(
@@ -592,13 +682,17 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   void _setTrack(String? title) {
     final station = _currentStation;
-    if (station == null) return;
+
+    // A cast's title is its track; anything a podcast host embeds as ICY
+    // metadata is not wanted over it.
+
+    if (station == null || _currentCast != null) return;
 
     final track = _cleanTrack(title);
     if (track == _currentTrack) return;
 
     _currentTrack = track;
-    mediaItem.add(_sessionItem(station, _queueParentId, track: track));
+    mediaItem.add(_nowItem());
     _publishQueue();
   }
 
@@ -626,16 +720,14 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   void _publishQueue() {
     final items = [
-      for (final s in _queueStations) stationMediaItem(s, _queueParentId),
+      for (final s in _queueStations)
+        stationMediaItem(s, _queueParentId, details: _podcastDetails(s)),
     ];
 
-    final station = _currentStation;
-    if (station != null && _queueIndex >= 0 && _queueIndex < items.length) {
-      items[_queueIndex] = _sessionItem(
-        station,
-        _queueParentId,
-        track: _currentTrack,
-      );
+    if (_currentStation != null &&
+        _queueIndex >= 0 &&
+        _queueIndex < items.length) {
+      items[_queueIndex] = _nowItem();
     }
 
     // An unchanged queue is not republished. Skipping within a playlist
@@ -665,7 +757,7 @@ class RadioAudioHandler extends BaseAudioHandler {
   void _watchTrack(Station station) {
     _trackSubscription?.cancel();
     _trackSubscription = null;
-    if (!needsIcyPolling || !icyPollingEnabled) return;
+    if (!needsIcyPolling || !icyPollingEnabled || station.isPodcast) return;
 
     _trackSubscription = IcyReader.watch(station.url).listen(
       (title) {
@@ -696,11 +788,16 @@ class RadioAudioHandler extends BaseAudioHandler {
     return t;
   }
 
-  @override
-  Future<void> skipToNext() => _skipBy(1);
+  /// Next and Previous: through the station queue, or, while a cast plays,
+  /// to the next older or newer cast of the same podcast.
 
   @override
-  Future<void> skipToPrevious() => _skipBy(-1);
+  Future<void> skipToNext() =>
+      _currentCast != null ? _skipCast(older: true) : _skipBy(1);
+
+  @override
+  Future<void> skipToPrevious() =>
+      _currentCast != null ? _skipCast(older: false) : _skipBy(-1);
 
   /// Move [delta] stations through the current queue, wrapping at the ends.
   ///
@@ -749,7 +846,12 @@ class RadioAudioHandler extends BaseAudioHandler {
   Future<List<MediaItem>> getChildren(
     String parentMediaId, [
     Map<String, dynamic>? options,
-  ]) async => browseChildren(parentMediaId, _stations, _playlists);
+  ]) async => browseChildren(
+    parentMediaId,
+    _stations,
+    _playlists,
+    detailsOf: _podcastDetails,
+  );
 
   @override
   ValueStream<Map<String, dynamic>> subscribeToChildren(String parentMediaId) =>
@@ -768,7 +870,13 @@ class RadioAudioHandler extends BaseAudioHandler {
     if (parts == null) return null;
     final station = _stations.where((s) => s.id == parts.stationId).firstOrNull;
 
-    return station == null ? null : stationMediaItem(station, parts.parentId);
+    return station == null
+        ? null
+        : stationMediaItem(
+            station,
+            parts.parentId,
+            details: _podcastDetails(station),
+          );
   }
 
   // ── State broadcast ───────────────────────────────────────────────────────
@@ -785,6 +893,8 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   void _broadcastState(PlaybackEvent? event) {
     final playing = _player.playing;
+    if (_currentCast != null) return _broadcastCastState(playing);
+
     final hasQueue = _queueStations.length > 1;
 
     playbackState.add(
@@ -799,6 +909,10 @@ class RadioAudioHandler extends BaseAudioHandler {
         processingState: _reportedState,
         playing: playing,
         queueIndex: _queueIndex < 0 ? null : _queueIndex,
+
+        // Back to no timeline, should a cast have published one.
+        updatePosition: Duration.zero,
+        bufferedPosition: Duration.zero,
       ),
     );
   }

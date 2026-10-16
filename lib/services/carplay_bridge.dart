@@ -94,9 +94,16 @@ class CarPlayBridge {
 
   /// Send the library to the car. Called on every library change.
 
-  static void publishLibrary(List<Station> stations, List<Playlist> playlists) {
+  static void publishLibrary(
+    List<Station> stations,
+    List<Playlist> playlists, {
+    String? Function(Station)? detailsOf,
+  }) {
     if (!_supported) return;
-    _send('setLibrary', carPlayLibrary(stations, playlists));
+    _send(
+      'setLibrary',
+      carPlayLibrary(stations, playlists, detailsOf: detailsOf),
+    );
   }
 
   static void _send(String method, Object? arguments) {
@@ -120,8 +127,9 @@ class CarPlayBridge {
 
 Map<String, Object?> carPlayLibrary(
   List<Station> stations,
-  List<Playlist> playlists,
-) {
+  List<Playlist> playlists, {
+  String? Function(Station)? detailsOf,
+}) {
   Map<String, Object?> station(MediaItem m) => {
     'mediaId': m.id,
     'stationId': m.extras?['stationId'],
@@ -132,7 +140,12 @@ Map<String, Object?> carPlayLibrary(
 
   return {
     'stations': [
-      for (final m in browseChildren(browseAllStationsId, stations, playlists))
+      for (final m in browseChildren(
+        browseAllStationsId,
+        stations,
+        playlists,
+        detailsOf: detailsOf,
+      ))
         station(m),
     ],
     'playlists': [
@@ -143,7 +156,12 @@ Map<String, Object?> carPlayLibrary(
             'title': folder.title,
             'subtitle': folder.displaySubtitle,
             'stations': [
-              for (final m in browseChildren(folder.id, stations, playlists))
+              for (final m in browseChildren(
+                folder.id,
+                stations,
+                playlists,
+                detailsOf: detailsOf,
+              ))
                 station(m),
             ],
           },

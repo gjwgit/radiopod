@@ -1,7 +1,7 @@
 name: radiopod
 description: "Radio Pod - Internet Radio with Secure and Private Storage"
 publish_to: 'none'
-version: 1.5.13+35
+version: 2.0.0+36
 
 environment:
   sdk: ^3.13.4
@@ -37,6 +37,11 @@ dependencies:
   # media_kit_libs_audio (which covers every platform) would bloat the APK for
   # a backend that is never initialised there.
 
+  # 20261016 gjw Podcast Index signs each request with an SHA-1 of the key,
+  # the secret and the time. Already present transitively; declared because
+  # PodcastIndex imports it.
+
+  crypto: ^3.0.7
   ffi: ^2.1.4
   file_picker: ^13.1.0
   gap: ^3.0.1
@@ -81,6 +86,12 @@ dependencies:
   url_launcher: ^6.3.2
   uuid: ^4.6.0
   window_manager: ^0.5.2
+
+  # 20261016 gjw Podcasts arrive as RSS, which is XML. A small pure-Dart
+  # parser, already present transitively; the feed handling in
+  # lib/utils/rss.dart is our own, so no podcast package is needed.
+
+  xml: ^7.1.0
 
 dev_dependencies:
   flutter_test:
