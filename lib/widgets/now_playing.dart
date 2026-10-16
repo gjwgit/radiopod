@@ -30,6 +30,7 @@ import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:rxdart/rxdart.dart';
 
+import 'package:radiopod/models/station.dart';
 import 'package:radiopod/services/player.dart';
 
 /// What the media session is doing, reduced to what a station row needs.
@@ -110,6 +111,24 @@ class NowPlaying {
     paused,
     failed,
   );
+}
+
+/// One line saying what is on: `ABC Jazz — Miles Davis, So What`, or the
+/// podcast and its cast, or just the station while it announces no song.
+/// Null when nothing is playing or paused, or the station is not in
+/// [stations] (a Search preview, say).
+
+String? nowPlayingLine(NowPlaying now, List<Station> stations) {
+  if (!now.playing && !now.paused) return null;
+  final name = stations
+      .where((s) => now.isCurrent(s.id))
+      .map((s) => s.name)
+      .firstOrNull;
+  if (name == null) return null;
+
+  final line = now.track == null ? name : '$name — ${now.track}';
+
+  return now.paused && !now.playing ? 'Paused: $line' : line;
 }
 
 /// Rebuilds [builder] whenever the media session changes.

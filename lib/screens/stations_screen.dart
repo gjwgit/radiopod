@@ -92,22 +92,39 @@ class _StationsScreenState extends State<StationsScreen> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
               children: [
+                // 20261016 gjw While something plays, the empty box says
+                // what: the station and its song, or the podcast and its
+                // cast. It is still the filter — typing replaces the line
+                // as any hint is replaced — so nothing is lost, and the
+                // usual prompt returns when playback stops.
                 Expanded(
-                  child: TextField(
-                    controller: _filter,
-                    onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.filter_list),
-                      hintText: 'Filter your stations',
-                      border: const OutlineInputBorder(),
-                      isDense: true,
-                      suffixIcon: _filter.text.isEmpty
-                          ? null
-                          : IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () => setState(_filter.clear),
-                            ),
-                    ),
+                  child: NowPlayingBuilder(
+                    builder: (context, now) {
+                      final playing = nowPlayingLine(now, provider.stations);
+
+                      return TextField(
+                        controller: _filter,
+                        onChanged: (_) => setState(() {}),
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.filter_list),
+                          hintText: playing ?? 'Filter your stations',
+                          hintStyle: playing == null
+                              ? null
+                              : TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                          border: const OutlineInputBorder(),
+                          isDense: true,
+                          suffixIcon: _filter.text.isEmpty
+                              ? null
+                              : IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () => setState(_filter.clear),
+                                ),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 8),
