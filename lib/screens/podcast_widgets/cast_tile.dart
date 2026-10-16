@@ -36,7 +36,7 @@ import 'package:radiopod/utils/cast_text.dart';
 ///
 /// 20261016 gjw A PLAYED CAST STAYS, GREYED. It is still worth seeing — to
 /// find something heard last week, or to hear it again — so it is dimmed
-/// rather than removed, and a tap still plays it. A SWITCHED-OFF cast is
+/// rather than removed, and a tap still plays it. A SKIPPED (disabled) cast is
 /// dimmed the same way; the switch says which it is. Neither is played when
 /// the podcast is working backwards through its casts.
 ///

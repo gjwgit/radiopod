@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.0 Podcasts
 
++ Skip all, or unskip all, of a podcast's casts [2.0.1 20261016 gjw]
 + Podcasts: Podcast Index, tap to play, resume, skip, seek [2.0.0 20261016 gjw]
 
 ## 1.5 Starter stations

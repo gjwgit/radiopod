@@ -263,7 +263,7 @@ class _StationsScreenState extends State<StationsScreen> {
           **Casts**
 
           See this podcast's episodes: what each is about, how long it runs
-          and how far you got. Switch off any you never want to hear.
+          and how far you got. Skip any you never want to hear.
 
           ''',
           onPressed: () => _openCasts(station),

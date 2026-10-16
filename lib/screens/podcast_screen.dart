@@ -1,4 +1,4 @@
-/// PodcastScreen — a podcast's casts, to read about, play, or switch off.
+/// PodcastScreen — a podcast's casts, to read about, play, or skip.
 ///
 // Time-stamp: <Friday 2026-10-16 06:00:00 +1100 Graham Williams>
 ///
@@ -84,13 +84,14 @@ class _PodcastScreenState extends State<PodcastScreen> {
       appBar: AppBar(
         title: Text(podcast.name),
         actions: [
+          if (casts.isNotEmpty) _skipAll(provider, podcast, casts),
           MarkdownTooltip(
             message: '''
 
             **Refresh**
 
             Fetch this podcast's feed from its publisher now, to pick up any
-            new casts. Your progress and switched-off casts are kept.
+            new casts. Your progress and skipped casts are kept.
 
             ''',
             child: IconButton(
@@ -150,6 +151,63 @@ class _PodcastScreenState extends State<PodcastScreen> {
         ),
       );
 
+  /// Skip every cast, or, once all are skipped, bring them all back.
+  ///
+  /// 20261016 gjw One tap for a podcast followed for its next episode only,
+  /// where the back catalogue is not wanted. Offered as its own undo, since
+  /// putting twenty switches back by hand is not.
+
+  Widget _skipAll(AppProvider provider, Station podcast, List<Cast> casts) {
+    final allSkipped = casts.every((c) => c.disabled);
+
+    return MarkdownTooltip(
+      message: allSkipped
+          ? '''
+
+            **Unskip all**
+
+            Put every cast back in the podcast's turn, so it plays them
+            again, newest first. Casts already heard stay heard.
+
+            '''
+          : '''
+
+            **Skip all**
+
+            Skip every cast listed here, so the podcast plays none of them
+            and waits for the next new one. A tap on a cast still plays it.
+
+            ''',
+      child: TextButton.icon(
+        icon: Icon(allSkipped ? Icons.playlist_add_check : Icons.block),
+        label: Text(allSkipped ? 'Unskip all' : 'Skip all'),
+        onPressed: () => _setAllSkipped(provider, podcast, !allSkipped),
+      ),
+    );
+  }
+
+  Future<void> _setAllSkipped(
+    AppProvider provider,
+    Station podcast,
+    bool skip,
+  ) async {
+    final error = await provider.setAllCastsDisabled(podcast.id, skip);
+    if (!mounted) return;
+    if (error != null) {
+      await showErrorDialog(
+        context,
+        title: 'Saved on this device only',
+        message: 'The change could not be written to your Pod.\n\n$error',
+      );
+
+      return;
+    }
+    showPositiveSnackBar(
+      context,
+      skip ? 'Every cast of ${podcast.name} is skipped.' : 'No casts skipped.',
+    );
+  }
+
   Widget _header(AppProvider provider, Station podcast) {
     final cs = Theme.of(context).colorScheme;
     final casts = provider.castsOf(podcast.id);
@@ -173,7 +231,7 @@ class _PodcastScreenState extends State<PodcastScreen> {
                 ? 'No casts yet. Refresh to fetch them from the publisher.'
                 : 'Tap the podcast in Stations to play the latest cast still '
                       'to hear, then each older one in turn. Played casts '
-                      'stay here, greyed; switched-off casts are skipped.',
+                      'stay here, greyed, as do skipped casts.',
             style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
           ),
         ],

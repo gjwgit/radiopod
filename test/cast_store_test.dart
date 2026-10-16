@@ -30,6 +30,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:radiopod/models/cast.dart';
 import 'package:radiopod/models/station.dart';
+import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/services/cast_store.dart';
 import 'package:radiopod/services/pod_service.dart';
 
@@ -211,5 +212,31 @@ void main() {
 
       expect(CastStore.all.keys, ['keep']);
     });
+  });
+
+  group('setAllCastsDisabled', () {
+    test(
+      'skips every cast, and unskips them, keeping what was heard',
+      () async {
+        final heard = _cast.withState(played: true, at: DateTime.utc(2026));
+        final other = Cast(
+          guid: 'g2',
+          title: 'Two',
+          published: DateTime.utc(2026, 10, 15),
+          audioUrl: 'https://x.example/2.mp3',
+        );
+        await CastStore.put('p1', [heard, other]);
+        final provider = AppProvider()..loadForTest(const [], const []);
+
+        await provider.setAllCastsDisabled('p1', true);
+        expect(CastStore.of('p1').every((c) => c.disabled), isTrue);
+        expect(provider.castsToPlay('p1'), 0);
+
+        await provider.setAllCastsDisabled('p1', false);
+        expect(CastStore.of('p1').any((c) => c.disabled), isFalse);
+        expect(CastStore.of('p1').first.played, isTrue);
+        expect(provider.castsToPlay('p1'), 1);
+      },
+    );
   });
 }

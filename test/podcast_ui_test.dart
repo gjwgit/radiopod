@@ -125,10 +125,7 @@ void main() {
 
       expect(castSummary(half), endsWith('29 min · 20 min left'));
       expect(castSummary(_cast.withState(played: true)), endsWith('Played'));
-      expect(
-        castSummary(_cast.withState(disabled: true)),
-        endsWith('Switched off'),
-      );
+      expect(castSummary(_cast.withState(disabled: true)), endsWith('Skipped'));
     });
 
     test('clock time', () {
@@ -183,6 +180,15 @@ void main() {
         MediaControl.play,
         MediaControl.fastForward,
       ]);
+    });
+
+    test('a resumed cast starts five seconds back, never before 0:00', () {
+      expect(
+        resumeFrom(const Duration(minutes: 12, seconds: 30)),
+        const Duration(minutes: 12, seconds: 25),
+      );
+      expect(resumeFrom(const Duration(seconds: 3)), Duration.zero);
+      expect(resumeFrom(Duration.zero), Duration.zero);
     });
 
     test('a seek is kept within the cast', () {

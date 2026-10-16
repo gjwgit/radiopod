@@ -510,7 +510,9 @@ class RadioAudioHandler extends BaseAudioHandler {
       await _player
           .setUrl(
             cast?.audioUrl ?? station.url,
-            initialPosition: cast == null || cast.played ? null : cast.position,
+            initialPosition: cast == null || cast.played
+                ? null
+                : resumeFrom(cast.position),
           )
           .timeout(_openTimeout);
 
@@ -562,6 +564,13 @@ class RadioAudioHandler extends BaseAudioHandler {
     }
 
     if (!_player.playing) onPlayFromSilence?.call();
+
+    // A paused cast picks up a few seconds back, so the listener does not
+    // come in mid-word. See [castResumeBack].
+
+    if (_currentCast != null && !_player.playing) {
+      await _player.seek(resumeFrom(_player.position));
+    }
     await _player.play();
   }
 

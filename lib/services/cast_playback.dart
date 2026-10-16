@@ -38,6 +38,20 @@ const castSkipForward = Duration(seconds: 30);
 
 const castSkipBack = Duration(seconds: 15);
 
+/// How far back a resumed cast starts from where it was left.
+///
+/// 20261016 gjw At Graham's request. A cast picked up again exactly where
+/// it stopped starts mid-word, with the listener having lost the thread;
+/// five seconds is enough to pick it back up.
+
+const castResumeBack = Duration(seconds: 5);
+
+/// Where to resume a cast left at [position]: [castResumeBack] before it,
+/// and never before the start.
+
+Duration resumeFrom(Duration position) =>
+    position <= castResumeBack ? Duration.zero : position - castResumeBack;
+
 /// How often a playing cast's position is saved, so a phone that dies or a
 /// car that is switched off loses at most this much.
 

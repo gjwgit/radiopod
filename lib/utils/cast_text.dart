@@ -61,7 +61,7 @@ String castSummary(Cast c) {
     castDate(c.published),
     if (c.duration != null) castLength(c.duration!),
     if (c.disabled)
-      'Switched off'
+      'Skipped'
     else if (c.played)
       'Played'
     else if (c.position > Duration.zero)

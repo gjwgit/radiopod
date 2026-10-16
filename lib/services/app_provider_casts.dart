@@ -47,6 +47,20 @@ extension PodcastLibrary on AppProvider {
   Future<String?> setCastDisabled(String podcastId, String guid, bool off) =>
       _changeCast(podcastId, guid, (c) => c.withState(disabled: off));
 
+  /// Skip every cast of a podcast, or none. One store write and one Pod
+  /// write, rather than one of each per cast.
+
+  Future<String?> setAllCastsDisabled(String podcastId, bool off) async {
+    final now = DateTime.now().toUtc();
+    await CastStore.put(podcastId, [
+      for (final c in castsOf(podcastId))
+        c.disabled == off ? c : c.withState(disabled: off, at: now),
+    ]);
+    _castsDirty = true;
+
+    return _commitCasts();
+  }
+
   /// Mark a cast heard, greying it out, or not yet heard. Either way it
   /// starts from the beginning next time.
 
