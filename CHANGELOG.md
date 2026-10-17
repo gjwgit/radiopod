@@ -37,7 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.0 Podcasts
 
-+ A podcast tap resumes the part-heard episode, else the latest [2.0.11 20261018 gjw]
++ Tap a podcast to resume a part-heard episode [2.0.11 20261018 gjw]
 + Starting an episode picks up progress from other devices [2.0.10 20261017 gjw]
 + Episode progress reaches Pod while playing, read on return [2.0.9 20261017 gjw]
 + Podcast properties update from the feed, no reconnect switch [2.0.8 20261017 gjw]

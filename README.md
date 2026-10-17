@@ -66,10 +66,10 @@ many more apps using the Solid ecosystem.
   radio stations, by station name, by genre, or by location.
 + **Podcasts** sit in your Stations list beside the radio. A tap carries
   on with the episode you were part-way through, or else plays the
-  latest you have not heard, then each older one in turn. A podcast's Episodes page lists its
-  episodes with their show notes; heard ones stay listed, greyed, and
-  any you switch off are skipped. Search them in the open
-  [Podcast Index](https://podcastindex.org).
+  latest you have not heard, then each older one in turn. A podcast's
+  Episodes page lists its episodes with their show notes; heard ones
+  stay listed, greyed, and any you switch off are skipped. Search them
+  in the open [Podcast Index](https://podcastindex.org).
 + **Save** the stations you like into a library that is stored locally
   or encrypted on your Pod.
 + **Playlists** group your stations. They are also the folders you
