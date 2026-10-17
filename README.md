@@ -19,8 +19,8 @@ internet radio and podcast apps available. Find stations in the
 community-run [Radio-Browser](https://www.radio-browser.info)
 database, follow podcasts from the open [Podcast
 Index](https://podcastindex.org), group them into playlists, and
-listen — at your desk, on your phone, or in the car through Apple
-CarPlay or Android Auto.
+listen on your computer, on your phone, or in the car through Apple
+CarPlay or Android Auto, sharing the same playlists.
 
 Your station library and your playlists are stored locally by
 default. Once you are ready they can be

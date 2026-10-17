@@ -34,32 +34,8 @@ import 'package:markdown_tooltip/markdown_tooltip.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/stations_widgets/station_details.dart';
 import 'package:radiopod/screens/stations_widgets/station_icon_field.dart';
-import 'package:radiopod/services/radio_browser.dart';
-import 'package:radiopod/services/station_lookup.dart';
+import 'package:radiopod/services/station_update.dart';
 import 'package:radiopod/utils/station_icon.dart';
-
-/// What a freshly fetched record becomes once the listener's own choices
-/// are laid back over it.
-///
-/// Radio-Browser owns the facts — the address, the codec, where the station
-/// broadcasts from. The listener owns three things that a refresh must never
-/// touch:
-///
-/// - the local [Station.id], which playlists reference; replacing it would
-///   silently drop the station out of every playlist holding it,
-/// - [Station.reconnectOnEnd], which answers a question about this listener's
-///   experience that the database has no opinion on,
-/// - [Station.icon], a picture they went out of their way to choose.
-///
-/// Pure, so the rule can be tested without a network.
-
-Station applyRefresh(
-  Station fresh,
-  Station current, {
-  required bool reconnectOnEnd,
-  required String? icon,
-}) =>
-    fresh.copyWith(id: current.id, reconnectOnEnd: reconnectOnEnd, icon: icon);
 
 /// Edit [station], returning the changed copy, or null if cancelled.
 
@@ -132,9 +108,10 @@ class _DialogState extends State<_StationPropertiesDialog> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final podcast = widget.station.isPodcast;
 
     return AlertDialog(
-      title: const Text('Station properties'),
+      title: Text(podcast ? 'Podcast properties' : 'Station properties'),
       content: SizedBox(
         width: 420,
         child: SingleChildScrollView(
@@ -167,9 +144,13 @@ class _DialogState extends State<_StationPropertiesDialog> {
                 }),
               ),
 
-              const Gap(12),
-              MarkdownTooltip(
-                message: '''
+              // 20261017 gjw No reconnect switch for a podcast. An episode
+              // that ends has finished, and the next older one plays; there
+              // is no connection to pick back up.
+              if (!podcast) ...[
+                const Gap(12),
+                MarkdownTooltip(
+                  message: '''
 
                 **Reconnect when the stream ends**
 
@@ -182,20 +163,24 @@ class _DialogState extends State<_StationPropertiesDialog> {
                 RadioPod moves to the next station instead.
 
                 ''',
-                child: SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Reconnect when the stream ends'),
-                  subtitle: Text(
-                    _reconnect
-                        ? 'A continuous station: open it again.'
-                        : 'A programme that finishes: move to the next '
-                              'station.',
-                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                  child: SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Reconnect when the stream ends'),
+                    subtitle: Text(
+                      _reconnect
+                          ? 'A continuous station: open it again.'
+                          : 'A programme that finishes: move to the next '
+                                'station.',
+                      style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                    value: _reconnect,
+                    onChanged: (v) => setState(() => _reconnect = v),
                   ),
-                  value: _reconnect,
-                  onChanged: (v) => setState(() => _reconnect = v),
                 ),
-              ),
+              ],
 
               // What is known about the station, below what can be changed
               // about it. Read-only, and quiet about anything unknown.
@@ -226,7 +211,8 @@ class _DialogState extends State<_StationPropertiesDialog> {
   /// its Radio-Browser id; one added by hand or imported from a playlist file
   /// has none, so it is looked up by its address instead, which often finds
   /// it. It used to be disabled for those, which left a hand-added station
-  /// with a bare subtitle for good.
+  /// with a bare subtitle for good. 20261017 gjw Labelled Update details,
+  /// not Update from Radio-Browser: a podcast updates from its own feed.
 
   Widget _refreshControl(ColorScheme cs) {
     final note = _refreshMessage;
@@ -242,7 +228,7 @@ class _DialogState extends State<_StationPropertiesDialog> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.sync, size: 18),
-          label: const Text('Update from Radio-Browser'),
+          label: const Text('Update details'),
           onPressed: _refreshing ? null : _refresh,
         ),
         if (note != null) ...[
@@ -264,7 +250,7 @@ class _DialogState extends State<_StationPropertiesDialog> {
     _station.copyWith(name: _trimmed, reconnectOnEnd: _reconnect, icon: _icon),
   );
 
-  /// Fetch this station's current record from Radio-Browser.
+  /// Fetch the details again, from Radio-Browser or the podcast's feed.
   ///
   /// Updates the ADDRESS as well as the details. That is the point of the
   /// exercise: a station that has stopped playing has often simply moved,
@@ -273,75 +259,31 @@ class _DialogState extends State<_StationPropertiesDialog> {
   /// The name goes into the text field rather than being applied silently,
   /// so a station renamed to something personal is not quietly reverted
   /// without the user seeing it happen.
-  ///
-  /// A station with no Radio-Browser id is found by its address instead,
-  /// and then keeps its address and name: the address is how it was found,
-  /// and the name was typed by the listener.
 
   Future<void> _refresh() async {
-    final uuid = widget.station.stationUuid;
-    if (uuid == null) return _refreshByUrl();
-
     setState(() {
       _refreshing = true;
       _refreshMessage = null;
     });
     try {
-      final fresh = await RadioBrowser.lookup(uuid);
+      final update = await updateStationDetails(
+        _station,
+        reconnectOnEnd: _reconnect,
+        icon: _icon,
+      );
       if (!mounted) return;
 
       setState(() {
-        if (fresh == null) {
-          _refreshMessage =
-              'Radio-Browser no longer lists this station. Entries are '
-              'removed when they stop working.';
-
-          return;
-        }
-
-        // Keep this station's own identity and the choices that belong to
-        // the listener rather than to the database.
-
-        _station = applyRefresh(
-          fresh,
-          widget.station,
-          reconnectOnEnd: _reconnect,
-          icon: _icon,
-        );
-        _name.text = fresh.name;
-        _refreshMessage = 'Updated from Radio-Browser. Save to keep it.';
+        _refreshMessage = update.message;
+        if (update.station != null) _station = update.station!;
+        if (update.name != null) _name.text = update.name!;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _refreshMessage = 'Could not reach Radio-Browser. $e';
-      });
-    } finally {
-      if (mounted) setState(() => _refreshing = false);
-    }
-  }
-
-  Future<void> _refreshByUrl() async {
-    setState(() {
-      _refreshing = true;
-      _refreshMessage = null;
-    });
-    try {
-      final found = await RadioBrowser.byUrl(widget.station.url);
-      if (!mounted) return;
-
-      setState(() {
-        if (found == null) {
-          _refreshMessage = 'Radio-Browser has no station at this address.';
-
-          return;
-        }
-        _station = withRadioBrowserDetails(widget.station, found);
-        _refreshMessage = 'Updated from Radio-Browser. Save to keep it.';
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _refreshMessage = 'Could not reach Radio-Browser. $e');
+      final source = widget.station.isPodcast
+          ? 'the podcast\'s feed'
+          : 'Radio-Browser';
+      setState(() => _refreshMessage = 'Could not reach $source. $e');
     } finally {
       if (mounted) setState(() => _refreshing = false);
     }

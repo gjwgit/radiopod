@@ -28,7 +28,7 @@ library;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:radiopod/models/station.dart';
-import 'package:radiopod/screens/stations_widgets/station_properties_dialog.dart';
+import 'package:radiopod/services/station_update.dart';
 
 /// The station as saved: renamed by the listener, given their own picture,
 /// set to reconnect, and pointing at an address that has since moved.
