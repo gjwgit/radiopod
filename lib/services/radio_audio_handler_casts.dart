@@ -68,12 +68,12 @@ extension CastHandling on RadioAudioHandler {
   ].join(',');
 
   /// The cast to start for [podcast]: [guid] if given and known, else the
-  /// newest still to hear.
+  /// one part heard most recently, else the newest still to hear.
 
   Cast _castToPlay(Station podcast, String? guid) {
     final casts = CastStore.of(podcast.id);
     final cast = guid == null
-        ? nextCast(casts)
+        ? castToStart(casts)
         : casts.where((c) => c.guid == guid).firstOrNull;
     if (cast == null) {
       throw StateError(

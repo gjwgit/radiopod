@@ -106,6 +106,27 @@ bool _newer(Cast c, Cast than) {
   return u == null || t.isAfter(u);
 }
 
+/// The cast a tap on the podcast starts.
+///
+/// 20261018 gjw The part-heard cast listened to most recently, so a tap
+/// carries on where the listener left off; only when nothing is part heard
+/// does it start the newest cast still to hear. Before this a tap always
+/// took the newest, so a new cast arriving abandoned the one half heard.
+/// Played and switched-off casts are never chosen.
+
+Cast? castToStart(List<Cast> casts) {
+  final partHeard =
+      casts.where((c) => c.available && c.position > Duration.zero).toList()
+        ..sort((a, b) {
+          final t = a.updatedAt, u = b.updatedAt;
+          if (t == null || u == null) return t == null ? 1 : -1;
+
+          return u.compareTo(t);
+        });
+
+  return partHeard.firstOrNull ?? nextCast(casts);
+}
+
 /// The cast to play next.
 ///
 /// With no [after], the newest available cast: what a tap on the podcast

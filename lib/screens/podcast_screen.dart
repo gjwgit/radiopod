@@ -231,8 +231,9 @@ class _PodcastScreenState extends State<PodcastScreen> {
           Text(
             casts.isEmpty
                 ? 'No episodes yet. Refresh to fetch them from the publisher.'
-                : 'Tap the podcast in Stations to play the latest episode still '
-                      'to hear, then each older one in turn. Played episodes '
+                : 'Tap the podcast in Stations to carry on with the episode '
+                      'you were part-way through, or else the latest still to '
+                      'hear, then each older one in turn. Played episodes '
                       'stay here, greyed, as do skipped episodes.',
             style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
           ),

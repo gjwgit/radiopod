@@ -165,6 +165,35 @@ void main() {
       expect(previousCast(casts, 'nope'), isNull);
     });
 
+    test('a tap resumes the part-heard cast, not the newest', () {
+      final withPartial = [
+        _cast('newest', 5),
+        _cast('half', 3, position: 900, updatedAt: DateTime.utc(2026, 10, 6)),
+        _cast('oldest', 1),
+      ];
+
+      expect(castToStart(withPartial)?.guid, 'half');
+      expect(castToStart(casts)?.guid, 'newest');
+    });
+
+    test('of several part heard, the one heard most recently', () {
+      final two = [
+        _cast('a', 5, position: 60, updatedAt: DateTime.utc(2026, 10, 6)),
+        _cast('b', 3, position: 60, updatedAt: DateTime.utc(2026, 10, 7)),
+      ];
+
+      expect(castToStart(two)?.guid, 'b');
+    });
+
+    test('a part-heard cast switched off is passed over', () {
+      final off = [
+        _cast('newest', 5),
+        _cast('half', 3, position: 900, disabled: true),
+      ];
+
+      expect(castToStart(off)?.guid, 'newest');
+    });
+
     test('nothing left to play is null, and counts zero', () {
       final heard = [_cast('a', 1, played: true)];
 
