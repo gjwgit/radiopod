@@ -210,6 +210,7 @@ extension PodcastLibrary on AppProvider {
     if (_testMode) {
       return (podcasts: podcasts.length, newCasts: 0, failed: <String>[]);
     }
+    await syncCasts(force: true);
 
     var newCasts = 0;
     final failed = <String>[];
@@ -223,6 +224,40 @@ extension PodcastLibrary on AppProvider {
     }
 
     return (podcasts: podcasts.length, newCasts: newCasts, failed: failed);
+  }
+
+  /// Write any progress not yet on the Pod, now. Called as the app leaves
+  /// the screen, when it may be closed or frozen before the timer fires.
+
+  Future<void> flushCasts() async {
+    _castPodWrite?.cancel();
+    _castPodWrite = null;
+    await _saveCastsToPod();
+  }
+
+  /// Bring in progress made on another device, and send this one's.
+  ///
+  /// 20261017 gjw The casts were read from the Pod only when the library
+  /// loaded, so a desktop left open never saw what was heard on the phone.
+  /// Called when the app comes back to the screen and before Refresh
+  /// podcasts. At most every 30 seconds unless [force]d: on the desktop the
+  /// app "resumes" each time its window regains focus.
+
+  Future<void> syncCasts({bool force = false}) async {
+    if (_testMode || _source != LibrarySource.pod) return;
+    final now = DateTime.now();
+    final last = _castsSyncedAt;
+    if (!force && last != null && now.difference(last).inSeconds < 30) return;
+    _castsSyncedAt = now;
+
+    try {
+      await _loadCasts();
+      _notify();
+      await _pushToPlayer();
+      await _saveCastsToPod();
+    } catch (e) {
+      debugPrint('[AppProvider] cast sync failed: $e');
+    }
   }
 
   Future<String?> _changeCast(

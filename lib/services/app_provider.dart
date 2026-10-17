@@ -93,15 +93,20 @@ class AppProvider extends ChangeNotifier {
   AppProvider() {
     // 20261016 gjw The audio handler records each cast's progress straight
     // into CastStore. Listening here keeps the counts on the podcast rows
-    // current, and carries that progress to the Pod — after a pause in
-    // the changes, so a cast playing does not mean a Pod write every
-    // fifteen seconds.
+    // current, and carries that progress to the Pod at most a minute after
+    // it changed, so a cast playing does not mean a Pod write every fifteen
+    // seconds. 20261017 gjw A minute after the FIRST unsaved change, not
+    // the last: a cast saves its place every fifteen seconds, so restarting
+    // the timer on each change meant nothing reached the Pod while one
+    // played, and progress on the phone never showed on the desktop.
 
     _castChanges = CastStore.changes.listen((_) {
       _castsDirty = true;
       notifyListeners();
-      _castPodWrite?.cancel();
-      _castPodWrite = Timer(const Duration(seconds: 60), _saveCastsToPod);
+      _castPodWrite ??= Timer(const Duration(seconds: 60), () {
+        _castPodWrite = null;
+        unawaited(_saveCastsToPod());
+      });
     });
   }
 
@@ -176,6 +181,10 @@ class AppProvider extends ChangeNotifier {
   /// the Pod only when it has actually changed, not on every station edit.
 
   bool _castsDirty = false;
+
+  /// When the casts were last brought in from the Pod; see [syncCasts].
+
+  DateTime? _castsSyncedAt;
 
   /// The refresh of every podcast under way, if one is. See
   /// [PodcastLibrary.refreshAllPodcasts].
@@ -530,6 +539,11 @@ class AppProvider extends ChangeNotifier {
       }
       await _loadCasts();
       await _pushToPlayer();
+
+      // Send back progress the Pod has not seen, such as an episode heard
+      // in the car. Writes nothing when the Pod was already up to date.
+
+      unawaited(_saveCastsToPod());
 
       // INSIDE the try, so it runs only after a load that actually
       // succeeded. A Pod that failed to answer also leaves _stations empty,

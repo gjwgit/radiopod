@@ -83,12 +83,14 @@ class CastStore {
   }
 
   /// Replace everything, as after reconciling with the Pod, and save.
+  ///
+  /// 20261017 gjw Announces NO change. Its one caller, the Pod load, works
+  /// out for itself whether the Pod needs writing and then updates the
+  /// screen and the player. Announcing it marked every load as unsaved
+  /// progress, so each read of the Pod was followed by writing it back.
 
   static Future<void> replaceAll(Map<String, List<Cast>> casts) async {
     _casts = {for (final e in casts.entries) e.key: List.of(e.value)};
-    for (final id in _casts.keys) {
-      _changes.add(id);
-    }
     await _save();
   }
 

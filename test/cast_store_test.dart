@@ -212,6 +212,19 @@ void main() {
 
       expect(CastStore.all.keys, ['keep']);
     });
+
+    test('replaceAll, the Pod load, announces no unsaved change', () async {
+      final announced = <String>[];
+      final sub = CastStore.changes.listen(announced.add);
+      await CastStore.replaceAll({
+        'p1': [_cast],
+      });
+      await Future<void>.delayed(Duration.zero);
+      await sub.cancel();
+
+      expect(announced, isEmpty);
+      expect(CastStore.of('p1').single.guid, _cast.guid);
+    });
   });
 
   group('setAllCastsDisabled', () {

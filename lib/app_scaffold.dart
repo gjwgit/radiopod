@@ -41,7 +41,7 @@ import 'package:radiopod/screens/stations_screen.dart';
 import 'package:radiopod/screens/stations_widgets/new_station_dialog.dart';
 import 'package:radiopod/screens/transfer_screen.dart';
 import 'package:radiopod/services/app_provider.dart'
-    show AppProvider, StartupPhase;
+    show AppProvider, PodcastLibrary, StartupPhase;
 import 'package:radiopod/services/player.dart';
 import 'package:radiopod/services/station_lookup.dart';
 import 'package:radiopod/utils/sleep_timer_text.dart';
@@ -105,10 +105,22 @@ class _AppScaffoldState extends State<AppScaffold> {
     );
   }
 
+  /// Keeps episode progress moving between devices through the Pod.
+  ///
+  /// 20261017 gjw Progress is written when the app leaves the screen, as it
+  /// may then be closed or frozen, and read back when it returns, so an
+  /// episode heard on the phone carries on from the same place here.
+
+  late final AppLifecycleListener _lifecycle;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _initKeys());
+    _lifecycle = AppLifecycleListener(
+      onInactive: () => unawaited(context.read<AppProvider>().flushCasts()),
+      onResume: () => unawaited(context.read<AppProvider>().syncCasts()),
+    );
 
     _sleepMinutes = Player.sleepTimer.minutesLeft.value;
     Player.sleepTimer.minutesLeft.addListener(_onSleepTick);
@@ -120,6 +132,7 @@ class _AppScaffoldState extends State<AppScaffold> {
     // point of it. Only the listener goes.
 
     Player.sleepTimer.minutesLeft.removeListener(_onSleepTick);
+    _lifecycle.dispose();
     super.dispose();
   }
 

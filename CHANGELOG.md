@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.0 Podcasts
 
++ Episode progress reaches Pod while playing, read on return [2.0.9 20261017 gjw]
 + Podcast properties update from the feed, no reconnect switch [2.0.8 20261017 gjw]
 + Toolbar refreshes podcasts, say episodes not casts [2.0.7 20261017 gjw]
 + Split the provider and audio handler to keep under 300 lines [2.0.6 20261017 gjw]
