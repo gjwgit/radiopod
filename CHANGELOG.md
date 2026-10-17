@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.0 Podcasts
 
++ Starting an episode picks up progress from other devices [2.0.10 20261017 gjw]
 + Episode progress reaches Pod while playing, read on return [2.0.9 20261017 gjw]
 + Podcast properties update from the feed, no reconnect switch [2.0.8 20261017 gjw]
 + Toolbar refreshes podcasts, say episodes not casts [2.0.7 20261017 gjw]

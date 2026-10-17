@@ -133,6 +133,7 @@ extension PodcastLibrary on AppProvider {
   Future<void> playCast(String podcastId, String guid) async {
     final podcast = _stations.where((s) => s.id == podcastId).firstOrNull;
     if (podcast == null) return;
+    await _syncBeforePlay();
     await Player.handler.playStation(podcast, castGuid: guid);
   }
 
@@ -257,6 +258,22 @@ extension PodcastLibrary on AppProvider {
       await _saveCastsToPod();
     } catch (e) {
       debugPrint('[AppProvider] cast sync failed: $e');
+    }
+  }
+
+  /// Fetch the Pod's progress before an episode starts, so it starts where
+  /// it was left on another device.
+  ///
+  /// 20261017 gjw Found when the phone heard 15 minutes and the desktop
+  /// then started the episode from the top: it had not read the Pod since
+  /// the phone wrote. Waits at most three seconds, so a slow or absent
+  /// network delays the play only that long; the sync carries on behind.
+
+  Future<void> _syncBeforePlay() async {
+    try {
+      await syncCasts(force: true).timeout(const Duration(seconds: 3));
+    } on TimeoutException {
+      debugPrint('[AppProvider] playing before the Pod answered');
     }
   }
 
