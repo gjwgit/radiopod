@@ -4,25 +4,6 @@ Noted below are the high level changes for the app. Each update
 includes a short user-oriented description, version number, date, and
 developer.
 
-You can run the app in your
-[**browser**](https://radiopod.solidcommunity.au) or else download and
-install locally the latest version from the [Solid Community
-AU](https://solidcommunity.au) or directly:
-
-+ **Android** as
-  [apk](https://solidcommunity.au/installers/radiopod.apk) or
-  [aab](https://solidcommunity.au/installers/radiopod.aab);
-+ **GNU/Linux** as
-  [deb](https://solidcommunity.au/installers/radiopod_amd64.deb) or
-  [snap](https://solidcommunity.au/installers/radiopod_amd64.snap) or
-  [zip](https://solidcommunity.au/installers/radiopod-linux.zip);
-+ **macOS** as
-  [dmg](https://solidcommunity.au/installers/radiopod-macos.dmg) or
-  [zip](https://solidcommunity.au/installers/radiopod-macos.zip);
-+ **Windows** as
-  [exe](https://solidcommunity.au/installers/radiopod-windows-inno.exe)
-  or [zip](https://solidcommunity.au/installers/radiopod-windows.zip).
-
 Contributions are welcome. Visit
 [github](https://github.com/gjwgit/radiopod) to submit an issue or,
 even better, fork the repository yourself, update the code, and submit
