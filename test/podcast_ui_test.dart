@@ -204,6 +204,45 @@ void main() {
         const Duration(minutes: 31),
       );
     });
+
+    // 20261018 gjw Daily Mass Readings: the feed said 5:48, the ad-injecting
+    // host sent 6:18, and Forward at 5:57 clamped to 5:47 — backwards.
+
+    test('the measured length wins over the feed\'s', () {
+      const stated = Duration(minutes: 5, seconds: 48);
+      const measured = Duration(minutes: 6, seconds: 18);
+
+      expect(castPlayLength(measured: measured, stated: stated), measured);
+      expect(castPlayLength(stated: stated), stated);
+      expect(castPlayLength(measured: Duration.zero, stated: stated), stated);
+
+      final forward = clampSeek(
+        const Duration(minutes: 6, seconds: 27),
+        castPlayLength(measured: measured, stated: stated),
+      );
+      expect(forward, measured - const Duration(seconds: 1));
+    });
+
+    test('a stated length is corrected only when it is out', () {
+      const stated = Duration(minutes: 5, seconds: 48);
+
+      expect(
+        lengthNeedsCorrecting(
+          measured: const Duration(minutes: 6, seconds: 18),
+          stated: stated,
+        ),
+        isTrue,
+      );
+      expect(
+        lengthNeedsCorrecting(
+          measured: stated + const Duration(seconds: 1),
+          stated: stated,
+        ),
+        isFalse,
+      );
+      expect(lengthNeedsCorrecting(measured: stated), isTrue);
+      expect(lengthNeedsCorrecting(measured: Duration.zero), isFalse);
+    });
   });
 
   group('CastTile', () {

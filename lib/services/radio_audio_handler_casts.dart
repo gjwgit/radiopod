@@ -123,7 +123,7 @@ extension CastHandling on RadioAudioHandler {
 
     final position = _player.position;
 
-    final finished = isFinished(position, cast.duration ?? _player.duration);
+    final finished = isFinished(position, _castLength);
     await CastStore.update(
       station.id,
       cast.guid,
@@ -204,21 +204,30 @@ extension CastHandling on RadioAudioHandler {
 
   Future<void> _seekCast(Duration target) async {
     if (_currentCast == null) return;
-    await _player.seek(
-      clampSeek(target, _currentCast!.duration ?? _player.duration),
-    );
+    await _player.seek(clampSeek(target, _castLength));
     _broadcastState(null);
     await _saveCastPlace();
   }
 
-  /// The player has found the cast's length, which the feed did not state.
-  /// Keep it, and republish so the car and lock screen can draw a seek bar.
+  /// The length of the cast on air, the player's over the feed's (see
+  /// [castPlayLength]).
+
+  Duration? get _castLength => castPlayLength(
+    measured: _player.duration,
+    stated: _currentCast?.duration,
+  );
+
+  /// The player has found the cast's length, which the feed did not state
+  /// or stated wrongly (an ad-injecting host). Keep it, and republish so
+  /// the bar, the car and the lock screen show the real length.
 
   void _learnCastDuration(Duration? length) {
     final station = _currentStation;
     final cast = _currentCast;
     if (station == null || cast == null || length == null) return;
-    if (cast.duration != null || length <= Duration.zero) return;
+    if (!lengthNeedsCorrecting(measured: length, stated: cast.duration)) {
+      return;
+    }
 
     _currentCast = cast.withDuration(length);
     unawaited(

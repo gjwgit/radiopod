@@ -114,6 +114,27 @@ const castSystemActions = {
   MediaAction.rewind,
 };
 
+/// The length of the cast on air: what the player [measured], once it has,
+/// else what the feed [stated].
+///
+/// 20261018 gjw THE FEED'S LENGTH IS ONLY A HINT. Hosts that splice adverts
+/// into the audio as they serve it (Simplecast's `-injected` host, for one)
+/// state the length WITHOUT the ads: Daily Mass Readings said 5:48 and sent
+/// 6:18. Trusting it drew the bar short, made Forward clamp to 5:47 and so
+/// jump BACK, and marked the episode heard, its place reset, a minute
+/// before it ended.
+
+Duration? castPlayLength({Duration? measured, Duration? stated}) =>
+    measured != null && measured > Duration.zero ? measured : stated;
+
+/// Whether the player's [measured] length should replace the [stated] one:
+/// when there is none, or it is out by more than a couple of seconds (an
+/// estimate from the bitrate may differ by a fraction of one).
+
+bool lengthNeedsCorrecting({required Duration measured, Duration? stated}) =>
+    measured > Duration.zero &&
+    (stated == null || (measured - stated).abs() > const Duration(seconds: 2));
+
 /// [target] kept within the cast. A jump past the end lands just short of
 /// it, so the cast finishes and the next one plays, rather than the player
 /// being asked to seek beyond the audio.
