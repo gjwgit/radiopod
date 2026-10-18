@@ -1,7 +1,7 @@
 name: radiopod
 description: "Radio Pod - Internet Radio with Secure and Private Storage"
 publish_to: 'none'
-version: 2.0.14+51
+version: 2.0.15+52
 
 environment:
   sdk: ^3.13.4
@@ -117,6 +117,19 @@ dev_dependencies:
   # Re-run after changing the icon: dart run flutter_launcher_icons
 
   flutter_launcher_icons: ^0.14.4
+
+# 20261018 gjw HOLD shared_preferences_android BELOW 2.5.0. That release
+# moved to Pigeon JNI: Dart finds its Java methods BY NAME, and R8 in an
+# Android release build renamed them, as nothing in Java calls them. Every
+# SharedPreferences read then threw NoSuchMethodError
+# (SharedPreferencesApiRegistrar.getAll), so solidui's login check never
+# finished and the app sat on a bare spinner. Debug builds do not shrink, so
+# only an installed release showed it. Came in with a `pub upgrade` in
+# 2.0.13. Lift this once a later release ships keep rules for R8, and check
+# with a release build on a phone.
+
+dependency_overrides:
+  shared_preferences_android: ">=2.4.28 <2.5.0"
 
 flutter:
   assets:
