@@ -396,14 +396,16 @@ class _StationsScreenState extends State<StationsScreen> {
       await provider.play(station, queue: queue);
     } catch (e) {
       if (!mounted) return;
-      await showErrorDialog(
+      await showPlayError(
         context,
-        title: 'Cannot play ${station.name}',
-        message:
-            'The stream could not be reached.\n\n'
-            'Radio stations change and retire their stream addresses, so a '
-            'station saved a while ago may simply be gone. Try finding it '
-            'again in Search.\n\n$e',
+        station: station,
+        error: e,
+        otherwise: station.isPodcast
+            ? 'The episode could not be fetched from the podcast\'s server.'
+            : 'The stream could not be reached.\n\n'
+                  'Radio stations change and retire their stream addresses, '
+                  'so a station saved a while ago may simply be gone. Try '
+                  'finding it again in Search.',
       );
     }
   }

@@ -250,14 +250,15 @@ class _SearchScreenState extends State<SearchScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      await showErrorDialog(
+      await showPlayError(
         context,
-        title: 'Cannot play ${station.name}',
-        message: station.isPodcast
+        station: station,
+        error: e,
+        otherwise: station.isPodcast
             ? 'Its episodes could not be fetched or played. The podcast '
-                  'may have moved or stopped publishing.\n\n$e'
+                  'may have moved or stopped publishing.'
             : 'Radio-Browser lists this station but its stream could not be '
-                  'reached. It may be off the air.\n\n$e',
+                  'reached. It may be off the air.',
       );
     }
   }

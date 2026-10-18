@@ -29,6 +29,9 @@ import 'package:flutter/material.dart';
 
 import 'package:gap/gap.dart';
 
+import 'package:radiopod/models/station.dart';
+import 'package:radiopod/services/cast_playback.dart';
+
 /// Report [message] in a dialog the user must dismiss.
 ///
 /// Errors get a dialog rather than a SnackBar because they need
@@ -40,15 +43,17 @@ Future<void> showErrorDialog(
   BuildContext context, {
   required String title,
   required String message,
+  IconData icon = Icons.error_outline,
 }) {
   final cs = Theme.of(context).colorScheme;
+  final fault = icon == Icons.error_outline;
 
   return showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
       title: Row(
         children: [
-          Icon(Icons.error_outline, color: cs.error),
+          Icon(icon, color: fault ? cs.error : cs.primary),
           const Gap(8),
           Expanded(child: Text(title)),
         ],
@@ -61,5 +66,34 @@ Future<void> showErrorDialog(
         ),
       ],
     ),
+  );
+}
+
+/// Report why [station] did not play: [otherwise] for a fault, or, for a
+/// podcast with nothing left ([NothingToPlay]), what is actually the case.
+///
+/// 20261018 gjw A podcast with every episode heard was reported as a dead
+/// stream, with advice to find it again in Search. That is not a fault, and
+/// it gets an information icon rather than an error one.
+
+Future<void> showPlayError(
+  BuildContext context, {
+  required Station station,
+  required Object error,
+  required String otherwise,
+}) {
+  if (error is NothingToPlay) {
+    return showErrorDialog(
+      context,
+      title: error.title,
+      message: error.message,
+      icon: Icons.info_outline,
+    );
+  }
+
+  return showErrorDialog(
+    context,
+    title: 'Cannot play ${station.name}',
+    message: '$otherwise\n\n$error',
   );
 }

@@ -75,16 +75,19 @@ extension CastHandling on RadioAudioHandler {
     final cast = guid == null
         ? castToStart(casts)
         : casts.where((c) => c.guid == guid).firstOrNull;
-    if (cast == null) {
+    if (cast != null) return cast;
+
+    // A chosen episode that has gone is a different story from a podcast
+    // with nothing left, and must not be told as one.
+
+    if (guid != null) {
       throw StateError(
-        casts.isEmpty
-            ? '${podcast.name} has no episodes yet. Refresh it from its Episodes '
-                  'page.'
-            : 'Every episode of ${podcast.name} has been played or switched off.',
+        'That episode is no longer listed for ${podcast.name}. Refresh its '
+        'Episodes page.',
       );
     }
 
-    return cast;
+    throw NothingToPlay(podcast.name, noEpisodes: casts.isEmpty);
   }
 
   void _findCastNeighbours(Station podcast, Cast cast) {

@@ -283,7 +283,7 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   ///
   /// For a podcast, [castGuid] names the cast to play; otherwise the newest
-  /// still to hear. Throws [StateError] when the podcast has none left.
+  /// still to hear. Throws [NothingToPlay] when the podcast has none left.
 
   Future<void> playStation(
     Station station, {
