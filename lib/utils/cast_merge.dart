@@ -1,6 +1,6 @@
 /// Cast merge — keep the listener's place as feeds and devices change.
 ///
-// Time-stamp: <Friday 2026-10-16 06:00:00 +1100 Graham Williams>
+// Time-stamp: <Sunday 2026-10-18 21:32:40 +1100 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -33,11 +33,11 @@ import 'package:radiopod/models/cast.dart';
 /// rewritten to the Pod on each change, so the back catalogue beyond this is
 /// left in the feed rather than carried along for nothing.
 ///
-/// 20261016 gjw Twenty, at Graham's request, down from 300. A subscription
-/// is for keeping up, not for working through a back catalogue, and twenty
-/// keeps the Casts page short and `casts.ttl` small. It also bounds how far
-/// back a podcast plays: once the twentieth newest is heard, there is
-/// nothing older to move on to, and playback stops.
+/// 20261016 gjw Twenty down from 300. A subscription is for keeping up, not for
+/// working through a back catalogue, and twenty keeps the Casts page short and
+/// `casts.ttl` small. It also bounds how far back a podcast plays: once the
+/// twentieth newest is heard, there is nothing older to move on to, and the
+/// next station in the queue plays.
 
 const maxCastsPerPodcast = 20;
 

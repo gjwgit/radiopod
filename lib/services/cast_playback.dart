@@ -1,6 +1,6 @@
 /// Cast playback — what the media session says while a podcast plays.
 ///
-// Time-stamp: <Friday 2026-10-16 06:00:00 +1100 Graham Williams>
+// Time-stamp: <Sunday 2026-10-18 21:32:12 +1100 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -40,9 +40,9 @@ const castSkipBack = Duration(seconds: 15);
 
 /// How far back a resumed cast starts from where it was left.
 ///
-/// 20261016 gjw At Graham's request. A cast picked up again exactly where
-/// it stopped starts mid-word, with the listener having lost the thread;
-/// five seconds is enough to pick it back up.
+/// 20261016 gjw A cast picked up again exactly where it stopped starts
+/// mid-word, with the listener having lost the thread; five seconds is enough
+/// to pick it back up.
 
 const castResumeBack = Duration(seconds: 5);
 

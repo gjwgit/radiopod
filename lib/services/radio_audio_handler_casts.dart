@@ -1,6 +1,6 @@
 /// RadioAudioHandler's podcast half — playing casts with a timeline.
 ///
-// Time-stamp: <Friday 2026-10-16 06:00:00 +1100 Graham Williams>
+// Time-stamp: <Sunday 2026-10-18 21:31:25 +1100 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -142,7 +142,7 @@ extension CastHandling on RadioAudioHandler {
   }
 
   /// A cast reached its end: it has been heard. Play the next older one
-  /// still to hear, or stop when there is none.
+  /// still to hear, or, when there is none, move on through the queue.
 
   Future<void> _onCastEnded() async {
     final station = _currentStation;
@@ -173,6 +173,33 @@ extension CastHandling on RadioAudioHandler {
       } catch (e) {
         debugPrint('[RadioAudioHandler] cast ${next.guid} would not open: $e');
         after = next.guid;
+      }
+    }
+
+    await _advanceFromPodcast();
+  }
+
+  /// The podcast has nothing more to play: start the next station in the
+  /// queue, podcast or radio, as a radio stream that ends moves on.
+  ///
+  /// 20261018 gjw It used to stop. Wraps round the queue like Next does. A
+  /// station that will not start, or a podcast with every episode heard, is
+  /// passed over; once the whole queue has been tried, it stops, so a library
+  /// with nothing left cannot spin.
+
+  Future<void> _advanceFromPodcast() async {
+    final queue = _queueStations;
+    final from = _queueIndex;
+    final n = queue.length;
+
+    for (var step = 1; from >= 0 && step < n; step++) {
+      final next = queue[(from + step) % n];
+      try {
+        await playStation(next, queue: queue, parentId: _queueParentId);
+
+        return;
+      } catch (e) {
+        debugPrint('[RadioAudioHandler] ${next.name} would not start: $e');
       }
     }
 

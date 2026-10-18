@@ -129,12 +129,16 @@ extension PodcastLibrary on AppProvider {
   ];
 
   /// Play one particular cast, then carry on backwards from it.
+  ///
+  /// 20261018 gjw The library is the queue, as it is for a tap on the
+  /// Stations list, so when the podcast has nothing older left the next
+  /// station in the list plays rather than nothing.
 
   Future<void> playCast(String podcastId, String guid) async {
     final podcast = _stations.where((s) => s.id == podcastId).firstOrNull;
     if (podcast == null) return;
     await _syncBeforePlay();
-    await Player.handler.playStation(podcast, castGuid: guid);
+    await Player.handler.playStation(podcast, queue: _stations, castGuid: guid);
   }
 
   /// Play the latest cast of a podcast that is NOT saved, from Search.

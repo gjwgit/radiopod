@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.0 Podcasts
 
++ Podcast with no episodes left moves to next station [2.0.17 20261018 gjw]
 + Episode length from the audio, not the feed [2.0.16 20261018 gjw]
 + Fix Android start-up hang from shared_preferences 2.5 [2.0.15 20261018 gjw]
 + Search info button shows details, podcast description [2.0.14 20261018 gjw]
