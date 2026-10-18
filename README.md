@@ -291,7 +291,10 @@ Radio-Browser holds a record per submission, so one station can be
 listed many times over; RadioPod collapses those to one row per stream
 address. A tick marks a station already in your library, and the plus
 adds a new one. Tapping any row plays that station straight away, so
-you can listen before deciding to keep it.
+you can listen before deciding to keep it. The **ⓘ** button shows what
+is known about a result, such as its homepage, genre and audio format,
+and for a podcast what it is about and how many episodes it has, with
+Save to hand.
 
 ### Your stations
 

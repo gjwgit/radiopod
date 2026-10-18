@@ -33,6 +33,7 @@ import 'package:uuid/uuid.dart';
 
 import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/models/station.dart';
+import 'package:radiopod/utils/rss.dart' show plainText;
 import 'package:radiopod/utils/scramble.dart';
 
 const _uuid = Uuid();
@@ -133,6 +134,23 @@ Map<String, String> podcastIndexHeaders(
   };
 }
 
+/// What Podcast Index says about a podcast beyond what a [Station] keeps,
+/// for the search result's information dialog.
+
+typedef PodcastAbout = ({String? description, int? episodes});
+
+/// The [PodcastAbout] of each podcast found by search, keyed by its result.
+///
+/// 20261018 gjw An Expando rather than new [Station] fields, so the
+/// description goes no further than the search results: not into the
+/// library, not to the Pod, and gone with the results it came with.
+
+final podcastAbout = Expando<PodcastAbout>('podcastAbout');
+
+/// The longest description kept for the dialog, in characters.
+
+const _aboutLength = 1200;
+
 /// Podcasts from a `search/byterm` answer.
 ///
 /// A feed Podcast Index has marked dead is left out: saving it would give
@@ -153,21 +171,26 @@ List<Station> podcastsFromSearch(String body) {
     if (!seen.add(url)) continue;
 
     final categories = f['categories'];
-    podcasts.add(
-      Station(
-        id: _uuid.v4(),
-        name: title,
-        url: url,
-        homepage: _str(f['link']),
-        favicon: _str(f['artwork']) ?? _str(f['image']),
-        language: _str(f['language']),
-        author: _str(f['author']) ?? _str(f['ownerName']),
-        tags: categories is Map
-            ? categories.values.whereType<String>().toList()
-            : const [],
-        isPodcast: true,
-      ),
+    final about = _str(f['description']);
+    final episodes = f['episodeCount'];
+    final podcast = Station(
+      id: _uuid.v4(),
+      name: title,
+      url: url,
+      homepage: _str(f['link']),
+      favicon: _str(f['artwork']) ?? _str(f['image']),
+      language: _str(f['language']),
+      author: _str(f['author']) ?? _str(f['ownerName']),
+      tags: categories is Map
+          ? categories.values.whereType<String>().toList()
+          : const [],
+      isPodcast: true,
     );
+    podcastAbout[podcast] = (
+      description: about == null ? null : plainText(about, limit: _aboutLength),
+      episodes: episodes is int && episodes > 0 ? episodes : null,
+    );
+    podcasts.add(podcast);
   }
 
   return podcasts;

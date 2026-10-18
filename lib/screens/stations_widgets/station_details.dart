@@ -77,7 +77,8 @@ class StationDetails extends StatelessWidget {
         // the one that dies after a minute on the desktop, and knowing that
         // is what points the listener at the station's other entry.
         _row('Format', s.isHls ? 'HLS — a playlist of segments' : null),
-        _row('Stream', s.url, copy: true, link: true),
+        // A podcast's url is its RSS feed, not audio.
+        _row(s.isPodcast ? 'Feed' : 'Stream', s.url, copy: true, link: true),
       ]),
     ].whereType<Widget>().toList();
 

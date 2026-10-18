@@ -109,6 +109,28 @@ void main() {
       },
     );
 
+    test('keeps the description and episode count beside the result', () {
+      final p = podcastsFromSearch(
+        body([
+          {
+            'title': 'T',
+            'url': 'https://x.example/t',
+            'description': '<p>All about <b>things</b>.</p>',
+            'episodeCount': 42,
+          },
+          {'title': 'U', 'url': 'https://x.example/u', 'episodeCount': 0},
+        ]),
+      );
+
+      expect(podcastAbout[p.first]?.description, 'All about things.');
+      expect(podcastAbout[p.first]?.episodes, 42);
+      expect(podcastAbout[p.last]?.description, isNull);
+      expect(podcastAbout[p.last]?.episodes, isNull);
+
+      // Nothing of it reaches the library or the Pod.
+      expect(p.first.toJson().toString(), isNot(contains('things')));
+    });
+
     test('an answer with no feeds is empty, not an error', () {
       expect(podcastsFromSearch('{"status":"true","count":0}'), isEmpty);
       expect(podcastsFromSearch('[]'), isEmpty);

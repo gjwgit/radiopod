@@ -67,8 +67,14 @@ void main() {
     addTearDown(StationLogoCache.resetForTest);
     final kept = carPlayLibrary(_stations, _playlists)['stations']! as List;
 
+    // Compared as a path, not a file:// string, which lychee would check as
+    // a link that does not exist.
+
+    final art = Uri.parse(kept.last['artUri'] as String);
+
     expect(kept.first['artUri'], isNull);
-    expect(kept.last['artUri'], startsWith('file:///tmp/icons/logo_'));
+    expect(art.isScheme('file'), isTrue);
+    expect(art.toFilePath(), startsWith('/tmp/icons/logo_'));
   });
 
   test('the Playlists tab lists every playlist, empty ones included', () {

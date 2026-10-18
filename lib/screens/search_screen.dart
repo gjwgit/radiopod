@@ -27,12 +27,12 @@ library;
 
 import 'package:flutter/material.dart';
 
-import 'package:markdown_tooltip/markdown_tooltip.dart';
 import 'package:provider/provider.dart';
 
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/search_widgets/search_controls.dart';
 import 'package:radiopod/screens/search_widgets/search_intro.dart';
+import 'package:radiopod/screens/search_widgets/search_result_actions.dart';
 import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/services/player.dart';
 import 'package:radiopod/services/podcast_index.dart';
@@ -168,32 +168,11 @@ class _SearchScreenState extends State<SearchScreen> {
             onTap: () => now.isCurrent(station.id)
                 ? (now.playing ? Player.handler.stop() : Player.handler.play())
                 : _preview(station),
-            trailing: saved
-                ? const MarkdownTooltip(
-                    message: '''
-
-                  **Already saved**
-
-                  This is in your library. Find it on the Stations screen to
-                  play it or add it to a playlist.
-
-                  ''',
-                    child: Icon(Icons.check),
-                  )
-                : MarkdownTooltip(
-                    message: '''
-
-                  **Save**
-
-                  Add this to your library, at the top of your Stations. It is
-                  written encrypted to your Solid Pod when you are logged in.
-
-                  ''',
-                    child: IconButton(
-                      icon: const Icon(Icons.add_circle_outline),
-                      onPressed: () => _save(provider, station),
-                    ),
-                  ),
+            trailing: SearchResultActions(
+              station: station,
+              saved: saved,
+              onSave: () => _save(provider, station),
+            ),
           );
         },
       ),
