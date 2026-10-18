@@ -1,5 +1,7 @@
 /// StationIconCache — user-chosen station icons, as files the car can show.
 ///
+/// Station logos are kept in the same directory by StationLogoCache.
+///
 // Time-stamp: <Monday 2026-10-05 06:00:00 +1000 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
@@ -20,6 +22,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/models/station.dart';
+import 'package:radiopod/services/station_logo_cache.dart';
 import 'package:radiopod/utils/platform_io.dart'
     if (dart.library.js_interop) 'package:radiopod/utils/platform_web.dart';
 import 'package:radiopod/utils/station_icon.dart';
@@ -88,22 +91,27 @@ class StationIconCache {
 
   static Uri? uriFor(String stationId) {
     final path = _paths[stationId];
-    if (path == null) return null;
+
+    return path == null ? null : publishedUri(path);
+  }
+
+  /// The URI to publish for a file in the icons directory, chosen icon or
+  /// kept logo (StationLogoCache) alike.
+
+  static Uri publishedUri(String path) {
     if (!usesContentIcons) return Uri.file(path);
 
     // Matches android:authorities in AndroidManifest.xml and the
-    // <files-path name> in res/xml/station_icon_paths.xml. Station ids are
-    // uuids, so nothing here needs escaping, but pathSegments encodes
-    // anyway rather than relying on that.
+    // <files-path name> in res/xml/station_icon_paths.xml. File names are
+    // uuids and hex digests, so nothing here needs escaping, but
+    // pathSegments encodes anyway rather than relying on that.
 
     return Uri(
       scheme: 'content',
       host: '$androidApplicationId.stationicons',
-      pathSegments: ['station_icons', _fileName(stationId)],
+      pathSegments: ['station_icons', path.split('/').last],
     );
   }
-
-  static String _fileName(String stationId) => '$stationId.png';
 
   /// Write out the icons for [stations], and forget any that have gone.
   ///
@@ -154,6 +162,11 @@ class StationIconCache {
       for (final id in _paths.keys.toList()) {
         if (!live.contains(id)) _forget(id);
       }
+
+      // 20261018 gjw And the logos of the stations with no chosen icon, so
+      // the car's path (Player.init) keeps them as the app's does.
+
+      await StationLogoCache.sync(stations);
     } on Object catch (e) {
       debugPrint('[StationIconCache] sync failed: $e');
     }
@@ -166,6 +179,11 @@ class StationIconCache {
       File(path).delete().catchError((_) => File(path));
     }
   }
+
+  /// The icons directory, shared with StationLogoCache, or null where there
+  /// is none (the web, tests).
+
+  static Future<Directory?> directory() => _iconDir();
 
   static Future<Directory?> _iconDir() async {
     if (_dir != null) return _dir;

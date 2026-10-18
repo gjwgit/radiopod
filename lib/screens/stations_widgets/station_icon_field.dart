@@ -25,10 +25,13 @@
 
 library;
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import 'package:gap/gap.dart';
 
+import 'package:radiopod/services/station_logo_cache.dart';
 import 'package:radiopod/utils/station_icon.dart';
 
 /// A preview of the station's icon and the three things that can be done to
@@ -161,6 +164,10 @@ class StationIconField extends StatelessWidget {
       );
     } else if (stored != null) {
       inner = Image.memory(stored, fit: BoxFit.cover, gaplessPlayback: true);
+    } else if (StationLogoCache.pathFor(advertisedIcon) case final kept?) {
+      // The kept copy (StationLogoCache), so opening Properties does not
+      // fetch the logo again.
+      inner = Image.file(File(kept), fit: BoxFit.cover, gaplessPlayback: true);
     } else if (advertisedIcon != null && advertisedIcon!.isNotEmpty) {
       inner = Image.network(
         advertisedIcon!,

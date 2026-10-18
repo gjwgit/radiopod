@@ -157,6 +157,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
           return StationTile(
             station: station,
+            keepLogo: false,
             current: now.isCurrent(station.id),
             playing: now.playing,
             connecting: now.connecting,

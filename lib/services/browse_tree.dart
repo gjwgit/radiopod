@@ -31,6 +31,7 @@ import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/services/station_icon_cache.dart';
+import 'package:radiopod/services/station_logo_cache.dart';
 
 /// The two levels of the browse tree, built as plain functions over the
 /// library so the audio handler stays about playback.
@@ -181,24 +182,6 @@ MediaItem stationMediaItem(
   extras: {'stationId': station.id, 'track': ?track},
 );
 
-/// The station's OWN logo, as Radio-Browser gave it, or null.
-///
-/// Only http and https pass. The value comes out of Pod data and could be
-/// anything; an odd scheme should not reach the media session, and a head
-/// unit would not fetch it anyway.
-///
-/// This is the FALLBACK. What a station actually shows is [sessionArtUri],
-/// which prefers a picture the user chose.
-
-Uri? _artUri(Station station) {
-  final favicon = station.favicon;
-  if (favicon == null || favicon.isEmpty) return null;
-  final uri = Uri.tryParse(favicon);
-  if (uri == null || !uri.hasScheme) return null;
-
-  return (uri.isScheme('http') || uri.isScheme('https')) ? uri : null;
-}
-
 /// Artwork for a station: the picture the user chose if there is one,
 /// otherwise the station's own logo.
 ///
@@ -223,9 +206,17 @@ Uri? _artUri(Station station) {
 /// showing nothing. StationIconProvider removes the reason for the split by
 /// serving the icons to Auto as content://, readable across processes —
 /// see StationIconCache.uriFor.
+///
+/// 20261018 gjw THE LOGO IS THE KEPT COPY, NEVER ITS URL. Handing the
+/// session the https address made audio_service fetch it, and Android Auto
+/// fetch it again in Google's process, each time a station played: the logo
+/// host learnt what was on. StationLogoCache keeps each library logo as a
+/// file served like a chosen icon. A logo not kept yet (a Search preview, a
+/// dead link) shows no artwork rather than going to fetch it.
 
 Uri? sessionArtUri(Station station) =>
-    StationIconCache.uriFor(station.id) ?? _artUri(station);
+    StationIconCache.uriFor(station.id) ??
+    StationLogoCache.uriFor(station.favicon);
 
 String _stationCount(int n) => '$n station${n == 1 ? '' : 's'}';
 

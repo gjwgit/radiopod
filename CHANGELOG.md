@@ -37,6 +37,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.0 Podcasts
 
++ Logos fetched once and kept, not on each play [2.0.13 20261018 gjw]
 + make upload_android sends the bundle to Play testing [2.0.12 20261018 gjw]
 + Tap a podcast to resume a part-heard episode [2.0.11 20261018 gjw]
 + Starting an episode picks up progress from other devices [2.0.10 20261017 gjw]

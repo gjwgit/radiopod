@@ -29,6 +29,7 @@ import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/services/carplay_bridge.dart';
+import 'package:radiopod/services/station_logo_cache.dart';
 
 const _stations = [
   Station(id: 's1', name: 'Zulu FM', url: 'https://live.example/z'),
@@ -56,9 +57,18 @@ void main() {
     expect(stations.first['stationId'], 's1');
   });
 
-  test('station logos are passed on when present', () {
-    expect(stations.first['artUri'], isNull);
-    expect(stations.last['artUri'], 'https://live.example/a.png');
+  // 20261018 gjw The kept copy, never the logo's own address, which the
+  // car would fetch itself (StationLogoCache).
+
+  test('station logos are passed on as the kept copy only', () {
+    expect(stations.last['artUri'], isNull);
+
+    StationLogoCache.debugSetKept('https://live.example/a.png', '/tmp/icons');
+    addTearDown(StationLogoCache.resetForTest);
+    final kept = carPlayLibrary(_stations, _playlists)['stations']! as List;
+
+    expect(kept.first['artUri'], isNull);
+    expect(kept.last['artUri'], startsWith('file:///tmp/icons/logo_'));
   });
 
   test('the Playlists tab lists every playlist, empty ones included', () {

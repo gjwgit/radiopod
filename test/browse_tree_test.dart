@@ -32,6 +32,7 @@ import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/services/browse_tree.dart';
 import 'package:radiopod/services/station_icon_cache.dart';
+import 'package:radiopod/services/station_logo_cache.dart';
 
 const _stations = [
   Station(id: 's1', name: 'Zulu FM', url: 'https://live.example/z'),
@@ -196,8 +197,18 @@ void main() {
       expect(sessionArtUri(station)?.toFilePath(), '/tmp/station_icons/s1.png');
     });
 
-    test('the station logo is used when there is no chosen icon', () {
+    // 20261018 gjw The logo reaches the session as the KEPT copy, never as
+    // its https address, which audio_service and the car would each fetch
+    // as the station played and so tell the logo's host what was on.
+
+    test('the kept logo is used when there is no chosen icon', () {
       StationIconCache.resetForTest();
+      StationLogoCache.resetForTest();
+      StationLogoCache.debugSetKept(
+        'https://logo.example/alpha.png',
+        '/tmp/station_icons',
+      );
+      addTearDown(StationLogoCache.resetForTest);
 
       const station = Station(
         id: 's1',
@@ -205,11 +216,10 @@ void main() {
         url: 'https://live.example/a',
         favicon: 'https://logo.example/alpha.png',
       );
+      final art = stationMediaItem(station, browseAllStationsId).artUri;
 
-      expect(
-        stationMediaItem(station, browseAllStationsId).artUri.toString(),
-        'https://logo.example/alpha.png',
-      );
+      expect(art?.isScheme('file'), isTrue);
+      expect(art?.toFilePath(), startsWith('/tmp/station_icons/logo_'));
     });
 
     test('the subtitle is the station details when no track is known', () {
@@ -255,7 +265,10 @@ void main() {
       expect(item.artist, 'Some Song');
     });
 
-    test('accepts an https favicon', () {
+    test('a logo not kept yet gives no artwork, never its address', () {
+      StationIconCache.resetForTest();
+      StationLogoCache.resetForTest();
+
       const station = Station(
         id: 's9',
         name: 'Logo',
@@ -263,10 +276,7 @@ void main() {
         favicon: 'https://live.example/logo.png',
       );
 
-      expect(
-        stationMediaItem(station, browseAllStationsId).artUri.toString(),
-        'https://live.example/logo.png',
-      );
+      expect(stationMediaItem(station, browseAllStationsId).artUri, isNull);
     });
   });
 }

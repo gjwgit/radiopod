@@ -128,6 +128,12 @@ login timestamp and other standard server logging of meta data.
   publisher, as any podcast app fetches them. Which episodes you have
   heard, and how far into each, is kept with your library — encrypted
   on your Pod, and on the device for the car — and is never reported.
++ A station's or podcast's logo lives on its own server. RadioPod
+  fetches it **once**, when the station is in your library, and keeps
+  a small copy on the device, so drawing your list or playing a
+  station never asks for it again, and the car is given that copy,
+  never the logo's address. Search results still load their logos as
+  you browse them.
 + Playing a station connects directly to that station's stream, so the
   broadcaster sees a connection from your network, as it would from
   any radio player or web browser. RadioPod adds nothing to that

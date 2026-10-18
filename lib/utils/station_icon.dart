@@ -48,8 +48,15 @@ const stationIconWidth = 96;
 /// Station artwork URLs are arbitrary and point at whatever the broadcaster
 /// uploaded, sometimes a multi-megabyte press photo. Reading that into
 /// memory to produce a 96 pixel icon is not worth it.
+///
+/// 20261018 gjw Raised from 4 MB to 16 MB for podcasts. Their artwork is
+/// a 3000 by 3000 square by convention, often a JPEG of 4 to 5 MB (Back to
+/// Back Barries is 4.8 MB), so the old limit refused it and Download said
+/// there was no usable icon while the preview showed it plainly. The image
+/// is decoded straight to 96 pixels wide, so the size costs only the
+/// download, and that happens once (StationLogoCache).
 
-const _maxSourceBytes = 4 * 1024 * 1024;
+const _maxSourceBytes = 16 * 1024 * 1024;
 
 /// Download the artwork at [url] and return it ready to store.
 ///

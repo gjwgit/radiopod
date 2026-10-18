@@ -25,9 +25,13 @@
 
 library;
 
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:radiopod/models/station.dart';
+import 'package:radiopod/services/station_logo_cache.dart';
 import 'package:radiopod/utils/station_icon.dart';
 
 /// A station row, used by the Stations list, a playlist's contents, and the
@@ -81,6 +85,12 @@ class StationTile extends StatelessWidget {
   final VoidCallback? onTap;
   final Widget? trailing;
 
+  /// Keep this station's logo (StationLogoCache) rather than fetching it on
+  /// every draw. True for the library; Search turns it off, as browsing
+  /// results is not listening and they are not worth keeping.
+
+  final bool keepLogo;
+
   const StationTile({
     super.key,
     required this.station,
@@ -94,6 +104,7 @@ class StationTile extends StatelessWidget {
     this.details,
     this.onTap,
     this.trailing,
+    this.keepLogo = true,
   });
 
   @override
@@ -210,30 +221,49 @@ class StationTile extends StatelessWidget {
     final favicon = station.favicon;
     if (favicon == null || favicon.isEmpty) return fallback;
 
-    return _framed(
-      Image.network(
-        favicon,
-        fit: BoxFit.cover,
-        // 20260924 gjw CORS. On the web the default strategy fetches the
-        // BYTES of the image, which the browser refuses cross-origin unless
-        // the server sends Access-Control-Allow-Origin. Station artwork is
-        // an arbitrary third-party URL and essentially never does — none of
-        // ABC News Radio's five Radio-Browser entries do — so every logo
-        // fell back to the radio glyph in the browser while looking right
-        // on every other platform.
-        //
-        // `fallback` keeps the byte fetch, which is what allows the image to
-        // be clipped and blended normally, and drops to an <img> element in
-        // a platform view only when that fetch fails. An <img> merely
-        // DISPLAYS a cross-origin image, which browsers have always allowed;
-        // it is reading the pixels back that needs permission.
-        //
-        // Ignored off the web, so this costs the other platforms nothing.
-        webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
-        errorBuilder: (_, _, _) => fallback,
-      ),
+    // 20261018 gjw A library logo comes from StationLogoCache, fetched once
+    // and kept, so drawing the list does not tell the logo's host which
+    // stations are here. Until it arrives the row shows the glyph, and
+    // never the network: the web alone, which has no files, still uses it.
+
+    if (kIsWeb) return _framed(_network(favicon, fallback));
+
+    return ValueListenableBuilder<int>(
+      valueListenable: StationLogoCache.changes,
+      builder: (context, _, _) {
+        final kept = StationLogoCache.pathFor(favicon);
+        if (kept != null) {
+          return _framed(
+            Image.file(
+              File(kept),
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              errorBuilder: (_, _, _) => fallback,
+            ),
+          );
+        }
+        if (!keepLogo) return _framed(_network(favicon, fallback));
+        StationLogoCache.request(favicon);
+
+        return fallback;
+      },
     );
   }
+
+  Widget _network(String favicon, Widget fallback) => Image.network(
+    favicon,
+    fit: BoxFit.cover,
+    // 20260924 gjw CORS. On the web the default strategy fetches the
+    // BYTES of the image, which the browser refuses cross-origin unless
+    // the server sends Access-Control-Allow-Origin. Station artwork is an
+    // arbitrary third-party URL and essentially never does, so every logo
+    // fell back to the radio glyph in the browser. `fallback` keeps the
+    // byte fetch and drops to an <img> element only when it fails; an
+    // <img> merely DISPLAYS a cross-origin image, which browsers allow.
+    // Ignored off the web.
+    webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
+    errorBuilder: (_, _, _) => fallback,
+  );
 
   Widget _framed(Widget child) => SizedBox(
     width: 40,

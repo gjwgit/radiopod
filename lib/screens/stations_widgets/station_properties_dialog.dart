@@ -34,6 +34,7 @@ import 'package:markdown_tooltip/markdown_tooltip.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/stations_widgets/station_details.dart';
 import 'package:radiopod/screens/stations_widgets/station_icon_field.dart';
+import 'package:radiopod/services/station_logo_cache.dart';
 import 'package:radiopod/services/station_update.dart';
 import 'package:radiopod/utils/station_icon.dart';
 
@@ -299,7 +300,8 @@ class _DialogState extends State<_StationPropertiesDialog> {
       _busy = true;
       _message = null;
     });
-    final fetched = await fetchStationIcon(url);
+    final fetched =
+        StationLogoCache.iconFor(url) ?? await fetchStationIcon(url);
     if (!mounted) return;
 
     setState(() {
@@ -308,7 +310,7 @@ class _DialogState extends State<_StationPropertiesDialog> {
         // Not an error worth a dialog: Radio-Browser's favicon links rot,
         // and plenty were never images in the first place.
 
-        _message = 'No usable icon at the address this station advertises.';
+        _message = 'No usable icon at the address advertised.';
       } else {
         _icon = fetched;
         _message = 'Downloaded.';
