@@ -5,8 +5,22 @@ APP=$(pwd | rev | cut -d'/' -f2 | rev)
 VER=$(egrep '^version:' ../pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1)
 
 # Build the release.
+#
+# 20261018 gjw Pass dart_defines.json, as support/flutter.mk and CI do.
+# Without it the Podcast Index pair is not compiled in and podcast search
+# says it is unavailable. Obfuscated like the other release builds, so the
+# scrambled pair is harder to dig out of the binary.
 
-(cd ..; flutter build linux --release)
+DEFINES=""
+if [ -f ../dart_defines.json ]; then
+  DEFINES="--dart-define-from-file=dart_defines.json"
+else
+  echo "Warning: no dart_defines.json, so podcast search will be unavailable."
+  echo "Run: dart run support/scramble_defines.dart"
+fi
+
+(cd ..; flutter build linux --release ${DEFINES} \
+  --obfuscate --split-debug-info=build/symbols)
 
 # Create debian package structure.
 
@@ -26,11 +40,12 @@ Priority: optional
 Architecture: amd64
 Depends: libgtk-3-0, libblkid1, liblzma5, libmpv2
 Maintainer: Graham Williams <graham.williams@togaware.com>
-Description: Privacy-first internet radio player
+Description: Privacy-first internet radio and podcast player
  With ${APP} you can find internet radio stations in the community-run
- Radio-Browser database, group them into playlists, and listen. Your
- station library is stored encrypted in your Pod, so nobody can see
- what you listen to. Playlists import and export as M3U and PLS.
+ Radio-Browser database and podcasts in Podcast Index, group them into
+ playlists, and listen. Your library and listening progress are stored
+ encrypted in your Pod, so nobody can see what you listen to. Playlists
+ import and export as M3U and PLS, podcasts as OPML.
 EOL
 
 # Create desktop entry.
@@ -38,7 +53,7 @@ EOL
 cat > ${APP}_${VER}_amd64/usr/share/applications/com.togaware.${APP}.desktop << EOL
 [Desktop Entry]
 Name=RadioPod
-Comment=Collect your contacts in Pods
+Comment=Simple, Private, Secure Internet Radio and Podcasts with your Solid Pod
 Exec=/usr/bin/${APP}
 Icon=${APP}
 Terminal=false
