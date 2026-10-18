@@ -83,13 +83,14 @@ TITLE = 'RadioPod'
 
 # Leads with privacy rather than with what the app plays, matching the snap
 # summary. "player" is dropped from that wording: it adds nothing after
-# "radio" and the line has to sit within the banner.
+# "radio" and the line has to sit within the banner. 20261018 gjw Podcasts
+# added, as in the summary; "internet" dropped to fit Play's 1024px.
 
-TAGLINE = 'Privacy-first internet radio'
+TAGLINE = 'Privacy-first radio and podcasts'
 
 # How, in one line, under the claim above.
 
-THIRD = 'Your stations, encrypted in your own Solid Pod'
+THIRD = 'Stations and podcasts, encrypted in your own Solid Pod'
 
 MAX_BYTES = 2 * 1024 * 1024
 

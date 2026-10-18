@@ -1,19 +1,27 @@
 name: radiopod
 version: 2.0.12
-summary: Privacy-first internet radio player.
+summary: Privacy-first internet radio and podcast player.
 description: |
-  RadioPod plays internet radio. Find stations in the community-run
-  Radio-Browser database, group them into playlists, and listen — at
-  your desk, on your phone, or in the car through Android Auto.
+  RadioPod plays internet radio and podcasts. Find stations in the
+  community-run Radio-Browser database and podcasts in Podcast Index,
+  group them into playlists, and listen — at your desk, on your phone,
+  or in the car through Android Auto.
 
-  Your station library and playlists are stored encrypted in your
-  personal online data store (Pod) within a Data Vault hosted by your
-  Solid Server of choice, so nobody — not even the server
-  administrator — can see what you listen to. Without a login the
-  library is kept on this device instead and nothing is sent anywhere.
+  A podcast sits in your list beside the stations. Tap it to resume the
+  episode you were part way through, or else start the newest. Each
+  episode remembers where you stopped, so you can pick it up on another
+  device, and you can skip back and forward or mark it played.
+
+  Your stations, podcasts, playlists and listening progress are stored
+  encrypted in your personal online data store (Pod) within a Data
+  Vault hosted by your Solid Server of choice, so nobody — not even the
+  server administrator — can see what you listen to. Without a login
+  the library is kept on this device instead and nothing is sent
+  anywhere.
 
   Playlists import and export as M3U and PLS, the open formats every
-  other radio player reads.
+  other radio player reads. Podcasts import and export as OPML, so you
+  can bring your subscriptions from another podcast app.
 
 # 20260924 gjw Named explicitly rather than relying on snapcraft finding
 # snap/gui/icon.png by convention. This is the icon the Snap Store shows
