@@ -155,8 +155,8 @@ repositories including:
 
 + [SnapCraft](https://snapcraft.io/radiopod) for Linux.
 
-See [INSTALL.md](https://gjwgit.github.io/INSTALL.md) for installation
-instructions.
+See the [Install Guide](https://gjwgit.github.io/rasdiopod/INSTALL.md)
+for installation instructions.
 
 ### GNU/Linux prerequisite
 
