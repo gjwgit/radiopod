@@ -81,16 +81,14 @@ NEEDLE_HI = (255, 181, 104)
 
 TITLE = 'RadioPod'
 
-# Leads with privacy rather than with what the app plays, matching the snap
-# summary. "player" is dropped from that wording: it adds nothing after
-# "radio" and the line has to sit within the banner. 20261018 gjw Podcasts
-# added, as in the summary; "internet" dropped to fit Play's 1024px.
+# 20261019 gjw Says what the app does first, then the promise under it.
+# The tagline is too long for either canvas on one line, so it is set as
+# two, broken where the sense breaks; each line is checked against the edge
+# below.
 
-TAGLINE = 'Privacy-first radio and podcasts'
+TAGLINE = ['Listen to your favourite', 'internet radio and podcasts']
 
-# How, in one line, under the claim above.
-
-THIRD = 'Stations and podcasts, encrypted in your own Solid Pod'
+THIRD = 'Privacy first: your data stays under your control'
 
 MAX_BYTES = 2 * 1024 * 1024
 
@@ -190,18 +188,25 @@ def main():
     third_font = ImageFont.truetype(FONTS + 'Roboto-Light.ttf', pt(28))
 
     # Set from the middle outwards so the block stays centred against the
-    # dial whatever the strings are changed to.
+    # dial whatever the strings are changed to. Each tagline line past the
+    # first adds a step, split above and below, so a one-line tagline sits
+    # exactly where it always has.
 
-    draw.text((tx, int(NH * 0.40)), TITLE, font=title_font,
+    step = tag_font.size * 1.3
+    shift = step * (len(TAGLINE) - 1) / 2
+
+    draw.text((tx, int(NH * 0.40 - shift)), TITLE, font=title_font,
               fill=CREAM + (255,), anchor='ls')
-    draw.text((tx + 3 * SS, int(NH * 0.58)), TAGLINE, font=tag_font,
-              fill=NEEDLE_HI + (255,), anchor='ls')
-    draw.text((tx + 3 * SS, int(NH * 0.72)), THIRD, font=third_font,
+    for i, line in enumerate(TAGLINE):
+        draw.text((tx + 3 * SS, int(NH * 0.58 - shift + i * step)), line,
+                  font=tag_font, fill=NEEDLE_HI + (255,), anchor='ls')
+    draw.text((tx + 3 * SS, int(NH * 0.72 + shift)), THIRD, font=third_font,
               fill=CREAM + (150,), anchor='ls')
 
-    for label, text, font in (('title', TITLE, title_font),
-                              ('tagline', TAGLINE, tag_font),
-                              ('third', THIRD, third_font)):
+    lines = [('title', TITLE, title_font)]
+    lines += [('tagline', line, tag_font) for line in TAGLINE]
+    lines += [('third', THIRD, third_font)]
+    for label, text, font in lines:
         right = tx + font.getbbox(text)[2]
         assert right < NW - int(NW * 0.04), (
             f'{label} reaches {right / SS:.0f}px of {W}, too close to the '
