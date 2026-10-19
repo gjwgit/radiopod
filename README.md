@@ -156,7 +156,7 @@ repositories including:
 + [SnapCraft](https://snapcraft.io/radiopod) for Linux.
 
 See the [Install
-Guide](https://gjwgit.github.io/rasdiopod/INSTALL.html) for
+Guide](https://gjwgit.github.io/radiopod/INSTALL.html) for
 installation instructions.
 
 ### GNU/Linux prerequisite
