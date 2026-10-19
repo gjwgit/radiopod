@@ -144,12 +144,13 @@ class Station {
 
   /// A one-line summary for the second line of a list tile.
   ///
-  /// Only the parts we actually know are joined, so a hand-imported station
-  /// with nothing but a name and URL shows an empty subtitle rather than a
-  /// row of separators.
+  /// It opens with what the row is, Radio or Podcast, so the two read alike
+  /// in a mixed list. Only the other parts we actually know are joined, so a
+  /// hand-imported station with nothing but a name and URL shows just
+  /// "Radio" rather than a row of separators.
 
   String get subtitle => [
-    if (isPodcast) 'Podcast',
+    isPodcast ? 'Podcast' : 'Radio',
     if (author != null && author!.isNotEmpty) author,
     if (country != null && country!.isNotEmpty) country,
     if (language != null && language!.isNotEmpty) language,

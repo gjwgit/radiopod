@@ -232,7 +232,7 @@ void main() {
       );
       final item = stationMediaItem(station, browseAllStationsId);
 
-      expect(item.artist, 'Australia · MP3');
+      expect(item.artist, 'Radio · Australia · MP3');
       expect(item.extras?['track'], isNull);
     });
 

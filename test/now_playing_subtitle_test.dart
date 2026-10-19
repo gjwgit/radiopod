@@ -52,7 +52,7 @@ void main() {
 
       expect(
         item.artist,
-        'The United States Of America · english · AAC+ · 192 kbps',
+        'Radio · The United States Of America · english · AAC+ · 192 kbps',
       );
       expect(item.extras?['track'], isNull);
     });

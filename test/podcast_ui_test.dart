@@ -68,15 +68,15 @@ void main() {
     test('the app says how many casts are left to hear', () {
       expect(
         podcastDetails(_podcast, toPlay: 5, total: 120),
-        'Podcast · ABC Australia · 5 to play of 120',
+        'Podcast · 5 to play · ABC Australia',
       );
       expect(
         podcastDetails(_podcast, toPlay: 0, total: 3),
-        'Podcast · ABC Australia · all 3 heard',
+        'Podcast · all heard · ABC Australia',
       );
       expect(
         podcastDetails(_podcast, toPlay: 0, total: 0),
-        'Podcast · ABC Australia · no episodes yet',
+        'Podcast · no episodes yet · ABC Australia',
       );
     });
 

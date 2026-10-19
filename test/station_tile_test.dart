@@ -57,12 +57,12 @@ void main() {
     expect(find.text('Alpha FM'), findsOneWidget);
   });
 
-  testWidgets('shows a subtitle only when there is metadata', (tester) async {
+  testWidgets('says Radio, then whatever metadata there is', (tester) async {
     await _pump(tester, const StationTile(station: plain));
-    expect(find.text('Australia · MP3 · 128 kbps'), findsNothing);
+    expect(find.text('Radio'), findsOneWidget);
 
     await _pump(tester, const StationTile(station: detailed));
-    expect(find.text('Australia · MP3 · 128 kbps'), findsOneWidget);
+    expect(find.text('Radio · Australia · MP3 · 128 kbps'), findsOneWidget);
   });
 
   testWidgets('falls back to a radio icon with no favicon', (tester) async {
@@ -108,7 +108,10 @@ void main() {
       find.text('Playing | Pink Floyd - Wish You Were Here'),
       findsOneWidget,
     );
-    expect(find.textContaining('Australia · MP3 · 128 kbps'), findsNothing);
+    expect(
+      find.textContaining('Radio · Australia · MP3 · 128 kbps'),
+      findsNothing,
+    );
   });
 
   testWidgets('the row on air keeps its logo and says Playing', (tester) async {
@@ -119,25 +122,32 @@ void main() {
 
     expect(find.byIcon(Icons.radio), findsOneWidget);
     expect(find.byIcon(Icons.stop_circle), findsNothing);
-    expect(find.text('Playing | Australia · MP3 · 128 kbps'), findsOneWidget);
+    expect(
+      find.text('Playing | Radio · Australia · MP3 · 128 kbps'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a stopped row keeps its logo and says so', (tester) async {
     await _pump(tester, const StationTile(station: plain, current: true));
 
     expect(find.byIcon(Icons.radio), findsOneWidget);
-    expect(find.text('Stopped'), findsOneWidget);
+    expect(find.text('Stopped | Radio'), findsOneWidget);
   });
 
   testWidgets('each transport state has its own label', (tester) async {
     const cases = {
-      'Paused': StationTile(station: plain, current: true, paused: true),
-      'Connecting': StationTile(
+      'Paused | Radio': StationTile(
+        station: plain,
+        current: true,
+        paused: true,
+      ),
+      'Connecting | Radio': StationTile(
         station: plain,
         current: true,
         connecting: true,
       ),
-      'Loading': StationTile(
+      'Loading | Radio': StationTile(
         station: plain,
         current: true,
         playing: true,
@@ -164,7 +174,7 @@ void main() {
     await _pump(tester, const StationTile(station: detailed));
 
     expect(find.byIcon(Icons.radio), findsOneWidget);
-    expect(find.text('Australia · MP3 · 128 kbps'), findsOneWidget);
+    expect(find.text('Radio · Australia · MP3 · 128 kbps'), findsOneWidget);
     expect(find.textContaining('|'), findsNothing);
   });
 

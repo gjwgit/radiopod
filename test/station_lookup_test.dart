@@ -61,7 +61,10 @@ void main() {
 
   group('withRadioBrowserDetails takes the facts from the record', () {
     test('so the subtitle reads in full', () {
-      expect(merged.subtitle, 'Australia · english · AAC · 115 kbps · HLS');
+      expect(
+        merged.subtitle,
+        'Radio · Australia · english · AAC · 115 kbps · HLS',
+      );
     });
 
     test('and the Radio-Browser id, so Refresh works from now on', () {

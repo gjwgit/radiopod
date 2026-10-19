@@ -70,7 +70,7 @@ void main() {
     );
 
     expect(find.text('Alpha FM'), findsOneWidget);
-    expect(find.text('Australia · MP3'), findsOneWidget);
+    expect(find.text('Radio · Australia · MP3'), findsOneWidget);
     expect(find.text('Stream'), findsOneWidget);
   });
 

@@ -272,8 +272,12 @@ class StationTile extends StatelessWidget {
   );
 }
 
-/// The second line of a podcast's row: what it is, who makes it, and how
-/// many of its casts are still to be heard.
+/// The second line of a podcast's row: what it is, how many of its casts are
+/// still to be heard, and who makes it.
+///
+/// 20261019 gjw The count comes before the author, where it is seen at a
+/// glance rather than cut off at the end of a narrow row, and without the
+/// total, which says nothing about what is waiting.
 
 String podcastDetails(
   Station podcast, {
@@ -283,12 +287,12 @@ String podcastDetails(
   final count = total == 0
       ? 'no episodes yet'
       : toPlay == 0
-      ? 'all $total heard'
-      : '$toPlay to play of $total';
+      ? 'all heard'
+      : '$toPlay to play';
 
   return [
     'Podcast',
-    if (podcast.author != null && podcast.author!.isNotEmpty) podcast.author!,
     count,
+    if (podcast.author != null && podcast.author!.isNotEmpty) podcast.author!,
   ].join(' · ');
 }

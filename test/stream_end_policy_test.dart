@@ -270,7 +270,7 @@ void main() {
         isHls: true,
       );
 
-      expect(s.subtitle, 'AAC+ · HLS');
+      expect(s.subtitle, 'Radio · AAC+ · HLS');
     });
 
     test('a continuous stream carries no HLS marker', () {
@@ -281,7 +281,7 @@ void main() {
         codec: 'AAC+',
       );
 
-      expect(s.subtitle, 'AAC+');
+      expect(s.subtitle, 'Radio · AAC+');
       expect(s.isHls, isFalse);
     });
 
