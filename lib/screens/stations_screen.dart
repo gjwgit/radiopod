@@ -1,6 +1,6 @@
 /// StationsScreen — the saved station library.
 ///
-// Time-stamp: <Sunday 2026-09-21 06:00:00 +1000 Graham Williams>
+// Time-stamp: <Monday 2026-10-19 16:09:05 +1100 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -107,7 +107,9 @@ class _StationsScreenState extends State<StationsScreen> {
                         onChanged: (_) => setState(() {}),
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.filter_list),
-                          hintText: playing ?? 'Filter your stations',
+                          hintText:
+                              playing ??
+                              'Filter stations. Tap Search to add stations.',
                           hintStyle: playing == null
                               ? null
                               : TextStyle(
