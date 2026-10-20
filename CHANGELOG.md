@@ -18,6 +18,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.0 Podcasts
 
++ Import/Export page by direction, OPML beside M3U/PLS [2.0.20 20261021 gjw]
 + Rows begin Radio or Podcast; podcasts say 2 to play [2.0.19 20261019 gjw]
 + Say "Nothing left to play", not a stream error [2.0.18 20261018 gjw]
 + Podcast with no episodes left moves to next station [2.0.17 20261018 gjw]

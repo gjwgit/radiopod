@@ -1,6 +1,6 @@
 /// RadioPod — application scaffold configuration.
 ///
-// Time-stamp: <Friday 2026-09-25 05:44:56 +1000 Graham Williams>
+// Time-stamp: <Wednesday 2026-10-21 08:20:43 +1100 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -433,11 +433,11 @@ class _AppScaffoldState extends State<AppScaffold> {
             child: PlaylistsScreen(),
           ),
           const SolidMenuItem(
-            title: 'Export/Import',
+            title: 'Import/Export',
             icon: Icons.save_alt,
             tooltip:
-                '**Export/Import**\n\n'
-                'Export and import playlists in the open M3U and PLS formats.',
+                '**Import/Export**\n\n'
+                'Import and export playlists in the open M3U and PLS formats.',
             child: TransferScreen(),
           ),
           const SolidMenuItem(

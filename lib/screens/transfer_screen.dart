@@ -1,6 +1,6 @@
 /// TransferScreen — import and export M3U and PLS playlists.
 ///
-// Time-stamp: <Sunday 2026-09-21 06:00:00 +1000 Graham Williams>
+// Time-stamp: <Wednesday 2026-10-21 08:23:38 +1100 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -35,14 +35,18 @@ import 'package:provider/provider.dart';
 
 import 'package:radiopod/screens/transfer_widgets/export_choice_sheet.dart';
 import 'package:radiopod/screens/transfer_widgets/import_action_card.dart';
-import 'package:radiopod/screens/transfer_widgets/import_message_banner.dart';
 import 'package:radiopod/screens/transfer_widgets/playlist_file_export.dart';
-import 'package:radiopod/screens/transfer_widgets/podcast_transfer_section.dart';
+import 'package:radiopod/screens/transfer_widgets/podcast_transfer.dart';
+import 'package:radiopod/screens/transfer_widgets/transfer_section.dart';
 import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/utils/playlist_file.dart';
 
 /// Move playlists in and out of RadioPod in the open M3U and PLS formats,
 /// and podcasts in OPML.
+///
+/// 20261021 gjw Arranged by direction, Import then Export, with the playlist
+/// and the podcast action under each, rather than a third Podcasts heading:
+/// someone moving their library goes looking for a direction, not a format.
 ///
 /// These are the formats every other radio app reads, which is the point: a
 /// library kept here is not trapped here. Import merges into the existing
@@ -56,29 +60,40 @@ class TransferScreen extends StatefulWidget {
   State<TransferScreen> createState() => _TransferScreenState();
 }
 
-class _TransferScreenState extends State<TransferScreen> {
+class _TransferScreenState extends State<TransferScreen> with PodcastTransfer {
   bool _loading = false;
   String? _importMessage;
   bool _importError = false;
   String? _exportMessage;
   bool _exportError = false;
 
-  void _setImportMsg(String msg, {bool error = false}) => setState(() {
+  @override
+  void setImportMsg(String msg, {bool error = false}) => setState(() {
     _importMessage = msg;
     _importError = error;
   });
 
-  void _setExportMsg(String msg, {bool error = false}) => setState(() {
+  @override
+  void setExportMsg(String msg, {bool error = false}) => setState(() {
     _exportMessage = msg;
     _exportError = error;
   });
 
   @override
+  void setBusy(bool busy) => setState(() {
+    _loading = busy;
+    if (busy) {
+      _importMessage = null;
+      _exportMessage = null;
+    }
+  });
+
+  @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final provider = context.watch<AppProvider>();
     final stations = provider.stations.length;
     final playlists = provider.playlists.length;
+    final podcasts = provider.podcastFeeds.length;
 
     // 20260925 gjw MADE TO FILL THE VIEWPORT so the content stays at the
     // top. This screen is shorter than the window, and something above it
@@ -99,69 +114,74 @@ class _TransferScreenState extends State<TransferScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Import ──────────────────────────────────────────────────
-
-              Text('Import', style: Theme.of(context).textTheme.titleLarge),
-              const Gap(8),
-              Text(
-                'Bring in a playlist you already have, in the M3U, M3U8 or PLS '
-                'format. The stations are added to your library and grouped into '
-                'a new playlist named after the file. A station whose stream '
-                'address you have already saved is reused rather than duplicated.',
-                style: TextStyle(color: cs.onSurfaceVariant),
+              TransferSection(
+                title: 'Import',
+                explanation:
+                    'Bring in a playlist you already have, in the M3U, M3U8 or '
+                    'PLS format. The stations are added to your library and '
+                    'grouped into a new playlist named after the file. A '
+                    'station whose stream address you have already saved is '
+                    'reused rather than duplicated.\n\n'
+                    'Bring in the podcasts you follow in another app as an '
+                    'OPML file. Only the list of podcasts moves, not what you '
+                    'have heard there, and a podcast you already have is not '
+                    'added twice.',
+                message: _importMessage,
+                isError: _importError,
+                actions: [
+                  ImportActionCard(
+                    icon: Icons.upload_file_outlined,
+                    title: 'Import M3U or PLS playlist',
+                    subtitle: 'Select a .m3u, .m3u8 or .pls file to import.',
+                    loading: _loading,
+                    onTap: _import,
+                  ),
+                  ImportActionCard(
+                    icon: Icons.podcasts,
+                    title: 'Import podcasts from OPML',
+                    subtitle:
+                        'Select an .opml file exported from a podcast app.',
+                    loading: _loading,
+                    onTap: importPodcasts,
+                  ),
+                ],
               ),
-              if (_importMessage != null) ...[
-                const Gap(12),
-                ImportMessageBanner(
-                  message: _importMessage!,
-                  isError: _importError,
-                  cs: cs,
-                ),
-              ],
-              const Gap(16),
-              ImportActionCard(
-                icon: Icons.upload_file_outlined,
-                title: 'Import M3U or PLS playlist',
-                subtitle: 'Select a .m3u, .m3u8 or .pls file to import.',
-                loading: _loading,
-                onTap: _import,
-              ),
-
-              // ── Export ──────────────────────────────────────────────────
               const Gap(32),
-              Text('Export', style: Theme.of(context).textTheme.titleLarge),
-              const Gap(8),
-              Text(
-                'Save your whole library, or any one playlist, as an M3U or PLS '
-                'file. Both are plain text formats that every other radio player '
-                'reads, so nothing you collect here is locked in. Podcasts '
-                'are left out: those formats hold audio streams, and a '
-                'podcast is a feed of episodes. Export them as OPML below.',
-                style: TextStyle(color: cs.onSurfaceVariant),
+              TransferSection(
+                title: 'Export',
+                explanation:
+                    'Save your whole library, or any one playlist, as an M3U '
+                    'or PLS file. Both are plain text formats that every other '
+                    'radio player reads, so nothing you collect here is locked '
+                    'in. Podcasts are left out: those formats hold audio '
+                    'streams, and a podcast is a feed of episodes.\n\n'
+                    'Save your podcasts as an OPML file, which any podcast app '
+                    'can import. What you have heard stays here.',
+                message: _exportMessage,
+                isError: _exportError,
+                actions: [
+                  ImportActionCard(
+                    icon: Icons.download_outlined,
+                    title: 'Export a playlist',
+                    subtitle: playlists == 0
+                        ? 'Export all $stations saved stations as one file.'
+                        : 'Choose all $stations stations, or one of your '
+                              '$playlists playlists.',
+                    loading: _loading,
+                    onTap: () => _export(provider),
+                  ),
+                  ImportActionCard(
+                    icon: Icons.podcasts,
+                    title: 'Export podcasts as OPML',
+                    subtitle: podcasts == 0
+                        ? 'No podcasts saved yet.'
+                        : 'Save all $podcasts '
+                              'podcast${podcasts == 1 ? '' : 's'} as one file.',
+                    loading: _loading,
+                    onTap: () => exportPodcasts(provider),
+                  ),
+                ],
               ),
-              if (_exportMessage != null) ...[
-                const Gap(12),
-                ImportMessageBanner(
-                  message: _exportMessage!,
-                  isError: _exportError,
-                  cs: cs,
-                ),
-              ],
-              const Gap(16),
-              ImportActionCard(
-                icon: Icons.download_outlined,
-                title: 'Export a playlist',
-                subtitle: playlists == 0
-                    ? 'Export all $stations saved stations as one file.'
-                    : 'Choose all $stations stations, or one of your $playlists '
-                          'playlists.',
-                loading: _loading,
-                onTap: () => _export(provider),
-              ),
-
-              // ── Podcasts ────────────────────────────────────────────────
-              const Gap(32),
-              const PodcastTransferSection(),
             ],
           ),
         ),
@@ -199,7 +219,7 @@ class _TransferScreenState extends State<TransferScreen> {
       final content = utf8.decode(bytes, allowMalformed: true);
       final entries = parsePlaylist(content, detectFormat(file.name, content));
       if (entries.isEmpty) {
-        _setImportMsg('No stations found in "${file.name}".', error: true);
+        setImportMsg('No stations found in "${file.name}".', error: true);
 
         return;
       }
@@ -213,19 +233,19 @@ class _TransferScreenState extends State<TransferScreen> {
       if (saveError != null) {
         // Do not claim success: the stations are listed but not on the Pod.
 
-        _setImportMsg('Import failed to save: $saveError', error: true);
+        setImportMsg('Import failed to save: $saveError', error: true);
 
         return;
       }
 
-      _setImportMsg(
+      setImportMsg(
         'Imported ${entries.length} station${entries.length == 1 ? '' : 's'} '
         'from "${file.name}" into the playlist "$name" '
         '($added new to your library).',
       );
     } catch (e, st) {
       debugPrint('[Transfer] import error: $e\n$st');
-      _setImportMsg('Import failed: $e', error: true);
+      setImportMsg('Import failed: $e', error: true);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -268,14 +288,14 @@ class _TransferScreenState extends State<TransferScreen> {
         format: choice.format,
       );
       if (path == null) return;
-      _setExportMsg(
+      setExportMsg(
         'Saved ${choice.stations.where((s) => !s.isPodcast).length} '
         'stations as '
         '${choice.format.label} to $path',
       );
     } catch (e, st) {
       debugPrint('[Transfer] export error: $e\n$st');
-      _setExportMsg('Export failed: $e', error: true);
+      setExportMsg('Export failed: $e', error: true);
     } finally {
       if (mounted) setState(() => _loading = false);
     }

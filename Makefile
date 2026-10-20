@@ -2,7 +2,7 @@
 #
 # Generic Makefile
 #
-# Time-stamp: <Saturday 2026-10-17 09:29:12 +1100 Graham Williams>
+# Time-stamp: <Wednesday 2026-10-21 08:00:04 +1100 Graham Williams>
 #
 # Copyright (c) Graham.Williams@togaware.com
 #
@@ -99,6 +99,7 @@ $(APP):
   apk	     Upload the installer to $(REPO)
   snapstore  Publish the $(VER) snap to the Snap Store stable channel
   upload_android  Build the $(VER) bundle and send it to Play internal testing
+  flatpak    Build installers/$(APP)-$(VER).flatpak and install it for this user
 
 endef
 export HELP
@@ -162,6 +163,26 @@ deb:
 	wajig install $(APP)_amd64.deb
 	rm -f $(APP)_amd64.deb
 	mv -f installers/$(APP)_*.deb installers/ARCHIVE/
+
+# 20261020 gjw A Flatpak, built locally for now. The Flutter bundle is
+# built on the host with the scrambled Podcast Index pair, as deb.sh
+# does, and flatpak/com.togaware.radiopod.yml wraps it with a libmpv
+# built from source. Needs `flatpak install --user flathub
+# org.flatpak.Builder org.gnome.Sdk//49`.
+
+FLATPAK_ID = com.togaware.radiopod
+FLATPAK_BUILDER = flatpak run org.flatpak.Builder
+
+.PHONY: flatpak
+flatpak:
+	flutter build linux --release --dart-define-from-file=dart_defines.json \
+	  $(OBFUSCATE)
+	$(FLATPAK_BUILDER) --user --install --force-clean --disable-rofiles-fuse \
+	  --state-dir=build/flatpak-state --repo=build/flatpak-repo \
+	  build/flatpak flatpak/$(FLATPAK_ID).yml
+	flatpak build-bundle build/flatpak-repo \
+	  installers/$(APP)-$(VER).flatpak $(FLATPAK_ID)
+	@echo "Run with: flatpak run $(FLATPAK_ID)"
 
 dinstall:
 	wget $(DWLD)$(APP)_amd64.deb -O $(APP)_amd64.deb

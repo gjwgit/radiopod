@@ -1,6 +1,6 @@
 /// StationEmptyState — what the Stations screen shows before anything is saved.
 ///
-// Time-stamp: <Tuesday 2026-09-29 16:07:27 +1000 Graham Williams>
+// Time-stamp: <Wednesday 2026-10-21 08:21:55 +1100 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -64,7 +64,7 @@ class StationEmptyState extends StatelessWidget {
                   ? 'No saved station matches what you typed. Clear the '
                         'filter to see your whole library.'
                   : 'Use the Search button 🔍 to find stations in the '
-                        'Radio-Browser database, or the Export/Import '
+                        'Radio-Browser database, or the Import/Export '
                         'button 📥 to import a M3U or PLS playlist you '
                         'already have, perhaps from another app or '
                         'perhaps from a friend.',

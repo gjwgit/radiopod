@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 20261020 gjw AppStream metadata: what GNOME Software, KDE Discover and
+     Flathub show for the app. The description follows the snap's. -->
+<component type="desktop-application">
+  <id>com.togaware.radiopod</id>
+  <name>RadioPod</name>
+  <summary>Privacy-first internet radio and podcast player</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <developer id="com.togaware">
+    <name>Togaware</name>
+  </developer>
+  <url type="homepage">https://github.com/gjwgit/radiopod</url>
+  <url type="bugtracker">https://github.com/gjwgit/radiopod/issues</url>
+  <launchable type="desktop-id">com.togaware.radiopod.desktop</launchable>
+
+  <description>
+    <p>
+      RadioPod plays internet radio and podcasts. Find stations in the
+      community-run Radio-Browser database and podcasts in Podcast Index,
+      group them into playlists, and listen.
+    </p>
+    <p>
+      A podcast sits in your list beside the stations. Tap it to resume the
+      episode you were part way through, or else start the newest. Each
+      episode remembers where you stopped, so you can pick it up on another
+      device.
+    </p>
+    <p>
+      Your stations, podcasts, playlists and listening progress are stored
+      encrypted in your own Solid Pod, so nobody, not even the server
+      administrator, can see what you listen to. Without a login the library
+      is kept on this device instead and nothing is sent anywhere.
+    </p>
+    <p>
+      Playlists import and export as M3U and PLS, and podcasts as OPML.
+    </p>
+  </description>
+
+  <categories>
+    <category>AudioVideo</category>
+    <category>Audio</category>
+    <category>Player</category>
+  </categories>
+
+  <keywords>
+    <keyword>radio</keyword>
+    <keyword>podcast</keyword>
+    <keyword>solid</keyword>
+  </keywords>
+
+  <content_rating type="oars-1.1"/>
+
+  <releases>
+    <release version="2.0.20" date="2026-10-21"/>
+  </releases>
+</component>

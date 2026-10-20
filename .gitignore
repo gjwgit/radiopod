@@ -20,6 +20,7 @@ qtest_*.txt
 installers/*.apk
 installers/*.exe
 installers/*.snap
+installers/*.flatpak
 installers/*.tar.gz
 installers/*-linux.zip
 installers/*-macos.zip

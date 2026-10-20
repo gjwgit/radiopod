@@ -1,0 +1,121 @@
+# RadioPod as a Flatpak.
+#
+# 20261020 gjw A first, local build. It wraps the Flutter release bundle
+# built on the host (`make flatpak` builds it first, with the scrambled
+# Podcast Index pair from dart_defines.json, exactly as deb.sh does) and
+# builds libmpv, which no Flatpak runtime ships, from source.
+#
+# Flathub is NOT the target yet: it builds from public source and has no
+# access to the Podcast Index pair, so its build would have no podcast
+# search. This manifest makes a .flatpak bundle to hand out ourselves.
+#
+# Build and run by hand:
+#
+#   flatpak run org.flatpak.Builder --user --install --force-clean \
+#     build-flatpak flatpak/com.togaware.radiopod.yml
+#   flatpak run com.togaware.radiopod
+
+id: com.togaware.radiopod
+runtime: org.gnome.Platform
+runtime-version: '49'
+sdk: org.gnome.Sdk
+command: radiopod
+
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  # Streams, Radio-Browser, Podcast Index, the feeds and the Pod.
+  - --share=network
+  # Without it the stream connects, the row says Playing, and nothing is
+  # heard: the same quiet failure the snap's audio-playback plug avoids.
+  - --socket=pulseaudio
+  # solidpod keeps the security key through flutter_secure_storage, which
+  # on GNU/Linux is libsecret talking to the keyring over this name. The
+  # snap needed password-manager-service connected by hand (CLAUDE.md §12);
+  # here it is granted by the manifest.
+  - --talk-name=org.freedesktop.secrets
+
+cleanup:
+  - /include
+  - /lib/pkgconfig
+  - /share/man
+  - '*.la'
+  - '*.a'
+
+modules:
+
+  # libmpv and the two libraries it needs that the GNOME runtime lacks.
+  # Configured for audio from a library, not a video player: no mpv
+  # command, no scripting, no Vulkan. ffmpeg is the runtime's own.
+
+  - name: libass
+    config-opts:
+      - --disable-static
+      - --enable-fontconfig
+    sources:
+      - type: git
+        url: https://github.com/libass/libass.git
+        tag: 0.17.5
+        commit: 4a05d8127f525943ebf45fdc6497c9e665947f0d
+
+  - name: libplacebo
+    buildsystem: meson
+    config-opts:
+      - -Dvulkan=disabled
+      - -Dshaderc=disabled
+      - -Dglslang=disabled
+      - -Ddemos=false
+      - -Dtests=false
+    sources:
+      - type: git
+        url: https://github.com/haasn/libplacebo.git
+        tag: v7.360.1
+        commit: cee9b076f2c63104ccfd497fa79c39a867293ec4
+
+  - name: mpv
+    buildsystem: meson
+    config-opts:
+      - -Dlibmpv=true
+      - -Dcplayer=false
+      - -Dlua=disabled
+      - -Djavascript=disabled
+      - -Dvulkan=disabled
+      - -Dpulse=enabled
+      - -Dmanpage-build=disabled
+      - -Dhtml-build=disabled
+      - -Dpdf-build=disabled
+      - -Dbuild-date=false
+      - -Dwerror=false
+    sources:
+      - type: git
+        url: https://github.com/mpv-player/mpv.git
+        tag: v0.41.0
+        commit: 41f6a645068483470267271e1d09966ca3b9f413
+
+  # The app: the Flutter bundle as built, under /app/radiopod, since the
+  # executable finds its lib/ and data/ beside itself.
+
+  - name: radiopod
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/radiopod /app/bin
+      - cp -r bundle/. /app/radiopod/
+      - ln -s /app/radiopod/radiopod /app/bin/radiopod
+      - install -Dm644 com.togaware.radiopod.desktop
+          /app/share/applications/com.togaware.radiopod.desktop
+      - install -Dm644 com.togaware.radiopod.metainfo.xml
+          /app/share/metainfo/com.togaware.radiopod.metainfo.xml
+      - install -Dm644 icon.png
+          /app/share/icons/hicolor/512x512/apps/com.togaware.radiopod.png
+    sources:
+      - type: dir
+        path: ../build/linux/x64/release/bundle
+        dest: bundle
+      - type: file
+        path: com.togaware.radiopod.desktop
+      - type: file
+        path: com.togaware.radiopod.metainfo.xml
+      - type: file
+        path: ../snap/gui/icon.png

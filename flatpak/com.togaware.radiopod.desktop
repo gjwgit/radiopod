@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=RadioPod
+Comment=Simple, Private, Secure Internet Radio and Podcasts with your Solid Pod
+Exec=radiopod
+Icon=com.togaware.radiopod
+Terminal=false
+Type=Application
+Categories=AudioVideo;Audio;Player;Network;
+Keywords=radio;internet radio;streaming;shoutcast;icecast;podcast;podcasts;solid;pod;
