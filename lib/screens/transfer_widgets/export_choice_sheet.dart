@@ -29,7 +29,6 @@ import 'package:flutter/material.dart';
 
 import 'package:gap/gap.dart';
 
-import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/utils/playlist_file.dart';
@@ -102,7 +101,7 @@ class _ExportChoiceSheetState extends State<ExportChoiceSheet> {
                 _row(
                   context,
                   icon: Icons.radio,
-                  name: appName,
+                  name: '',
                   label: 'All stations',
                   stations: widget.allStations,
                 ),

@@ -161,18 +161,25 @@ extension PodcastLibrary on AppProvider {
   ///
   /// Returns a message when the feed could not be fetched or read, which
   /// leaves the stored casts exactly as they were.
+  ///
+  /// 20261021 gjw Marks the casts for the Pod only when the feed changed
+  /// them, and [save] false leaves the write to the caller. Refreshing every
+  /// podcast after a load wrote the whole of `casts.ttl` once per podcast,
+  /// changed or not: 23 podcasts, 23 encrypted writes at every start.
 
-  Future<String?> refreshPodcast(String podcastId) async {
+  Future<String?> refreshPodcast(String podcastId, {bool save = true}) async {
     final podcast = _stations.where((s) => s.id == podcastId).firstOrNull;
     if (podcast == null || !podcast.isPodcast) return null;
 
     try {
       final feed = await fetchFeed(podcast.url);
-      await CastStore.put(
-        podcastId,
-        mergeFeed(CastStore.of(podcastId), feed.casts),
-      );
-      _castsDirty = true;
+      final before = CastStore.of(podcastId);
+      final merged = mergeFeed(before, feed.casts);
+      if (encodeCasts({podcastId: merged}) !=
+          encodeCasts({podcastId: before})) {
+        await CastStore.put(podcastId, merged);
+        _castsDirty = true;
+      }
 
       // Fill in what Search could not supply, never overwrite what the
       // listener chose.
@@ -192,7 +199,7 @@ extension PodcastLibrary on AppProvider {
         return await _commit();
       }
 
-      return await _commitCasts();
+      return save ? await _commitCasts() : null;
     } catch (e) {
       debugPrint('[AppProvider] feed refresh failed (${podcast.url}): $e');
 
@@ -221,12 +228,16 @@ extension PodcastLibrary on AppProvider {
     final failed = <String>[];
     for (final p in podcasts) {
       final before = {for (final c in castsOf(p.id)) c.guid};
-      if (await refreshPodcast(p.id) != null) {
+      if (await refreshPodcast(p.id, save: false) != null) {
         failed.add(p.name);
         continue;
       }
       newCasts += castsOf(p.id).where((c) => !before.contains(c.guid)).length;
     }
+
+    // One write for the whole run, and none when no feed changed anything.
+
+    await _commitCasts();
 
     return (podcasts: podcasts.length, newCasts: newCasts, failed: failed);
   }

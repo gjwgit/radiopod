@@ -9,11 +9,8 @@
 # access to the Podcast Index pair, so its build would have no podcast
 # search. This manifest makes a .flatpak bundle to hand out ourselves.
 #
-# Build and run by hand:
-#
-#   flatpak run org.flatpak.Builder --user --install --force-clean \
-#     build-flatpak flatpak/com.togaware.radiopod.yml
-#   flatpak run com.togaware.radiopod
+# Build with `make flatpak`, which builds outside the project (see the
+# Makefile), then run with `flatpak run com.togaware.radiopod`.
 
 id: com.togaware.radiopod
 runtime: org.gnome.Platform

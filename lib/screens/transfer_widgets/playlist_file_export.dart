@@ -44,9 +44,9 @@ import 'package:radiopod/utils/playlist_file.dart';
 /// audio, and an M3U or PLS player handed one would play nothing. They go
 /// to [saveOpmlFile] instead, which is what a podcast app reads.
 ///
-/// Returns the saved path, or null if the user cancelled. [name] seeds the
-/// suggested filename, sanitised so a playlist called "Drive / Work" cannot
-/// produce a path separator.
+/// Returns the saved path, or null if the user cancelled. [name], the
+/// playlist's, or empty for the whole library, goes into the suggested
+/// filename through [exportFileName].
 
 Future<String?> savePlaylistFile({
   required List<Station> stations,
@@ -60,7 +60,7 @@ Future<String?> savePlaylistFile({
 
   final fileUri = await FilePicker.saveFile(
     dialogTitle: 'Save ${format.label} playlist',
-    fileName: '${safeFileName(name)}.${format.extension}',
+    fileName: exportFileName(name, format.extension),
     bytes: utf8.encode(content),
     type: FileType.custom,
     allowedExtensions: [format.extension],
@@ -76,13 +76,36 @@ Future<String?> savePlaylistFile({
 Future<String?> saveOpmlFile(List<OpmlFeed> feeds) async {
   final fileUri = await FilePicker.saveFile(
     dialogTitle: 'Save podcasts as OPML',
-    fileName: 'radiopod_podcasts.opml',
+    fileName: exportFileName('podcasts', 'opml'),
     bytes: utf8.encode(writeOpml(feeds, title: 'RadioPod podcasts')),
     type: FileType.custom,
     allowedExtensions: const ['opml'],
   );
 
   return fileUri?.path;
+}
+
+/// The suggested name for an exported file: the app's name, then [part] if
+/// any, then the date, all in lower case with single underscores, as in
+/// radiopod_drive_work_20261021.m3u.
+///
+/// 20261021 gjw Always lower case and always dated, so exports sort
+/// together in a folder and a later one never overwrites an earlier one
+/// unasked.
+
+String exportFileName(String part, String extension, {DateTime? now}) {
+  final d = now ?? DateTime.now();
+  final stamp =
+      '${d.year}${d.month.toString().padLeft(2, '0')}'
+      '${d.day.toString().padLeft(2, '0')}';
+
+  final stem = [
+    'radiopod',
+    if (part.trim().isNotEmpty) safeFileName(part),
+    stamp,
+  ].join('_').toLowerCase().replaceAll(RegExp(r'_+'), '_');
+
+  return '$stem.$extension';
 }
 
 /// Reduce [name] to something safe to put in a filename.

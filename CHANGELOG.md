@@ -16,9 +16,14 @@ then please show some ❤️ and tap on the star at
 This app is authored by [Graham
 Williams](https://togaware.com/Graham.Williams.html).
 
+## 2.1 Tidy up import/export and fine tune
+
++ Write casts to Pod once at startup, not once per podcast [2.1.2 20261021 gjw]
++ Exports named in lowercase with a date, radiopod_20261021 [2.1.1 20261021 gjw]
++ Import/Export page by direction, OPML beside M3U/PLS [2.1.0 20261021 gjw]
+
 ## 2.0 Podcasts
 
-+ Import/Export page by direction, OPML beside M3U/PLS [2.0.20 20261021 gjw]
 + Rows begin Radio or Podcast; podcasts say 2 to play [2.0.19 20261019 gjw]
 + Say "Nothing left to play", not a stream error [2.0.18 20261018 gjw]
 + Podcast with no episodes left moves to next station [2.0.17 20261018 gjw]

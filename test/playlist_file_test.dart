@@ -74,6 +74,32 @@ void main() {
     });
   });
 
+  group('exportFileName', () {
+    final day = DateTime(2026, 10, 21, 23, 59);
+
+    test('the whole library is the app name, lower case, and the date', () {
+      expect(exportFileName('', 'm3u', now: day), 'radiopod_20261021.m3u');
+    });
+
+    test('a playlist adds its own name, lower case, one underscore', () {
+      expect(
+        exportFileName('Drive / Work', 'pls', now: day),
+        'radiopod_drive_work_20261021.pls',
+      );
+      expect(
+        exportFileName('Jazz: _late_ night!', 'm3u', now: day),
+        'radiopod_jazz_late_night_20261021.m3u',
+      );
+    });
+
+    test('podcasts are dated too', () {
+      expect(
+        exportFileName('podcasts', 'opml', now: DateTime(2026, 3, 4)),
+        'radiopod_podcasts_20260304.opml',
+      );
+    });
+  });
+
   group('safeFileName', () {
     test('replaces path separators and punctuation', () {
       expect(safeFileName('Drive / Work'), 'Drive___Work');

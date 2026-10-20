@@ -173,14 +173,21 @@ deb:
 FLATPAK_ID = com.togaware.radiopod
 FLATPAK_BUILDER = flatpak run org.flatpak.Builder
 
+# 20261021 gjw Built OUTSIDE the project. The build directory holds a whole
+# filesystem tree, with links the user cannot list, and `make prep` runs
+# dependency_validator over everything under the package root: it failed
+# with Permission denied on build/flatpak/var/run.
+
+FLATPAK_DIR = $(HOME)/.cache/$(APP)-flatpak
+
 .PHONY: flatpak
 flatpak:
 	flutter build linux --release --dart-define-from-file=dart_defines.json \
 	  $(OBFUSCATE)
 	$(FLATPAK_BUILDER) --user --install --force-clean --disable-rofiles-fuse \
-	  --state-dir=build/flatpak-state --repo=build/flatpak-repo \
-	  build/flatpak flatpak/$(FLATPAK_ID).yml
-	flatpak build-bundle build/flatpak-repo \
+	  --state-dir=$(FLATPAK_DIR)/state --repo=$(FLATPAK_DIR)/repo \
+	  $(FLATPAK_DIR)/build flatpak/$(FLATPAK_ID).yml
+	flatpak build-bundle $(FLATPAK_DIR)/repo \
 	  installers/$(APP)-$(VER).flatpak $(FLATPAK_ID)
 	@echo "Run with: flatpak run $(FLATPAK_ID)"
 
