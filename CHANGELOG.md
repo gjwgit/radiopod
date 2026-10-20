@@ -18,6 +18,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.1 Tidy up import/export and fine tune
 
++ Update to solidui 1.5.11 [2.1.3 20261021 gjw]
 + Write casts to Pod once at startup, not once per podcast [2.1.2 20261021 gjw]
 + Exports named in lowercase with a date, radiopod_20261021 [2.1.1 20261021 gjw]
 + Import/Export page by direction, OPML beside M3U/PLS [2.1.0 20261021 gjw]
