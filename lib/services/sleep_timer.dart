@@ -49,10 +49,14 @@ import 'package:radiopod/constants/app.dart';
 /// the stop the volume goes back to full, AFTER rather than before so the
 /// last moment is not a burst of sound, and the next play starts normally.
 ///
-/// AN ELAPSED TIMER IS NOT A STOPPED PLAYER. The two are deliberately kept
-/// apart: starting another station does not cancel the timer, because "stop
-/// playing at bedtime" is about the clock and not about which station is on.
-/// Only the listener cancels it, or its own firing.
+/// SWITCHING STATION IS NOT STOPPING. Starting another station while one
+/// plays does not cancel the timer, because "stop playing at bedtime" is
+/// about the clock and not about which station is on.
+///
+/// 20261022 gjw A real Stop DOES cancel it ([onPlaybackStopped]). The
+/// listening it was timing is over, so the next start from silence begins a
+/// fresh countdown when Settings asks for one, rather than inheriting
+/// whatever was left from an earlier session.
 
 class SleepTimer {
   SleepTimer(this._onExpire, {required this.setVolume});
@@ -97,6 +101,12 @@ class SleepTimer {
   void onPlaybackStarted() {
     if (startOnPlay && !isRunning) start(defaultDuration);
   }
+
+  /// Playback has been stopped, by the listener, the car, the end of the
+  /// queue or this timer's own firing. Not called for a Pause, nor for the
+  /// silence between one station and the next.
+
+  void onPlaybackStopped() => cancel();
 
   /// Turn the timer on for [defaultDuration], or off if it is already on.
   ///

@@ -89,7 +89,8 @@ many more apps using the Solid ecosystem.
 + **Sleep timer**: tap the timer in the toolbar to keep playing for a
   while and then stop. Half an hour by default, and you can choose
   anything from fifteen minutes to two hours in Settings. Only
-  playback stops, so a station is one tap away again.
+  playback stops, so a station is one tap away again. Switching
+  station keeps the countdown going; Stop resets it.
 + **Dark/Light** modes are supported.
 + Runs on **Android, iOS, GNU/Linux, macOS, Windows and the web**.
 

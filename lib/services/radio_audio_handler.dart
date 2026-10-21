@@ -129,6 +129,12 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   void Function()? onPlayFromSilence;
 
+  /// Called when [stop] has silenced the player. Not called by a Pause, nor
+  /// by the silence [playStation] makes between stations. Player.init points
+  /// it at the sleep timer, which a stop resets.
+
+  void Function()? onStopped;
+
   final _geoBlocks = StreamController<GeoBlock>.broadcast();
 
   /// A station that ended early because its server refuses our country.
@@ -495,6 +501,11 @@ class RadioAudioHandler extends BaseAudioHandler {
 
     _stopped = true;
     await _silence();
+
+    // After the silence, so a timer cancelled mid-fade restores the volume
+    // only once nothing is left to hear.
+
+    onStopped?.call();
     playbackState.add(
       playbackState.value.copyWith(
         processingState: AudioProcessingState.idle,

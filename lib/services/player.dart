@@ -155,6 +155,7 @@ class Player {
     // start from the car, the lock screen or the notification counts too.
 
     _handler!.onPlayFromSilence = _sleepTimer!.onPlaybackStarted;
+    _handler!.onStopped = _sleepTimer!.onPlaybackStopped;
 
     final (stations, playlists) = await LocalStore.load();
 

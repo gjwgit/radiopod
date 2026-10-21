@@ -322,6 +322,36 @@ void main() {
       });
     });
 
+    // A Stop ends the listening being timed, so the next start begins a
+    // full countdown rather than what was left.
+
+    test('a stop then a start restarts the timer from the top', () {
+      withFakeClock((async, timer, fired) {
+        timer
+          ..startOnPlay = true
+          ..onPlaybackStarted();
+        async.elapse(const Duration(minutes: 10));
+        timer.onPlaybackStopped();
+
+        expect(timer.isRunning, isFalse);
+
+        timer.onPlaybackStarted();
+
+        expect(timer.minutesLeft.value, 30);
+        expect(fired, isEmpty);
+      });
+    });
+
+    test('a stop during the fade puts the volume back', () {
+      withFakeClock((async, timer, fired) {
+        timer.start(const Duration(minutes: 1));
+        async.elapse(const Duration(seconds: 50));
+        timer.onPlaybackStopped();
+
+        expect(events.last, 1.0);
+      });
+    });
+
     // The default has to be one of the offered choices, or Settings would
     // open with a dropdown value it cannot show.
 

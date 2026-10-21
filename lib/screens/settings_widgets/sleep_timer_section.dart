@@ -120,7 +120,8 @@ class _SleepTimerSectionState extends State<SleepTimerSection> {
           title: const Text('Start the timer when playback starts'),
           subtitle: const Text(
             'Turn the sleep timer on whenever a station starts playing and '
-            'nothing else was. Switching stations leaves the timer as it is.',
+            'nothing else was. Switching stations leaves the timer as it is; '
+            'Stop turns it off, so the next play starts it afresh.',
           ),
         ),
       ],
