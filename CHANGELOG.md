@@ -18,6 +18,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.1 Tidy up import/export and fine tune
 
++ Login status bar on narrower windows, solidui 1.5.12 [2.1.5 20261022 gjw]
 + Sleep timer resets on Stop, not on switching station [2.1.4 20261022 gjw]
 + Update to solidui 1.5.11 [2.1.3 20261021 gjw]
 + Write casts to Pod once at startup, not once per podcast [2.1.2 20261021 gjw]
