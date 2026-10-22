@@ -90,12 +90,6 @@ extension CastHandling on RadioAudioHandler {
     throw NothingToPlay(podcast.name, noEpisodes: casts.isEmpty);
   }
 
-  void _findCastNeighbours(Station podcast, Cast cast) {
-    final casts = CastStore.of(podcast.id);
-    _castHasOlder = nextCast(casts, after: cast.guid) != null;
-    _castHasNewer = previousCast(casts, cast.guid) != null;
-  }
-
   /// What the session should be showing right now: the cast when a podcast
   /// plays, else the station with its song.
 
@@ -209,27 +203,6 @@ extension CastHandling on RadioAudioHandler {
     await stop();
   }
 
-  /// Next (older) or Previous (newer) cast of the podcast on air.
-
-  Future<void> _skipCast({required bool older}) async {
-    final station = _currentStation;
-    final cast = _currentCast;
-    if (station == null || cast == null) return;
-
-    final casts = CastStore.of(station.id);
-    final target = older
-        ? nextCast(casts, after: cast.guid)
-        : previousCast(casts, cast.guid);
-    if (target == null) return;
-
-    await playStation(
-      station,
-      queue: _queueStations,
-      parentId: _queueParentId,
-      castGuid: target.guid,
-    );
-  }
-
   /// Seek within the cast on air. Nothing to do for a live station.
 
   Future<void> _seekCast(Duration target) async {
@@ -272,8 +245,7 @@ extension CastHandling on RadioAudioHandler {
   void _broadcastCastState(bool playing) {
     final c = castControls(
       playing: playing,
-      hasOlder: _castHasOlder,
-      hasNewer: _castHasNewer,
+      hasQueue: _queueStations.length > 1,
     );
 
     playbackState.add(

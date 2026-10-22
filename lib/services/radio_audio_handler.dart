@@ -164,12 +164,6 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   Cast? _currentCast;
 
-  /// Whether the podcast on air has an older or a newer cast to skip to,
-  /// worked out when the cast starts rather than on every state event.
-
-  bool _castHasOlder = false;
-  bool _castHasNewer = false;
-
   /// Saves the cast's place every [castSaveEvery] while it plays.
 
   Timer? _castSaveTimer;
@@ -337,7 +331,6 @@ class RadioAudioHandler extends BaseAudioHandler {
     _currentTrack = null;
     _currentCast = cast;
     _castEnding = false;
-    if (cast != null) _findCastNeighbours(station, cast);
     _startedAt = DateTime.now();
     _stopped = false;
 
@@ -679,16 +672,18 @@ class RadioAudioHandler extends BaseAudioHandler {
     return t;
   }
 
-  /// Next and Previous: through the station queue, or, while a cast plays,
-  /// to the next older or newer cast of the same podcast.
+  /// Next and Previous: through the station queue, a podcast included.
+  ///
+  /// 20261023 gjw While a cast played they used to walk its episodes, and
+  /// were offered only when there was another to hear, so Next in the car
+  /// seemed to stop at a podcast. A driver pressing Next wants the next
+  /// station; episodes are chosen from the podcast's Episodes page.
 
   @override
-  Future<void> skipToNext() =>
-      _currentCast != null ? _skipCast(older: true) : _skipBy(1);
+  Future<void> skipToNext() => _skipBy(1);
 
   @override
-  Future<void> skipToPrevious() =>
-      _currentCast != null ? _skipCast(older: false) : _skipBy(-1);
+  Future<void> skipToPrevious() => _skipBy(-1);
 
   /// Move [delta] stations through the current queue, wrapping at the ends.
   ///

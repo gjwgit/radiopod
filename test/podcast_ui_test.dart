@@ -152,26 +152,18 @@ void main() {
       expect(item.isLive, isFalse);
     });
 
-    test('controls: pause not stop, skips only where there is a cast', () {
-      final first = castControls(
-        playing: true,
-        hasOlder: true,
-        hasNewer: false,
-      );
+    test('controls: pause not stop, skips only with a queue to walk', () {
+      final alone = castControls(playing: true, hasQueue: false);
 
-      expect(first.controls, [
+      expect(alone.controls, [
         MediaControl.rewind,
         MediaControl.pause,
         MediaControl.fastForward,
-        MediaControl.skipToNext,
       ]);
-      expect(first.compact, [0, 1, 2]);
+      expect(alone.compact, [0, 1, 2]);
 
-      final middle = castControls(
-        playing: false,
-        hasOlder: true,
-        hasNewer: true,
-      );
+      final middle = castControls(playing: false, hasQueue: true);
+      expect(middle.controls.last, MediaControl.skipToNext);
       expect(middle.controls.first, MediaControl.skipToPrevious);
       expect(middle.controls, contains(MediaControl.play));
       // The compact view is always back, play/pause, forward.

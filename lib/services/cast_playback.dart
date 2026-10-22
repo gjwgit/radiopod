@@ -114,20 +114,19 @@ MediaItem castSessionItem(MediaItem podcastItem, Station podcast, Cast cast) =>
 
 /// The transport controls for a cast, which unlike a station has a
 /// timeline: back, play or PAUSE (a pause keeps the place), forward.
-/// Next and Previous move to the older or newer cast, and are offered only
-/// when there is one.
+/// Next and Previous move through the station queue, as for a station,
+/// and are offered when it holds another.
 
 ({List<MediaControl> controls, List<int> compact}) castControls({
   required bool playing,
-  required bool hasOlder,
-  required bool hasNewer,
+  required bool hasQueue,
 }) {
   final controls = [
-    if (hasNewer) MediaControl.skipToPrevious,
+    if (hasQueue) MediaControl.skipToPrevious,
     MediaControl.rewind,
     if (playing) MediaControl.pause else MediaControl.play,
     MediaControl.fastForward,
-    if (hasOlder) MediaControl.skipToNext,
+    if (hasQueue) MediaControl.skipToNext,
   ];
   final rewind = controls.indexOf(MediaControl.rewind);
 
