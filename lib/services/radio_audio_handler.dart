@@ -30,6 +30,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -41,6 +42,7 @@ import 'package:radiopod/services/browse_tree.dart';
 import 'package:radiopod/services/carplay_bridge.dart';
 import 'package:radiopod/services/cast_playback.dart';
 import 'package:radiopod/services/cast_store.dart';
+import 'package:radiopod/services/focus_policy.dart';
 import 'package:radiopod/services/geo_block.dart';
 import 'package:radiopod/services/icy_reader.dart';
 import 'package:radiopod/services/stream_end_policy.dart';
@@ -49,6 +51,7 @@ import 'package:radiopod/utils/platform_io.dart'
     if (dart.library.js_interop) 'package:radiopod/utils/platform_web.dart';
 
 part 'radio_audio_handler_casts.dart';
+part 'radio_audio_handler_focus.dart';
 part 'radio_audio_handler_stream_end.dart';
 
 /// The single audio handler, shared by the Flutter UI, the system
@@ -173,6 +176,21 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   bool _castEnding = false;
 
+  /// True while a cast is paused because another app's sound asked us to
+  /// duck. See [FocusHandling].
+
+  bool _pausedForOther = false;
+
+  /// Whether the audio session is set up for speech (a cast) rather than
+  /// music (a station); null until the first play sets it.
+
+  bool? _speechSession;
+
+  /// Looks every [focusPollEvery] for the end of another app's sound after
+  /// it took the sound outright. See [FocusHandling].
+
+  Timer? _focusPoll;
+
   /// The counts the car's rows last showed, to tell a change that matters
   /// to them from one that does not.
 
@@ -214,6 +232,7 @@ class RadioAudioHandler extends BaseAudioHandler {
     _player.icyMetadataStream.listen(_broadcastTrack);
 
     _watchCasts();
+    unawaited(_watchFocus());
 
     // 20260922 gjw Most internet radio is an endless stream, but not all of
     // it: NPR and other bulletin feeds genuinely END when the bulletin is
@@ -331,6 +350,8 @@ class RadioAudioHandler extends BaseAudioHandler {
     _currentTrack = null;
     _currentCast = cast;
     _castEnding = false;
+    _pausedForOther = false;
+    _focusPoll?.cancel();
     _startedAt = DateTime.now();
     _stopped = false;
 
@@ -383,6 +404,7 @@ class RadioAudioHandler extends BaseAudioHandler {
 
       if (cast != null) _startCastSaving();
       if (fromSilence) onPlayFromSilence?.call();
+      await _useSessionFor(speech: cast != null);
       await _player.play();
     } catch (e) {
       // Superseded, not failed: the newer open owns the playback state.
