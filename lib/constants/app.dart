@@ -1,6 +1,6 @@
 /// RadioPod - app-wide constants.
 ///
-// Time-stamp: <Thursday 2026-10-08 08:27:42 +1100 Graham Williams>
+// Time-stamp: <Thursday 2026-10-22 09:23:01 +1100 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -33,7 +33,7 @@ const appName = 'RadioPod';
 
 /// Application title displayed as the window title.
 
-const String appTitle = 'RadioPod - Privacy-First Internet Radio';
+const String appTitle = 'RadioPod - Privacy-First Radio and Podcasts';
 
 /// App directory name used by solidpod for storage paths.
 
@@ -56,7 +56,7 @@ const castsFileName = 'casts.ttl';
 /// Podcast Index and each podcast's own feed. Radio-Browser's terms of use
 /// require it. Bump the version with the app's.
 
-const userAgent = 'RadioPod/2.1.5 (+https://github.com/gjwgit/radiopod)';
+const userAgent = 'RadioPod/2.1.6 (+https://github.com/gjwgit/radiopod)';
 
 /// Notification channel identity for the Android media notification.
 ///

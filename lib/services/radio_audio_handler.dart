@@ -115,6 +115,16 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   bool _stopped = false;
 
+  /// Counts the opens [playStation] starts, and the stops that end them.
+  ///
+  /// 20261022 gjw Tapping another station while one is still Connecting…
+  /// interrupts the first load, which throws. That is not a station failing
+  /// to connect, and reporting it put up a "could not connect" popup for a
+  /// station the listener had already moved on from. An open whose number is
+  /// no longer the latest returns quietly instead.
+
+  int _openCount = 0;
+
   /// How long to wait for a station to open before calling it a failure.
   ///
   /// Generous, because a distant station on a slow connection is not an
@@ -301,6 +311,7 @@ class RadioAudioHandler extends BaseAudioHandler {
     // even when this is a switch from one station to another.
 
     final fromSilence = !_player.playing;
+    final open = ++_openCount;
 
     // Resolve the cast first, so a podcast with nothing left to play fails
     // before the station on air is disturbed. Then save the place in
@@ -370,6 +381,10 @@ class RadioAudioHandler extends BaseAudioHandler {
           )
           .timeout(_openTimeout);
 
+      // Another station, or a Stop, came along while this one loaded.
+
+      if (open != _openCount) return;
+
       // 20261013 gjw BEFORE play(), not after: just_audio's play() future
       // completes only when playback later pauses or stops.
 
@@ -377,6 +392,13 @@ class RadioAudioHandler extends BaseAudioHandler {
       if (fromSilence) onPlayFromSilence?.call();
       await _player.play();
     } catch (e) {
+      // Superseded, not failed: the newer open owns the playback state.
+
+      if (open != _openCount) {
+        debugPrint('[RadioAudioHandler] ${station.name} superseded: $e');
+
+        return;
+      }
       debugPrint('[RadioAudioHandler] cannot play ${station.url}: $e');
       playbackState.add(
         playbackState.value.copyWith(
@@ -500,6 +522,7 @@ class RadioAudioHandler extends BaseAudioHandler {
     _castSaveTimer?.cancel();
 
     _stopped = true;
+    _openCount++;
     await _silence();
 
     // After the silence, so a timer cancelled mid-fade restores the volume
