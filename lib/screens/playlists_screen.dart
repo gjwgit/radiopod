@@ -41,6 +41,7 @@ import 'package:radiopod/widgets/error_dialog.dart';
 import 'package:radiopod/widgets/now_playing.dart';
 import 'package:radiopod/widgets/startup_overlay.dart';
 import 'package:radiopod/widgets/station_tile.dart';
+import 'package:radiopod/widgets/swipe_to_remove.dart';
 
 /// Playlists, each expanding to show the stations it holds.
 ///
@@ -245,8 +246,25 @@ class PlaylistsScreen extends StatelessWidget {
     List<Station> stations,
     NowPlaying now,
     int index,
-  ) => StationTile(
+  ) => SwipeToRemove(
     key: ValueKey('${playlist.id}:${s.id}'),
+    onRemove: () => provider.removeFromPlaylist(playlist.id, s.id),
+    child: _playlistTile(context, provider, playlist, s, stations, now, index),
+  );
+
+  /// The tile inside [_playlistRow], which a swipe left removes from the
+  /// playlist without asking, as its Remove button does: the station stays
+  /// in the library.
+
+  Widget _playlistTile(
+    BuildContext context,
+    AppProvider provider,
+    Playlist playlist,
+    Station s,
+    List<Station> stations,
+    NowPlaying now,
+    int index,
+  ) => StationTile(
     station: s,
     current: now.isCurrent(s.id),
     playing: now.playing,
@@ -268,7 +286,8 @@ class PlaylistsScreen extends StatelessWidget {
           **Remove from playlist**
 
           Take this station out of ${playlist.name}. It stays in your
-          library and in any other playlist it belongs to.
+          library and in any other playlist it belongs to. Swiping the row
+          to the left does the same.
 
           ''',
           child: IconButton(

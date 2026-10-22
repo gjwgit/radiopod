@@ -47,6 +47,7 @@ import 'package:radiopod/widgets/now_playing.dart';
 import 'package:radiopod/widgets/now_playing_stop_button.dart';
 import 'package:radiopod/widgets/startup_overlay.dart';
 import 'package:radiopod/widgets/station_tile.dart';
+import 'package:radiopod/widgets/swipe_to_remove.dart';
 
 /// Every saved station, in the order the user put them in, with a filter box
 /// for long libraries.
@@ -179,37 +180,12 @@ class _StationsScreenState extends State<StationsScreen> {
       builder: (context, now) {
         Widget row(int i) {
           final station = visible[i];
-          final current = now.isCurrent(station.id);
 
-          return StationTile(
+          return SwipeToRemove(
             key: ValueKey(station.id),
-            station: station,
-            current: current,
-            playing: now.playing,
-            connecting: now.connecting,
-            loading: now.loading,
-            paused: now.paused,
-            failed: now.failed,
-            track: now.track,
-            details: station.isPodcast
-                ? podcastDetails(
-                    station,
-                    toPlay: provider.castsToPlay(station.id),
-                    total: provider.castsOf(station.id).length,
-                  )
-                : null,
-
-            // Tapping the station on air toggles it; tapping any other row
-            // switches to that station.
-            onTap: () =>
-                current ? _toggle(now) : _play(provider, station, visible),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _actions(provider, station),
-                if (reorderable) _dragHandle(i),
-              ],
-            ),
+            confirm: () => _askDelete(station),
+            onRemove: () => _delete(provider, station),
+            child: _tile(provider, station, visible, now, i, reorderable),
           );
         }
 
@@ -232,6 +208,48 @@ class _StationsScreenState extends State<StationsScreen> {
               provider.reorderStation(oldIndex, newIndex),
         );
       },
+    );
+  }
+
+  /// One station row, its index [i] in [visible] being what a drag reports.
+
+  Widget _tile(
+    AppProvider provider,
+    Station station,
+    List<Station> visible,
+    NowPlaying now,
+    int i,
+    bool reorderable,
+  ) {
+    final current = now.isCurrent(station.id);
+
+    return StationTile(
+      station: station,
+      current: current,
+      playing: now.playing,
+      connecting: now.connecting,
+      loading: now.loading,
+      paused: now.paused,
+      failed: now.failed,
+      track: now.track,
+      details: station.isPodcast
+          ? podcastDetails(
+              station,
+              toPlay: provider.castsToPlay(station.id),
+              total: provider.castsOf(station.id).length,
+            )
+          : null,
+
+      // Tapping the station on air toggles it; tapping any other row
+      // switches to that station.
+      onTap: () => current ? _toggle(now) : _play(provider, station, visible),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _actions(provider, station),
+          if (reorderable) _dragHandle(i),
+        ],
+      ),
     );
   }
 
@@ -319,7 +337,8 @@ class _StationsScreenState extends State<StationsScreen> {
         **Delete station**
 
         Remove this station from your library and from every playlist it
-        appears in. You will be asked to confirm.
+        appears in. You will be asked to confirm. Swiping the row to the
+        left does the same.
 
         ''',
         onPressed: () => _confirmDelete(provider, station),
@@ -436,6 +455,13 @@ class _StationsScreenState extends State<StationsScreen> {
   /// every playlist that referenced it.
 
   Future<void> _confirmDelete(AppProvider provider, Station station) async {
+    if (!await _askDelete(station) || !mounted) return;
+    await _delete(provider, station);
+  }
+
+  /// The confirmation, asked by the Delete action and by a swipe left.
+
+  Future<bool> _askDelete(Station station) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -456,8 +482,10 @@ class _StationsScreenState extends State<StationsScreen> {
         ],
       ),
     );
-    if (confirmed != true || !mounted) return;
+    return confirmed == true;
+  }
 
+  Future<void> _delete(AppProvider provider, Station station) async {
     await provider.deleteStation(station.id);
     if (!mounted) return;
     showPositiveSnackBar(context, 'Deleted ${station.name}.');

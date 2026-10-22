@@ -411,7 +411,8 @@ class _AppScaffoldState extends State<AppScaffold> {
                 'Drag a station by the grip on the right to put the list in '
                 'the order you want. That order is saved, and is the order '
                 'the car and an export see. Dragging is unavailable while '
-                'the filter box has something in it.',
+                'the filter box has something in it. Swipe a station to the '
+                'left to delete it.',
             child: StationsScreen(),
           ),
           const SolidMenuItem(
