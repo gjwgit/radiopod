@@ -18,11 +18,12 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.1 Tidy up import/export and fine tune
 
-+ Swipe an episode left to skip it, right to bring it back [2.1.10 20261023 gjw]
-+ Larger, matching podcast skip buttons, harder to miss on a small phone [2.1.9 20261023 gjw]
-+ Swipe a station left to delete it, or remove it from a playlist [2.1.8 20261023 gjw]
-+ Next and Previous move to the next station while a podcast plays [2.1.7 20261023 gjw]
-+ No error popup when tapping another station while connecting [2.1.6 20261022 gjw]
++ Remove code left unused by the Next and Previous change [2.1.11 20261023 gjw]
++ Swipe episode left to skip, right to bring it back [2.1.10 20261023 gjw]
++ Larger podcast skip buttons for a small phone [2.1.9 20261023 gjw]
++ Swipe station left to delete or remove from playlist [2.1.8 20261023 gjw]
++ Next/Previous move to next station while a podcast plays [2.1.7 20261023 gjw]
++ No error popup tapping another station while connecting [2.1.6 20261022 gjw]
 + Login status bar on narrower windows, solidui 1.5.12 [2.1.5 20261022 gjw]
 + Sleep timer resets on Stop, not on switching station [2.1.4 20261022 gjw]
 + Update to solidui 1.5.11 [2.1.3 20261021 gjw]

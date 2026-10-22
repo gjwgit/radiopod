@@ -144,17 +144,6 @@ Cast? nextCast(List<Cast> casts, {String? after}) {
   return newestFirst.skip(start).where((c) => c.available).firstOrNull;
 }
 
-/// The next NEWER available cast than [before], for Previous.
-
-Cast? previousCast(List<Cast> casts, String before) {
-  final oldestFirst = [...casts]
-    ..sort((a, b) => a.published.compareTo(b.published));
-  final start = oldestFirst.indexWhere((c) => c.guid == before) + 1;
-  if (start == 0) return null;
-
-  return oldestFirst.skip(start).where((c) => c.available).firstOrNull;
-}
-
 /// True when [position] is close enough to the end of [duration] to count
 /// as heard. An unknown length is never finished by position alone; the
 /// player reporting the end is what marks it then.

@@ -154,15 +154,8 @@ void main() {
       expect(nextCast(casts, after: 'oldest'), isNull);
     });
 
-    test('previous goes the other way', () {
-      expect(previousCast(casts, 'oldest')?.guid, 'middle');
-      expect(previousCast(casts, 'middle')?.guid, 'newest');
-      expect(previousCast(casts, 'newest'), isNull);
-    });
-
-    test('an unknown cast has no neighbours', () {
+    test('an unknown cast has nothing after it', () {
       expect(nextCast(casts, after: 'nope'), isNull);
-      expect(previousCast(casts, 'nope'), isNull);
     });
 
     test('a tap resumes the part-heard cast, not the newest', () {
