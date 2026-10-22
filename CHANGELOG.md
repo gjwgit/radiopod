@@ -18,6 +18,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.1 Tidy up import/export and fine tune
 
++ Larger, matching podcast skip buttons, harder to miss on a small phone [2.1.9 20261023 gjw]
 + Swipe a station left to delete it, or remove it from a playlist [2.1.8 20261023 gjw]
 + Next and Previous move to the next station while a podcast plays [2.1.7 20261023 gjw]
 + No error popup when tapping another station while connecting [2.1.6 20261022 gjw]

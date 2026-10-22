@@ -66,20 +66,29 @@ class CastControls extends StatelessWidget {
     );
   }
 
+  static const _skipIconSize = 44.0;
+  static const _skipButtonSize = BoxConstraints(minWidth: 64, minHeight: 64);
+
   Widget _bar(BuildContext context, Duration position, Duration? length) {
     final cs = Theme.of(context).colorScheme;
     final max = (length ?? Duration.zero).inMilliseconds.toDouble();
     final value = position.inMilliseconds.toDouble().clamp(0.0, max);
     final style = TextStyle(fontSize: 12, color: cs.onSurfaceVariant);
 
+    // 20261023 gjw The skip buttons are large, with a gap below the bar,
+    // because on a small phone the default 48 px button sat so close to the
+    // first station that a tap on Back or Forward often started it instead.
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
       child: Row(
         children: [
           MarkdownTooltip(
             message: '**Back ${castSkipBack.inSeconds} seconds**',
             child: IconButton(
-              icon: const Icon(Icons.replay),
+              iconSize: _skipIconSize,
+              constraints: _skipButtonSize,
+              icon: _SkipIcon(castSkipBack.inSeconds, forward: false),
               onPressed: Player.handler.rewind,
             ),
           ),
@@ -98,8 +107,50 @@ class CastControls extends StatelessWidget {
           MarkdownTooltip(
             message: '**Forward ${castSkipForward.inSeconds} seconds**',
             child: IconButton(
-              icon: const Icon(Icons.forward_30),
+              iconSize: _skipIconSize,
+              constraints: _skipButtonSize,
+              icon: _SkipIcon(castSkipForward.inSeconds, forward: true),
               onPressed: Player.handler.fastForward,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The circular arrow with the seconds inside it.
+///
+/// 20261023 gjw Both buttons draw the SAME arrow, mirrored for forward.
+/// Material's forward_30 draws a smaller circle than the bare replay arrow,
+/// to fit its number, so the pair looked mismatched, and Material has no
+/// replay_15 to pair it with.
+
+class _SkipIcon extends StatelessWidget {
+  const _SkipIcon(this.seconds, {required this.forward});
+
+  final int seconds;
+  final bool forward;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = IconTheme.of(context).size ?? 24;
+
+    return SizedBox.square(
+      dimension: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Transform.flip(flipX: forward, child: const Icon(Icons.replay)),
+          Padding(
+            padding: EdgeInsets.only(top: size * 0.1),
+            child: Text(
+              '$seconds',
+              style: TextStyle(
+                fontSize: size * 0.26,
+                fontWeight: FontWeight.bold,
+                color: IconTheme.of(context).color,
+              ),
             ),
           ),
         ],
