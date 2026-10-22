@@ -122,7 +122,8 @@ class _CastTileState extends State<CastTile> {
               **Play this episode**
 
               On, this episode is played in its turn, newest first. Off, it
-              is skipped, though a tap still plays it.
+              is skipped, though a tap still plays it. Swipe the row left to
+              skip it, and right to bring it back.
 
               ''',
               child: Switch(value: !c.disabled, onChanged: widget.onEnabled),

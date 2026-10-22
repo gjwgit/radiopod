@@ -34,6 +34,7 @@ import 'package:provider/provider.dart';
 import 'package:radiopod/models/cast.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/podcast_widgets/cast_tile.dart';
+import 'package:radiopod/screens/podcast_widgets/swipe_to_skip.dart';
 import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/services/player.dart';
 import 'package:radiopod/widgets/app_snack_bar.dart';
@@ -132,24 +133,33 @@ class _PodcastScreenState extends State<PodcastScreen> {
             final current =
                 now.isCurrent(podcast.id) && now.isCurrentCast(cast.guid);
 
-            return CastTile(
+            return SwipeToSkip(
               key: ValueKey(cast.guid),
-              cast: cast,
-              current: current,
-              playing: now.playing,
-              onTap: () => current
-                  ? (now.playing
-                        ? Player.handler.pause()
-                        : Player.handler.play())
-                  : _play(provider, podcast, cast.guid),
-              onEnabled: (on) =>
-                  provider.setCastDisabled(podcast.id, cast.guid, !on),
-              onPlayed: (played) =>
-                  provider.setCastPlayed(podcast.id, cast.guid, played),
+              skipped: cast.disabled,
+              onSkip: (skip) =>
+                  provider.setCastDisabled(podcast.id, cast.guid, skip),
+              child: _tile(provider, podcast, cast, now, current),
             );
           },
         ),
       );
+
+  Widget _tile(
+    AppProvider provider,
+    Station podcast,
+    Cast cast,
+    NowPlaying now,
+    bool current,
+  ) => CastTile(
+    cast: cast,
+    current: current,
+    playing: now.playing,
+    onTap: () => current
+        ? (now.playing ? Player.handler.pause() : Player.handler.play())
+        : _play(provider, podcast, cast.guid),
+    onEnabled: (on) => provider.setCastDisabled(podcast.id, cast.guid, !on),
+    onPlayed: (played) => provider.setCastPlayed(podcast.id, cast.guid, played),
+  );
 
   /// Skip every cast, or, once all are skipped, bring them all back.
   ///
