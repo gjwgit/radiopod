@@ -142,6 +142,11 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   void Function()? onPlayFromSilence;
 
+  /// What plays when a cast finishes, from Settings. Player.init loads it
+  /// from [AfterCastPreference], so the car follows it with no screen open.
+
+  AfterCast afterCast = AfterCast.older;
+
   /// Called when [stop] has silenced the player. Not called by a Pause, nor
   /// by the silence [playStation] makes between stations. Player.init points
   /// it at the sleep timer, which a stop resets.

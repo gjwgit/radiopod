@@ -127,6 +127,50 @@ Cast? castToStart(List<Cast> casts) {
   return partHeard.firstOrNull ?? nextCast(casts);
 }
 
+/// What plays when a cast finishes, as chosen in Settings.
+///
+/// 20261024 gjw [older] was the only behaviour before there was a choice,
+/// and stays the default: working down the list is what someone catching
+/// up on a back catalogue wants. A news podcast is better heard [newest]
+/// first; [partHeard] finishes what was started, as a tap does.
+
+enum AfterCast {
+  /// The newest cast still to hear.
+  newest,
+
+  /// The next older cast still to hear.
+  older,
+
+  /// The part-heard cast listened to most recently, else the newest.
+  partHeard,
+
+  /// No more of this podcast: on to the next station.
+  nextStation,
+}
+
+/// The cast to play after [finished] (already marked played) under
+/// [choice], passing over the guids in [passOver], which would not open.
+/// Null means move on to the next station.
+
+Cast? castAfter(
+  List<Cast> casts,
+  AfterCast choice, {
+  required String finished,
+  Set<String> passOver = const {},
+}) {
+  final left = [
+    for (final c in casts)
+      if (!passOver.contains(c.guid)) c,
+  ];
+
+  return switch (choice) {
+    AfterCast.newest => nextCast(left),
+    AfterCast.older => nextCast(left, after: finished),
+    AfterCast.partHeard => castToStart(left),
+    AfterCast.nextStation => null,
+  };
+}
+
 /// The cast to play next.
 ///
 /// With no [after], the newest available cast: what a tap on the podcast

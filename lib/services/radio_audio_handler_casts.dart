@@ -138,8 +138,8 @@ extension CastHandling on RadioAudioHandler {
     });
   }
 
-  /// A cast reached its end: it has been heard. Play the next older one
-  /// still to hear, or, when there is none, move on through the queue.
+  /// A cast reached its end: it has been heard. Play the cast [afterCast]
+  /// chooses, or, when there is none, move on through the queue.
 
   Future<void> _onCastEnded() async {
     final station = _currentStation;
@@ -154,9 +154,16 @@ extension CastHandling on RadioAudioHandler {
       (c) => c.withState(played: true, position: Duration.zero),
     );
 
-    var after = cast.guid;
+    // What comes next is the listener's choice; see [AfterCast].
+
+    final failed = <String>{};
     for (var tries = 0; tries < _castFailureLimit; tries++) {
-      final next = nextCast(CastStore.of(station.id), after: after);
+      final next = castAfter(
+        CastStore.of(station.id),
+        afterCast,
+        finished: cast.guid,
+        passOver: failed,
+      );
       if (next == null) break;
       try {
         await playStation(
@@ -169,7 +176,7 @@ extension CastHandling on RadioAudioHandler {
         return;
       } catch (e) {
         debugPrint('[RadioAudioHandler] cast ${next.guid} would not open: $e');
-        after = next.guid;
+        failed.add(next.guid);
       }
     }
 

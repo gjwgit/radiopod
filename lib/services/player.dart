@@ -33,6 +33,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 
 import 'package:radiopod/constants/app.dart';
+import 'package:radiopod/services/after_cast_preference.dart';
 import 'package:radiopod/services/carplay_bridge.dart';
 import 'package:radiopod/services/cast_playback.dart';
 import 'package:radiopod/services/cast_store.dart';
@@ -150,6 +151,7 @@ class Player {
     );
     _sleepTimer!.defaultDuration = await SleepPreference.load();
     _sleepTimer!.startOnPlay = await SleepPreference.loadStartOnPlay();
+    _handler!.afterCast = await AfterCastPreference.load();
 
     // 20261013 gjw Hooked in the HANDLER rather than the station list, so a
     // start from the car, the lock screen or the notification counts too.

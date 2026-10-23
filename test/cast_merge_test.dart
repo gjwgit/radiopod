@@ -196,6 +196,63 @@ void main() {
     });
   });
 
+  group('castAfter', () {
+    // E3 has just been heard; E4 and E5 are newer and still to hear, E2 is
+    // older, and E1 was left part-way through.
+    final casts = [
+      _cast('e5', 5),
+      _cast('e4', 4),
+      _cast('e3', 3, played: true),
+      _cast('e2', 2),
+      _cast('e1', 1, position: 300, updatedAt: _t1),
+    ];
+
+    Cast? after(AfterCast choice, {Set<String> passOver = const {}}) =>
+        castAfter(casts, choice, finished: 'e3', passOver: passOver);
+
+    test('newest goes back to the latest still to hear', () {
+      expect(after(AfterCast.newest)?.guid, 'e5');
+    });
+
+    test('older carries on down the list', () {
+      expect(after(AfterCast.older)?.guid, 'e2');
+    });
+
+    test('partHeard carries on with the one started', () {
+      expect(after(AfterCast.partHeard)?.guid, 'e1');
+    });
+
+    test('partHeard with nothing started takes the newest', () {
+      expect(
+        castAfter(
+          [_cast('e5', 5), _cast('e3', 3, played: true)],
+          AfterCast.partHeard,
+          finished: 'e3',
+        )?.guid,
+        'e5',
+      );
+    });
+
+    test('nextStation plays no more of the podcast', () {
+      expect(after(AfterCast.nextStation), isNull);
+    });
+
+    test('a cast that would not open is passed over', () {
+      expect(after(AfterCast.newest, passOver: {'e5'})?.guid, 'e4');
+      expect(after(AfterCast.older, passOver: {'e2'})?.guid, 'e1');
+    });
+
+    test('nothing left means the next station', () {
+      final heard = [
+        _cast('e3', 3, played: true),
+        _cast('e2', 2, played: true),
+      ];
+      for (final choice in AfterCast.values) {
+        expect(castAfter(heard, choice, finished: 'e3'), isNull);
+      }
+    });
+  });
+
   group('isFinished', () {
     const hour = Duration(hours: 1);
 

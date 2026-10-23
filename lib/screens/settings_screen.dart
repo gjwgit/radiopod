@@ -30,6 +30,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
 
+import 'package:radiopod/screens/settings_widgets/after_cast_section.dart';
 import 'package:radiopod/screens/settings_widgets/library_storage_section.dart';
 import 'package:radiopod/screens/settings_widgets/login_diagnostics_section.dart';
 import 'package:radiopod/screens/settings_widgets/sleep_timer_section.dart';
@@ -107,6 +108,9 @@ class SettingsScreen extends StatelessWidget {
 
           // ── Sleep timer ─────────────────────────────────────────────
           const SleepTimerSection(),
+
+          // ── When an episode finishes ────────────────────────────────
+          const AfterCastSection(),
 
           // ── Login diagnostics ───────────────────────────────────────
           //

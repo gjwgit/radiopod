@@ -18,6 +18,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.1 Tidy up import/export and fine tune
 
++ Settings chooses what plays when an episode finishes [2.1.15 20261024 gjw]
 + Every tooltip is Markdown with a title, solidui 1.5.13 [2.1.14 20261024 gjw]
 + Next and Previous pass over a podcast with nothing left [2.1.13 20261023 gjw]
 + Podcasts pause for other sound, playback resumes after [2.1.12 20261023 gjw]
