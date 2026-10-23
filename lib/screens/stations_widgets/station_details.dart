@@ -29,6 +29,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
 import 'package:gap/gap.dart';
+import 'package:markdown_tooltip/markdown_tooltip.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:radiopod/models/station.dart';
@@ -175,18 +176,27 @@ class StationDetails extends StatelessWidget {
             ),
           ),
           if (row.copy)
-            IconButton(
-              icon: const Icon(Icons.copy, size: 16),
-              visualDensity: VisualDensity.compact,
-              tooltip: 'Copy the ${row.label.toLowerCase()}',
-              onPressed: () async {
-                await Clipboard.setData(ClipboardData(text: row.value));
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${row.label} copied.')),
-                  );
-                }
-              },
+            MarkdownTooltip(
+              message:
+                  '''
+
+              **Copy**
+
+              Copy the ${row.label.toLowerCase()} to the clipboard.
+
+              ''',
+              child: IconButton(
+                icon: const Icon(Icons.copy, size: 16),
+                visualDensity: VisualDensity.compact,
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: row.value));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('${row.label} copied.')),
+                    );
+                  }
+                },
+              ),
             ),
         ],
       ),

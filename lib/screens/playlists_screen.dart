@@ -160,24 +160,36 @@ class PlaylistsScreen extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          PopupMenuButton<String>(
-            onSelected: (value) => switch (value) {
-              'play' => _playAll(context, provider, stations),
-              'rename' => _rename(context, provider, playlist),
-              _ => _confirmDelete(context, provider, playlist),
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'play',
-                enabled: n > 0,
-                child: const Text('Play playlist'),
-              ),
-              const PopupMenuItem(value: 'rename', child: Text('Rename…')),
-              const PopupMenuItem(
-                value: 'delete',
-                child: Text('Delete playlist'),
-              ),
-            ],
+          MarkdownTooltip(
+            message: '''
+
+            **Playlist actions**
+
+            Play this playlist from the top, rename it, or delete it. The
+            stations in it stay in your library.
+
+            ''',
+            // An empty tooltip turns off the menu's own plain "Show menu".
+            child: PopupMenuButton<String>(
+              tooltip: '',
+              onSelected: (value) => switch (value) {
+                'play' => _playAll(context, provider, stations),
+                'rename' => _rename(context, provider, playlist),
+                _ => _confirmDelete(context, provider, playlist),
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'play',
+                  enabled: n > 0,
+                  child: const Text('Play playlist'),
+                ),
+                const PopupMenuItem(value: 'rename', child: Text('Rename…')),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Text('Delete playlist'),
+                ),
+              ],
+            ),
           ),
 
           // No tooltip, for the reason given on the Stations screen: a

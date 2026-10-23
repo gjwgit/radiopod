@@ -128,20 +128,32 @@ class _CastTileState extends State<CastTile> {
               ''',
               child: Switch(value: !c.disabled, onChanged: widget.onEnabled),
             ),
-            PopupMenuButton<bool>(
-              tooltip: 'Episode actions',
-              onSelected: widget.onPlayed,
-              itemBuilder: (_) => [
-                c.played
-                    ? const PopupMenuItem(
-                        value: false,
-                        child: Text('Mark as not played'),
-                      )
-                    : const PopupMenuItem(
-                        value: true,
-                        child: Text('Mark as played'),
-                      ),
-              ],
+            MarkdownTooltip(
+              message: '''
+
+              **Episode actions**
+
+              Mark this episode as played, so it is passed over, or as not
+              played, to hear it again in its turn.
+
+              ''',
+              // An empty tooltip turns off the menu's own plain "Show menu",
+              // which would otherwise show alongside this one.
+              child: PopupMenuButton<bool>(
+                tooltip: '',
+                onSelected: widget.onPlayed,
+                itemBuilder: (_) => [
+                  c.played
+                      ? const PopupMenuItem(
+                          value: false,
+                          child: Text('Mark as not played'),
+                        )
+                      : const PopupMenuItem(
+                          value: true,
+                          child: Text('Mark as played'),
+                        ),
+                ],
+              ),
             ),
           ],
         ),

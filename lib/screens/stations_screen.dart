@@ -375,7 +375,9 @@ class _StationsScreenState extends State<StationsScreen> {
     stream ends, add it to a playlist, or remove it from your library.
 
     ''',
+    // An empty tooltip turns off the menu's own plain "Show menu".
     child: PopupMenuButton<String>(
+      tooltip: '',
       onSelected: (value) => switch (value) {
         'casts' => _openCasts(station),
         'properties' => _editProperties(provider, station),
