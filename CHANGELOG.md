@@ -18,6 +18,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.1 Tidy up import/export and fine tune
 
++ Next and Previous pass over a podcast with nothing left [2.1.13 20261023 gjw]
 + Podcasts pause for other sound, playback resumes after [2.1.12 20261023 gjw]
 + Remove code left unused by the Next and Previous change [2.1.11 20261023 gjw]
 + Swipe episode left to skip, right to bring it back [2.1.10 20261023 gjw]

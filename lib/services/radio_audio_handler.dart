@@ -712,16 +712,33 @@ class RadioAudioHandler extends BaseAudioHandler {
   /// Wrapping matters in the car: a driver pressing Next on the last station
   /// should land back at the first rather than have nothing happen.
 
+  ///
+  /// 20261023 gjw A podcast with no episode left to hear is PASSED OVER, as
+  /// [_advanceFromPodcast] passes it. Next used to stop at it with nothing
+  /// to say, and in the car that looked like the button had broken. Only
+  /// that is passed over: a station that will not connect still reports
+  /// its error, since the driver should hear that it is gone.
+
   Future<void> _skipBy(int delta) async {
     if (_queueStations.length < 2 || _queueIndex < 0) return;
 
-    final n = _queueStations.length;
-    final next = (_queueIndex + delta + n) % n;
-    await playStation(
-      _queueStations[next],
-      queue: _queueStations,
-      parentId: _queueParentId,
-    );
+    final queue = _queueStations;
+    final from = _queueIndex;
+    final n = queue.length;
+
+    for (var step = 1; step < n; step++) {
+      try {
+        await playStation(
+          queue[(from + delta * step + n * step) % n],
+          queue: queue,
+          parentId: _queueParentId,
+        );
+
+        return;
+      } on NothingToPlay catch (e) {
+        debugPrint('[RadioAudioHandler] passing over ${e.podcast}');
+      }
+    }
   }
 
   @override
