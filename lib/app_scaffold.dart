@@ -412,16 +412,21 @@ class _AppScaffoldState extends State<AppScaffold> {
                 'the order you want. That order is saved, and is the order '
                 'the car and an export see. Dragging is unavailable while '
                 'the filter box has something in it. Swipe a station to the '
-                'left to delete it.',
+                'left to delete it.\n\n'
+                'The filter matches names, and for a podcast its description '
+                'and the titles and show notes of its episodes, so a topic '
+                'finds the podcast that covered it.',
             child: StationsScreen(),
           ),
           const SolidMenuItem(
-            title: 'Search',
+            title: 'Subscribe',
             icon: Icons.search,
             tooltip:
-                '**Search**\n\n'
-                'Find stations in the community-run Radio-Browser database '
-                'and save the ones you like. Only your search text is sent.',
+                '**Subscribe**\n\n'
+                'Find radio stations in the community-run Radio-Browser '
+                'database, and podcasts in the open Podcast Index, and '
+                'subscribe to the ones you like. Only your search text is '
+                'sent.',
             child: SearchScreen(),
           ),
           const SolidMenuItem(

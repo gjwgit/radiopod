@@ -33,10 +33,14 @@ import 'package:provider/provider.dart';
 
 import 'package:radiopod/models/cast.dart';
 import 'package:radiopod/models/station.dart';
+import 'package:radiopod/screens/podcast_widgets/cast_notes_dialog.dart';
 import 'package:radiopod/screens/podcast_widgets/cast_tile.dart';
+import 'package:radiopod/screens/podcast_widgets/episode_filter.dart';
+import 'package:radiopod/screens/podcast_widgets/podcast_description.dart';
 import 'package:radiopod/screens/podcast_widgets/swipe_to_skip.dart';
 import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/services/player.dart';
+import 'package:radiopod/utils/station_filter.dart';
 import 'package:radiopod/widgets/app_snack_bar.dart';
 import 'package:radiopod/widgets/cast_controls.dart';
 import 'package:radiopod/widgets/error_dialog.dart';
@@ -50,11 +54,20 @@ import 'package:radiopod/widgets/station_tile.dart';
 /// latest cast still to hear — and this page is for choosing: reading the
 /// show notes, playing an older cast, or switching off the ones not wanted
 /// so the podcast skips them.
+///
+/// 20261025 gjw The filter starts with [initialFilter], the Stations
+/// filter's text, so a podcast found there by an episode's topic opens on
+/// the episodes that matched.
 
 class PodcastScreen extends StatefulWidget {
   final String podcastId;
+  final String initialFilter;
 
-  const PodcastScreen({super.key, required this.podcastId});
+  const PodcastScreen({
+    super.key,
+    required this.podcastId,
+    this.initialFilter = '',
+  });
 
   @override
   State<PodcastScreen> createState() => _PodcastScreenState();
@@ -62,6 +75,13 @@ class PodcastScreen extends StatefulWidget {
 
 class _PodcastScreenState extends State<PodcastScreen> {
   bool _refreshing = false;
+  late final _filter = TextEditingController(text: widget.initialFilter);
+
+  @override
+  void dispose() {
+    _filter.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,13 +99,18 @@ class _PodcastScreenState extends State<PodcastScreen> {
       );
     }
 
-    final casts = provider.castsOf(podcast.id);
+    final query = _filter.text.trim().toLowerCase();
+    final casts = [
+      for (final c in provider.castsOf(podcast.id))
+        if (castMatches(c, query)) c,
+    ];
+    final filtered = query.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(podcast.name),
         actions: [
-          if (casts.isNotEmpty) _skipAll(provider, podcast, casts),
+          if (casts.isNotEmpty) _skipAll(provider, podcast, casts, filtered),
           MarkdownTooltip(
             message: '''
 
@@ -116,6 +141,7 @@ class _PodcastScreenState extends State<PodcastScreen> {
       // no casts, no titles and no show notes.
       body: Column(
         children: [
+          EpisodeFilter(controller: _filter, onChanged: () => setState(() {})),
           const CastControls(),
           Expanded(child: _casts(provider, podcast, casts)),
         ],
@@ -123,26 +149,31 @@ class _PodcastScreenState extends State<PodcastScreen> {
     );
   }
 
-  Widget _casts(AppProvider provider, Station podcast, List<Cast> casts) =>
-      NowPlayingBuilder(
-        builder: (context, now) => ListView.builder(
-          itemCount: casts.length + 1,
-          itemBuilder: (context, i) {
-            if (i == 0) return _header(provider, podcast);
-            final cast = casts[i - 1];
-            final current =
-                now.isCurrent(podcast.id) && now.isCurrentCast(cast.guid);
+  /// The episodes the filter shows, under the page's header.
 
-            return SwipeToSkip(
-              key: ValueKey(cast.guid),
-              skipped: cast.disabled,
-              onSkip: (skip) =>
-                  provider.setCastDisabled(podcast.id, cast.guid, skip),
-              child: _tile(provider, podcast, cast, now, current),
-            );
-          },
-        ),
-      );
+  Widget _casts(AppProvider provider, Station podcast, List<Cast> casts) {
+    return NowPlayingBuilder(
+      builder: (context, now) => ListView.builder(
+        itemCount: casts.length + 1,
+        itemBuilder: (context, i) {
+          if (i == 0) {
+            return _header(provider, podcast, unmatched: casts.isEmpty);
+          }
+          final cast = casts[i - 1];
+          final current =
+              now.isCurrent(podcast.id) && now.isCurrentCast(cast.guid);
+
+          return SwipeToSkip(
+            key: ValueKey(cast.guid),
+            skipped: cast.disabled,
+            onSkip: (skip) =>
+                provider.setCastDisabled(podcast.id, cast.guid, skip),
+            child: _tile(provider, podcast, cast, now, current),
+          );
+        },
+      ),
+    );
+  }
 
   Widget _tile(
     AppProvider provider,
@@ -159,15 +190,25 @@ class _PodcastScreenState extends State<PodcastScreen> {
         : _play(provider, podcast, cast.guid),
     onEnabled: (on) => provider.setCastDisabled(podcast.id, cast.guid, !on),
     onPlayed: (played) => provider.setCastPlayed(podcast.id, cast.guid, played),
+    onInfo: () => showCastNotes(context, podcast: podcast, cast: cast),
   );
 
-  /// Skip every cast, or, once all are skipped, bring them all back.
+  /// Skip every cast shown, or, once all are skipped, bring them all back.
+  ///
+  /// 20261025 gjw Only the casts the filter shows: a filter for a topic, then
+  /// Skip all, skips that topic and leaves the rest of the podcast alone.
   ///
   /// 20261016 gjw One tap for a podcast followed for its next episode only,
   /// where the back catalogue is not wanted. Offered as its own undo, since
   /// putting twenty switches back by hand is not.
 
-  Widget _skipAll(AppProvider provider, Station podcast, List<Cast> casts) {
+  Widget _skipAll(
+    AppProvider provider,
+    Station podcast,
+    List<Cast> casts,
+    bool filtered,
+  ) {
+    final which = filtered ? 'episode the filter shows' : 'episode';
     final allSkipped = casts.every((c) => c.disabled);
 
     return MarkdownTooltip(
@@ -176,7 +217,7 @@ class _PodcastScreenState extends State<PodcastScreen> {
 
             **Unskip all**
 
-            Put every episode back in the podcast's turn, so it plays them
+            Put every $which back in the podcast's turn, so it plays them
             again, newest first. Episodes already heard stay heard.
 
             '''
@@ -184,14 +225,19 @@ class _PodcastScreenState extends State<PodcastScreen> {
 
             **Skip all**
 
-            Skip every episode listed here, so the podcast plays none of them
-            and waits for the next new one. A tap on an episode still plays it.
+            Skip every $which, so the podcast plays none of them. A tap on
+            an episode still plays it.
 
             ''',
       child: TextButton.icon(
         icon: Icon(allSkipped ? Icons.playlist_add_check : Icons.block),
         label: Text(allSkipped ? 'Unskip all' : 'Skip all'),
-        onPressed: () => _setAllSkipped(provider, podcast, !allSkipped),
+        onPressed: () => _setAllSkipped(
+          provider,
+          podcast,
+          !allSkipped,
+          only: filtered ? {for (final c in casts) c.guid} : null,
+        ),
       ),
     );
   }
@@ -199,9 +245,14 @@ class _PodcastScreenState extends State<PodcastScreen> {
   Future<void> _setAllSkipped(
     AppProvider provider,
     Station podcast,
-    bool skip,
-  ) async {
-    final error = await provider.setAllCastsDisabled(podcast.id, skip);
+    bool skip, {
+    Set<String>? only,
+  }) async {
+    final error = await provider.setAllCastsDisabled(
+      podcast.id,
+      skip,
+      only: only,
+    );
     if (!mounted) return;
     if (error != null) {
       await showErrorDialog(
@@ -214,13 +265,20 @@ class _PodcastScreenState extends State<PodcastScreen> {
     }
     showPositiveSnackBar(
       context,
-      skip
+      only != null
+          ? '${only.length} ${only.length == 1 ? 'episode' : 'episodes'} '
+                '${skip ? 'skipped' : 'unskipped'}.'
+          : skip
           ? 'Every episode of ${podcast.name} is skipped.'
           : 'No episodes skipped.',
     );
   }
 
-  Widget _header(AppProvider provider, Station podcast) {
+  Widget _header(
+    AppProvider provider,
+    Station podcast, {
+    required bool unmatched,
+  }) {
     final cs = Theme.of(context).colorScheme;
     final casts = provider.castsOf(podcast.id);
 
@@ -237,14 +295,21 @@ class _PodcastScreenState extends State<PodcastScreen> {
             ),
             style: TextStyle(color: cs.onSurfaceVariant),
           ),
-          const Gap(4),
+          if (podcast.description case final about?) ...[
+            const Gap(8),
+            PodcastDescription(about),
+          ],
+          const Gap(8),
           Text(
             casts.isEmpty
                 ? 'No episodes yet. Refresh to fetch them from the publisher.'
+                : unmatched
+                ? 'No episode matches the filter. Clear it to list them all.'
                 : 'Tap the podcast in Stations to carry on with the episode '
                       'you were part-way through, or else the latest still to '
-                      'hear, then each older one in turn. Played episodes '
-                      'stay here, greyed, as do skipped episodes.',
+                      'hear. When one finishes, what plays next is chosen in '
+                      'Settings. Played episodes stay here, greyed, as do '
+                      'skipped episodes.',
             style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
           ),
         ],

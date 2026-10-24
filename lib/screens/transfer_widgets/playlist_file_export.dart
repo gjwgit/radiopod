@@ -62,8 +62,6 @@ Future<String?> savePlaylistFile({
     dialogTitle: 'Save ${format.label} playlist',
     fileName: exportFileName(name, format.extension),
     bytes: utf8.encode(content),
-    type: FileType.custom,
-    allowedExtensions: [format.extension],
   );
 
   return fileUri?.path;
@@ -78,8 +76,6 @@ Future<String?> saveOpmlFile(List<OpmlFeed> feeds) async {
     dialogTitle: 'Save podcasts as OPML',
     fileName: exportFileName('podcasts', 'opml'),
     bytes: utf8.encode(writeOpml(feeds, title: 'RadioPod podcasts')),
-    type: FileType.custom,
-    allowedExtensions: const ['opml'],
   );
 
   return fileUri?.path;

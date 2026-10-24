@@ -40,6 +40,7 @@ import 'package:radiopod/screens/stations_widgets/station_empty_state.dart';
 import 'package:radiopod/screens/stations_widgets/station_properties_dialog.dart';
 import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/services/player.dart';
+import 'package:radiopod/utils/station_filter.dart';
 import 'package:radiopod/widgets/app_snack_bar.dart';
 import 'package:radiopod/widgets/cast_controls.dart';
 import 'package:radiopod/widgets/error_dialog.dart';
@@ -82,7 +83,7 @@ class _StationsScreenState extends State<StationsScreen> {
     final query = _filter.text.trim().toLowerCase();
     final visible = [
       for (final s in provider.stations)
-        if (query.isEmpty || s.name.toLowerCase().contains(query)) s,
+        if (stationMatches(s, provider.castsOf(s.id), query)) s,
     ];
 
     return StartupOverlay(
@@ -110,7 +111,8 @@ class _StationsScreenState extends State<StationsScreen> {
                           prefixIcon: const Icon(Icons.filter_list),
                           hintText:
                               playing ??
-                              'Filter stations. Tap Search to add stations.',
+                              'Filter your subscribed stations and episodes. '
+                                  'Find new ones in Subscribe.',
                           hintStyle: playing == null
                               ? null
                               : TextStyle(
@@ -294,13 +296,16 @@ class _StationsScreenState extends State<StationsScreen> {
     children: [
       if (station.isPodcast)
         _button(
-          icon: Icons.list_alt,
+          // 20261025 gjw The information glyph, not a list, which sat beside
+          // Add to playlist and read as a second playlist button.
+          icon: Icons.info_outline,
           tooltip: '''
 
           **Episodes**
 
-          See this podcast's episodes: what each is about, how long it runs
-          and how far you got. Skip any you never want to hear.
+          What this podcast is about, and its episodes: what each is about,
+          how long it runs and how far you got. Skip any you never want to
+          hear.
 
           ''',
           onPressed: () => _openCasts(station),
@@ -401,7 +406,8 @@ class _StationsScreenState extends State<StationsScreen> {
 
   Future<void> _openCasts(Station podcast) => Navigator.of(context).push(
     MaterialPageRoute<void>(
-      builder: (_) => PodcastScreen(podcastId: podcast.id),
+      builder: (_) =>
+          PodcastScreen(podcastId: podcast.id, initialFilter: _filter.text),
     ),
   );
 
@@ -428,7 +434,7 @@ class _StationsScreenState extends State<StationsScreen> {
             : 'The stream could not be reached.\n\n'
                   'Radio stations change and retire their stream addresses, '
                   'so a station saved a while ago may simply be gone. Try '
-                  'finding it again in Search.',
+                  'finding it again in Subscribe.',
       );
     }
   }

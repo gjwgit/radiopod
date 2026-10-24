@@ -244,6 +244,7 @@ void main() {
       onTap: () {},
       onEnabled: (_) {},
       onPlayed: (_) {},
+      onInfo: () {},
     );
 
     testWidgets('a cast still to hear is drawn in full', (tester) async {
@@ -286,11 +287,29 @@ void main() {
           onTap: () {},
           onEnabled: (on) => enabled = on,
           onPlayed: (_) {},
+          onInfo: () {},
         ),
       );
       await tester.tap(find.byType(Switch));
 
       expect(enabled, isFalse);
+    });
+
+    testWidgets('Info asks for the whole text', (tester) async {
+      var asked = false;
+      await _pump(
+        tester,
+        CastTile(
+          cast: _cast,
+          onTap: () {},
+          onEnabled: (_) {},
+          onPlayed: (_) {},
+          onInfo: () => asked = true,
+        ),
+      );
+      await tester.tap(find.byIcon(Icons.info_outline));
+
+      expect(asked, isTrue);
     });
   });
 }

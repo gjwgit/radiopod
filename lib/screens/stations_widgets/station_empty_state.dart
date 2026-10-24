@@ -63,8 +63,9 @@ class StationEmptyState extends StatelessWidget {
               filtered
                   ? 'No saved station matches what you typed. Clear the '
                         'filter to see your whole library.'
-                  : 'Use the Search button 🔍 to find stations in the '
-                        'Radio-Browser database, or the Import/Export '
+                  : 'Use the Subscribe button 🔍 to find stations in the '
+                        'Radio-Browser database and podcasts in the Podcast '
+                        'Index, or the Import/Export '
                         'button 📥 to import a M3U or PLS playlist you '
                         'already have, perhaps from another app or '
                         'perhaps from a friend.',

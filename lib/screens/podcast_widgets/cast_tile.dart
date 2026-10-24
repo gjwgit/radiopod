@@ -55,12 +55,17 @@ class CastTile extends StatefulWidget {
   final ValueChanged<bool> onEnabled;
   final ValueChanged<bool> onPlayed;
 
+  /// Show the episode's whole text.
+
+  final VoidCallback onInfo;
+
   const CastTile({
     super.key,
     required this.cast,
     required this.onTap,
     required this.onEnabled,
     required this.onPlayed,
+    required this.onInfo,
     this.current = false,
     this.playing = false,
   });
@@ -116,6 +121,20 @@ class _CastTileState extends State<CastTile> {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            MarkdownTooltip(
+              message: '''
+
+              **Episode information**
+
+              The whole of what the publisher says about this episode. The
+              list shows only its first lines.
+
+              ''',
+              child: IconButton(
+                icon: const Icon(Icons.info_outline),
+                onPressed: widget.onInfo,
+              ),
+            ),
             MarkdownTooltip(
               message: '''
 

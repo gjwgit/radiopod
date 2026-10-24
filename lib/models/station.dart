@@ -120,6 +120,14 @@ class Station {
 
   final String? author;
 
+  /// What the podcast is about, from the feed's own channel description.
+  ///
+  /// 20261025 gjw From the FEED, not Podcast Index: the search result's
+  /// description stays in the results (see `podcastAbout`), and the feed is
+  /// fetched at every load anyway, so the text follows the publisher's.
+
+  final String? description;
+
   const Station({
     required this.id,
     required this.name,
@@ -138,6 +146,7 @@ class Station {
     this.icon,
     this.isPodcast = false,
     this.author,
+    this.description,
   });
 
   // ── Derived properties ────────────────────────────────────────────────────
@@ -179,6 +188,7 @@ class Station {
     if (icon != null) 'icon': icon,
     if (isPodcast) 'isPodcast': true,
     if (author != null) 'author': author,
+    if (description != null) 'description': description,
   };
 
   factory Station.fromJson(Map<String, dynamic> j) => Station(
@@ -199,6 +209,7 @@ class Station {
     icon: j['icon'] as String?,
     isPodcast: j['isPodcast'] as bool? ?? false,
     author: j['author'] as String?,
+    description: j['description'] as String?,
   );
 
   Station copyWith({
@@ -219,6 +230,7 @@ class Station {
     Object? icon = _sentinel,
     bool? isPodcast,
     Object? author = _sentinel,
+    Object? description = _sentinel,
   }) => Station(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -239,6 +251,9 @@ class Station {
     icon: icon == _sentinel ? this.icon : icon as String?,
     isPodcast: isPodcast ?? this.isPodcast,
     author: author == _sentinel ? this.author : author as String?,
+    description: description == _sentinel
+        ? this.description
+        : description as String?,
   );
 }
 

@@ -67,8 +67,8 @@ class SettingsScreen extends StatelessWidget {
           const Gap(8),
           _paragraph(
             cs,
-            'RadioPod contacts two directories, and only when you use '
-            'Search: the community-run Radio-Browser database of stations at '
+            'RadioPod contacts two directories, and only when you search '
+            'in Subscribe: the community-run Radio-Browser database of stations at '
             'all.api.radio-browser.info, and the open Podcast Index at '
             'api.podcastindex.org. Each is sent your search text and the '
             'name of this app, and nothing else — no WebID, no Pod address, '

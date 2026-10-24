@@ -116,7 +116,7 @@ mixin PodcastTransfer<T extends StatefulWidget> on State<T> {
   Future<void> exportPodcasts(AppProvider provider) async {
     final feeds = provider.podcastFeeds;
     if (feeds.isEmpty) {
-      setExportMsg('Save a podcast from Search first.');
+      setExportMsg('Subscribe to a podcast first.');
 
       return;
     }

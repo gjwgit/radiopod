@@ -112,7 +112,7 @@ login timestamp and other standard server logging of meta data.
   device** and written to your own Solid Pod. The server holding them,
   and its administrators, cannot read your stations and playlists.
 + The **only third parties contacted are Radio-Browser and Podcast
-  Index**, and only when you use the **Search** functionality, add a
+  Index**, and only when you search in **Subscribe**, add a
   station by hand, or refresh a station's details. Podcast Index is
   asked only when you search for a podcast; it is sent your search
   text and the app name, and the code is in
@@ -250,7 +250,7 @@ copy what you have collected up to your Pod.
 
 ### Finding a station
 
-![The Search screen before a
+![The Subscribe screen before a
 search](assets/screenshots/radiopod_search.png)
 
 You can search the community-run Radio-Browser database by station

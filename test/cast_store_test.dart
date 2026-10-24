@@ -251,5 +251,23 @@ void main() {
         expect(provider.castsToPlay('p1'), 1);
       },
     );
+
+    test('with only, skips just the casts the filter shows', () async {
+      final other = Cast(
+        guid: 'g2',
+        title: 'Two',
+        published: DateTime.utc(2026, 10, 15),
+        audioUrl: 'https://x.example/2.mp3',
+      );
+      await CastStore.put('p1', [_cast, other]);
+      final provider = AppProvider()..loadForTest(const [], const []);
+
+      await provider.setAllCastsDisabled('p1', true, only: {'g2'});
+
+      expect(CastStore.of('p1').map((c) => (c.guid, c.disabled)), [
+        (_cast.guid, false),
+        ('g2', true),
+      ]);
+    });
   });
 }

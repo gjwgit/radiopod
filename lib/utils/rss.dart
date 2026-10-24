@@ -36,12 +36,18 @@ typedef PodcastFeed = ({
   String? author,
   String? image,
   String? homepage,
+  String? description,
   List<Cast> casts,
 });
 
 /// The longest description kept, in characters. See [Cast.description].
 
 const castDescriptionLength = 400;
+
+/// The longest podcast description kept, in characters, as long as the one
+/// Search shows.
+
+const podcastDescriptionLength = 1200;
 
 /// Parse an RSS 2.0 podcast feed, newest cast first.
 ///
@@ -75,8 +81,57 @@ PodcastFeed parseFeed(String xml) {
         _attr(channel, 'itunes:image', 'href') ??
         channel.getElement('image')?.getElement('url')?.innerText.trim(),
     homepage: _text(channel, 'link'),
+    description: _about(channel),
     casts: casts,
   );
+}
+
+/// The longest show notes kept for an episode's Info, in characters: the
+/// whole of any real episode's, while a runaway feed cannot fill memory.
+
+const castNotesLength = 20000;
+
+/// The full show notes of the episode [guid] in the feed [xml], as plain
+/// text with its paragraphs, or null when the feed no longer lists it.
+///
+/// 20261025 gjw The fullest text the item has, `content:encoded` first,
+/// where [parseFeed] keeps a short summary for the list. Matched on the
+/// guid, or the audio URL that stands in for a missing one, as [parseFeed]
+/// does.
+
+String? castNotes(String xml, String guid) {
+  final channel = XmlDocument.parse(xml).findAllElements('channel').firstOrNull;
+  for (final item in channel?.findElements('item') ?? <XmlElement>[]) {
+    final url = item.getElement('enclosure')?.getAttribute('url')?.trim();
+    if ((_text(item, 'guid') ?? url) != guid) continue;
+
+    final notes = plainText(
+      _text(item, 'content:encoded') ??
+          _text(item, 'description') ??
+          _text(item, 'itunes:summary') ??
+          '',
+      limit: castNotesLength,
+      paragraphs: true,
+    );
+
+    return notes.isEmpty ? null : notes;
+  }
+
+  return null;
+}
+
+/// The channel's own description, as plain text, or null when it has none.
+
+String? _about(XmlElement channel) {
+  final text = plainText(
+    _text(channel, 'itunes:summary') ??
+        _text(channel, 'description') ??
+        _text(channel, 'itunes:subtitle') ??
+        '',
+    limit: podcastDescriptionLength,
+  );
+
+  return text.isEmpty ? null : text;
 }
 
 Cast? _cast(XmlElement item) {
@@ -199,9 +254,16 @@ DateTime? parseRfc822(String s) {
 /// Show notes as plain text: tags removed, common entities decoded, white
 /// space squashed, cut to [limit] characters at a word with an ellipsis.
 
-String plainText(String html, {required int limit}) {
+String plainText(String html, {required int limit, bool paragraphs = false}) {
   var s = html
-      .replaceAll(RegExp(r'<(br|/p|/li|/div)\s*/?>', caseSensitive: false), ' ')
+      .replaceAll(
+        RegExp(r'</(p|div)\s*>', caseSensitive: false),
+        paragraphs ? '\n\n' : ' ',
+      )
+      .replaceAll(
+        RegExp(r'<(br|/li)\s*/?>', caseSensitive: false),
+        paragraphs ? '\n' : ' ',
+      )
       .replaceAll(RegExp(r'<[^>]*>'), '')
       .replaceAll('&nbsp;', ' ')
       .replaceAll('&quot;', '"')
@@ -213,9 +275,14 @@ String plainText(String html, {required int limit}) {
         RegExp(r'&#(\d+);'),
         (m) => String.fromCharCode(int.parse(m[1]!)),
       )
-      .replaceAll('&amp;', '&')
-      .replaceAll(RegExp(r'\s+'), ' ')
-      .trim();
+      .replaceAll('&amp;', '&');
+  s = paragraphs
+      ? s
+            .replaceAll(RegExp(r'[ \t\r\f]+'), ' ')
+            .replaceAll(RegExp(r' ?\n ?'), '\n')
+            .replaceAll(RegExp(r'\n{2,}'), '\n\n')
+            .trim()
+      : s.replaceAll(RegExp(r'\s+'), ' ').trim();
   if (s.length <= limit) return s;
 
   s = s.substring(0, limit);

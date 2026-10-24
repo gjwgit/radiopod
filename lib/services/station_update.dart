@@ -83,6 +83,7 @@ Future<StationUpdate> updateStationDetails(
         author: feed.author ?? current.author,
         favicon: feed.image ?? current.favicon,
         homepage: feed.homepage ?? current.homepage,
+        description: feed.description ?? current.description,
         reconnectOnEnd: reconnectOnEnd,
         icon: icon,
       ),

@@ -93,6 +93,48 @@ void main() {
         'xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">'
         '<channel><title>T</title>$items</channel></rss>';
 
+    test('castNotes gives the whole text, paragraphs kept', () {
+      final xml = feed(
+        '<item><guid>g1</guid><title>A</title>'
+        '<description>Short</description>'
+        '<content:encoded xmlns:content="http://purl.org/rss/1.0/modules/content/">'
+        '&lt;p&gt;First part.&lt;/p&gt;&lt;p&gt;Second part.&lt;/p&gt;'
+        '</content:encoded>'
+        '<enclosure url="https://x.example/a.mp3" type="audio/mpeg"/></item>'
+        '<item><title>B</title><description>Bee</description>'
+        '<enclosure url="https://x.example/b.mp3" type="audio/mpeg"/></item>',
+      );
+
+      expect(castNotes(xml, 'g1'), 'First part.\n\nSecond part.');
+      // No guid: matched on the audio URL, as parseFeed does.
+      expect(castNotes(xml, 'https://x.example/b.mp3'), 'Bee');
+      expect(castNotes(xml, 'gone'), isNull);
+    });
+
+    test('the channel description is kept as plain text', () {
+      final about = parseFeed(
+        '<?xml version="1.0"?><rss version="2.0" '
+        'xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">'
+        '<channel><title>T</title>'
+        '<description>&lt;p&gt;The world, &lt;b&gt;explained&lt;/b&gt;.'
+        '&lt;/p&gt;</description></channel></rss>',
+      ).description;
+
+      expect(about, 'The world, explained.');
+    });
+
+    test('itunes:summary is preferred, and none at all is null', () {
+      final summary = parseFeed(
+        '<?xml version="1.0"?><rss version="2.0" '
+        'xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">'
+        '<channel><title>T</title><description>Short</description>'
+        '<itunes:summary>Longer</itunes:summary></channel></rss>',
+      ).description;
+
+      expect(summary, 'Longer');
+      expect(parseFeed(feed('')).description, isNull);
+    });
+
     test('a missing guid falls back to the audio URL', () {
       final casts = parseFeed(
         feed(

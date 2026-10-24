@@ -44,6 +44,7 @@ void main() {
       bitrate: 128,
       tags: ['classical', 'news'],
       stationUuid: 'uuid-1',
+      description: 'Classical music, all day.',
     );
 
     test('JSON round-trips every field', () {
@@ -60,6 +61,7 @@ void main() {
       expect(back.bitrate, full.bitrate);
       expect(back.tags, full.tags);
       expect(back.stationUuid, full.stationUuid);
+      expect(back.description, full.description);
     });
 
     test('a minimal station round-trips and omits absent fields', () {

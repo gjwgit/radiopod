@@ -52,14 +52,21 @@ extension PodcastLibrary on AppProvider {
   Future<String?> setCastDisabled(String podcastId, String guid, bool off) =>
       _changeCast(podcastId, guid, (c) => c.withState(disabled: off));
 
-  /// Skip every cast of a podcast, or none. One store write and one Pod
-  /// write, rather than one of each per cast.
+  /// Skip every cast of a podcast, or none; with [only], just the casts
+  /// whose guids it holds, as the Episodes filter shows them. One store
+  /// write and one Pod write, rather than one of each per cast.
 
-  Future<String?> setAllCastsDisabled(String podcastId, bool off) async {
+  Future<String?> setAllCastsDisabled(
+    String podcastId,
+    bool off, {
+    Set<String>? only,
+  }) async {
     final now = DateTime.now().toUtc();
     await CastStore.put(podcastId, [
       for (final c in castsOf(podcastId))
-        c.disabled == off ? c : c.withState(disabled: off, at: now),
+        c.disabled == off || (only != null && !only.contains(c.guid))
+            ? c
+            : c.withState(disabled: off, at: now),
     ]);
     _castsDirty = true;
 
@@ -182,21 +189,29 @@ extension PodcastLibrary on AppProvider {
       }
 
       // Fill in what Search could not supply, never overwrite what the
-      // listener chose.
+      // listener chose. The description is the publisher's, not the
+      // listener's, so it follows the feed; written only when it changed.
 
+      final about = feed.description ?? podcast.description;
       if (podcast.author == null && feed.author != null ||
-          podcast.favicon == null && feed.image != null) {
+          podcast.favicon == null && feed.image != null ||
+          about != podcast.description) {
         _stations = [
           for (final s in _stations)
             s.id == podcastId
                 ? s.copyWith(
                     author: s.author ?? feed.author,
                     favicon: s.favicon ?? feed.image,
+                    description: about,
                   )
                 : s,
         ];
 
-        return await _commit();
+        // 20261025 gjw In a run, once at the end: the first refresh after
+        // descriptions arrived changed every podcast, one Pod write each.
+
+        if (save) return await _commit();
+        _stationsDirty = true;
       }
 
       return save ? await _commitCasts() : null;
@@ -236,8 +251,14 @@ extension PodcastLibrary on AppProvider {
     }
 
     // One write for the whole run, and none when no feed changed anything.
+    // _commit saves the library and the casts together.
 
-    await _commitCasts();
+    if (_stationsDirty) {
+      _stationsDirty = false;
+      await _commit();
+    } else {
+      await _commitCasts();
+    }
 
     return (podcasts: podcasts.length, newCasts: newCasts, failed: failed);
   }

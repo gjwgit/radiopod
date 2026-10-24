@@ -64,3 +64,35 @@ Future<PodcastFeed> fetchFeed(String url) async {
 
   return compute(parseFeed, utf8.decode(res.bodyBytes, allowMalformed: true));
 }
+
+/// The full show notes already fetched this session, by feed and guid.
+
+final _notes = <String, String?>{};
+
+/// The full show notes of episode [guid] of the feed at [url]; see
+/// [castNotes]. Fetched once a session: the list keeps only a summary,
+/// and the whole text is wanted only when the listener asks.
+///
+/// Throws as [fetchFeed] does.
+
+Future<String?> fetchCastNotes(String url, String guid) async {
+  final key = '$url\n$guid';
+  if (_notes.containsKey(key)) return _notes[key];
+
+  final uri = Uri.parse(url);
+  final res = await http
+      .get(uri, headers: {'User-Agent': userAgent})
+      .timeout(const Duration(seconds: 20));
+  if (res.statusCode != 200) {
+    throw http.ClientException(
+      'The podcast server answered ${res.statusCode}.',
+      uri,
+    );
+  }
+
+  final xml = utf8.decode(res.bodyBytes, allowMalformed: true);
+
+  return _notes[key] = await compute(_notesOf, (xml: xml, guid: guid));
+}
+
+String? _notesOf(({String xml, String guid}) a) => castNotes(a.xml, a.guid);

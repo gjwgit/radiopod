@@ -182,6 +182,11 @@ class AppProvider extends ChangeNotifier {
 
   bool _castsDirty = false;
 
+  /// A podcast's details changed in a refresh run that saves once at the
+  /// end; see `_refreshEachPodcast`.
+
+  bool _stationsDirty = false;
+
   /// When the casts were last brought in from the Pod; see [syncCasts].
 
   DateTime? _castsSyncedAt;
