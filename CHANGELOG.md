@@ -18,8 +18,8 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.1 Tidy up import/export and fine tune
 
-+ Manage playlists grid and filter on Playlists, not per station [2.1.17 20261025 gjw]
-+ Podcast description, episode info and filter, Search is Subscribe [2.1.16 20261025 gjw]
++ Manage playlists grid, filter on Playlists [2.1.17 20261025 gjw]
++ Podcast description, episode info, Search Subscribe [2.1.16 20261025 gjw]
 + Settings chooses what plays when an episode finishes [2.1.15 20261024 gjw]
 + Every tooltip is Markdown with a title, solidui 1.5.13 [2.1.14 20261024 gjw]
 + Next and Previous pass over a podcast with nothing left [2.1.13 20261023 gjw]
