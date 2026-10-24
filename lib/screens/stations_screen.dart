@@ -35,7 +35,6 @@ import 'package:solidui/solidui.dart' show NavigationConstants;
 
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/podcast_screen.dart';
-import 'package:radiopod/screens/stations_widgets/add_to_playlist_sheet.dart';
 import 'package:radiopod/screens/stations_widgets/station_empty_state.dart';
 import 'package:radiopod/screens/stations_widgets/station_properties_dialog.dart';
 import 'package:radiopod/services/app_provider.dart';
@@ -274,7 +273,7 @@ class _StationsScreenState extends State<StationsScreen> {
     ),
   );
 
-  /// The row's actions: three buttons where there is room, else one menu.
+  /// The row's actions: a button each where there is room, else one menu.
   ///
   /// 20261008 gjw Measured against the SCREEN rather than the row, and
   /// against solidui's own narrow/wide threshold, so the row changes at the
@@ -289,15 +288,15 @@ class _StationsScreenState extends State<StationsScreen> {
       ? _buttons(provider, station)
       : _menu(provider, station);
 
-  /// The same three actions, each on its own button.
+  /// The same actions, each on its own button.
 
   Widget _buttons(AppProvider provider, Station station) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
       if (station.isPodcast)
         _button(
-          // 20261025 gjw The information glyph, not a list, which sat beside
-          // Add to playlist and read as a second playlist button.
+          // 20261025 gjw The information glyph, not a list, which read as a
+          // playlist button.
           icon: Icons.info_outline,
           tooltip: '''
 
@@ -321,19 +320,6 @@ class _StationsScreenState extends State<StationsScreen> {
 
         ''',
         onPressed: () => _editProperties(provider, station),
-      ),
-      _button(
-        icon: Icons.playlist_add,
-        tooltip: '''
-
-        **Add to playlist**
-
-        Put this station into one or more of your playlists. A station lives
-        once and is referenced from each playlist, so renaming it later
-        updates them all.
-
-        ''',
-        onPressed: () => _choosePlaylists(station),
       ),
       _button(
         icon: Icons.delete_outline,
@@ -377,7 +363,8 @@ class _StationsScreenState extends State<StationsScreen> {
     **Station actions**
 
     Rename this station, give it an icon, say what should happen when its
-    stream ends, add it to a playlist, or remove it from your library.
+    stream ends, or remove it from your library. Its playlists are chosen
+    with Manage playlists on the Playlists page.
 
     ''',
     // An empty tooltip turns off the menu's own plain "Show menu".
@@ -386,17 +373,12 @@ class _StationsScreenState extends State<StationsScreen> {
       onSelected: (value) => switch (value) {
         'casts' => _openCasts(station),
         'properties' => _editProperties(provider, station),
-        'playlists' => _choosePlaylists(station),
         _ => _confirmDelete(provider, station),
       },
       itemBuilder: (context) => [
         if (station.isPodcast)
           const PopupMenuItem(value: 'casts', child: Text('Episodes…')),
         const PopupMenuItem(value: 'properties', child: Text('Properties…')),
-        const PopupMenuItem(
-          value: 'playlists',
-          child: Text('Add to playlist…'),
-        ),
         const PopupMenuItem(value: 'delete', child: Text('Delete station')),
       ],
     ),
@@ -449,15 +431,6 @@ class _StationsScreenState extends State<StationsScreen> {
     if (!mounted) return;
     showPositiveSnackBar(context, 'Updated ${updated.name}.');
   }
-
-  Future<void> _choosePlaylists(Station station) => showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (_) => AddToPlaylistSheet(station: station),
-  );
 
   /// Confirm before deleting, because a deleted station also disappears from
   /// every playlist that referenced it.

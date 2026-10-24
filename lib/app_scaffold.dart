@@ -435,7 +435,8 @@ class _AppScaffoldState extends State<AppScaffold> {
             tooltip:
                 '**Playlists**\n\n'
                 'Group your stations into named lists. Playlists are the '
-                'folders Android Auto and CarPlay show you while driving.',
+                'folders Android Auto and CarPlay show you while driving. '
+                'Manage playlists ticks stations into them.',
             child: PlaylistsScreen(),
           ),
           const SolidMenuItem(

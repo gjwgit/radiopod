@@ -331,13 +331,6 @@ streaming. The default is to move to the next station when a stream
 ends. For example, NPR station streams a news bulletin so that when it
 finishes we move on to the next listed station.
 
-![Adding a station to
-playlists](assets/screenshots/radiopod_stations_playlists.png)
-
-**Add to playlist**, when selected, will list your playlists and
-provide an opportunity to select the playlists this station belongs. A
-station can sit in multiple playlists.
-
 ### Playlists
 
 ![The Playlists screen](assets/screenshots/radiopod_playlists.png)
@@ -347,6 +340,14 @@ holds references, not copies, so a station renamed once is renamed
 everywhere, and the same station can sit in as many playlists as you
 please. These are also the folders you browse on a car's infotainment
 system.
+
+**Manage playlists**, beside the filter at the top of the page, opens
+a grid with a row for every station and podcast in your library and a
+column for every playlist. Tick a box to put a station in that
+playlist, untick it to take it out. The grid starts with the page's
+filter, so typing a name first narrows it to the stations you are
+sorting. The filter itself keeps the playlists whose name matches, or
+that hold a matching station.
 
 ### Import and export
 

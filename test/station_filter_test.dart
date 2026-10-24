@@ -83,6 +83,24 @@ void main() {
     expect(stationMatches(_podcast, _casts, 'cricket'), isFalse);
   });
 
+  group('playlistMatches', () {
+    List<Cast> castsOf(String id) => id == 'p' ? _casts : const [];
+    const both = [_radio, _podcast];
+
+    test('a matching name shows every station, even none', () {
+      expect(playlistMatches('Drive', both, castsOf, 'drive'), both);
+      expect(playlistMatches('Drive', const [], castsOf, 'drive'), isEmpty);
+    });
+
+    test('else only the stations that match', () {
+      expect(playlistMatches('Drive', both, castsOf, 'neom'), [_podcast]);
+    });
+
+    test('nothing matching hides the playlist', () {
+      expect(playlistMatches('Drive', both, castsOf, 'cricket'), isNull);
+    });
+  });
+
   test('an episode matches on its title or show notes', () {
     final cast = _casts.single;
 

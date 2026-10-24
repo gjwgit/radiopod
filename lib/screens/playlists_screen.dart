@@ -34,8 +34,10 @@ import 'package:provider/provider.dart';
 import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/playlists_widgets/playlist_name_dialog.dart';
+import 'package:radiopod/screens/playlists_widgets/playlists_bar.dart';
 import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/services/player.dart';
+import 'package:radiopod/utils/station_filter.dart';
 import 'package:radiopod/widgets/app_snack_bar.dart';
 import 'package:radiopod/widgets/error_dialog.dart';
 import 'package:radiopod/widgets/now_playing.dart';
@@ -46,16 +48,50 @@ import 'package:radiopod/widgets/swipe_to_remove.dart';
 /// Playlists, each expanding to show the stations it holds.
 ///
 /// Playlists matter beyond tidiness: they are the folders Android Auto shows
-/// in the car, and the unit an M3U or PLS file exports to. Stations are added
-/// to a playlist from the Stations screen, so this screen only creates,
-/// renames, reorders by removal, and deletes.
+/// in the car, and the unit an M3U or PLS file exports to. Stations go into
+/// playlists through Manage playlists, a grid of every station against
+/// every playlist.
+///
+/// 20261025 gjw The filter keeps a playlist whose name matches, or that
+/// holds a matching station, and then shows only those stations. Dragging
+/// is offered only with the filter empty, as on Stations: a position in a
+/// filtered list says nothing about where the hidden rows sit.
 
-class PlaylistsScreen extends StatelessWidget {
+class PlaylistsScreen extends StatefulWidget {
   const PlaylistsScreen({super.key});
+
+  @override
+  State<PlaylistsScreen> createState() => _PlaylistsScreenState();
+}
+
+class _PlaylistsScreenState extends State<PlaylistsScreen> {
+  final _filter = TextEditingController();
+
+  @override
+  void dispose() {
+    _filter.dispose();
+    super.dispose();
+  }
+
+  String get _query => _filter.text.trim().toLowerCase();
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
+
+    // Each playlist shown, with the stations the filter keeps in it.
+
+    final shown = [
+      for (final p in provider.playlists)
+        if (playlistMatches(
+              p.name,
+              provider.stationsOf(p),
+              provider.castsOf,
+              _query,
+            )
+            case final stations?)
+          (playlist: p, stations: stations),
+    ];
 
     return StartupOverlay(
       phase: provider.startupPhase,
@@ -65,39 +101,25 @@ class PlaylistsScreen extends StatelessWidget {
         // in stations_screen.dart.
         body: provider.isStartingUp
             ? const SizedBox.shrink()
-            : provider.busy
-            ? const Center(child: CircularProgressIndicator())
-            : provider.playlists.isEmpty
-            ? _empty(context)
-            : NowPlayingBuilder(
-                // 20261005 gjw The playlists themselves reorder too, which
-                // is a different thing from the order of stations inside
-                // one. This is the order the driver scrolls past in the car
-                // before reaching All Stations.
-                //
-                // A reorderable list inside a reorderable list. Each handle
-                // binds to its NEAREST reorderable ancestor, so the grips on
-                // the station rows drive the inner list and the grip on a
-                // playlist header drives this one. Both set
-                // buildDefaultDragHandles: false, without which a long press
-                // anywhere would start a drag in whichever list caught it.
-
-                builder: (context, now) => ReorderableListView.builder(
-                  padding: const EdgeInsets.only(bottom: 88),
-                  buildDefaultDragHandles: false,
-                  itemCount: provider.playlists.length,
-                  onReorderItem: provider.reorderPlaylist,
-                  itemBuilder: (context, i) =>
-                      _tile(context, provider, provider.playlists[i], now, i),
-                ),
+            : Column(
+                children: [
+                  PlaylistsBar(
+                    controller: _filter,
+                    onChanged: () => setState(() {}),
+                    canManage:
+                        provider.playlists.isNotEmpty &&
+                        provider.stations.isNotEmpty,
+                  ),
+                  Expanded(child: _body(context, provider, shown)),
+                ],
               ),
         floatingActionButton: MarkdownTooltip(
           message: '''
 
           **New playlist**
 
-          Create an empty playlist, then add stations to it from the Stations
-          screen. Playlists are what Android Auto lists in the car.
+          Create an empty playlist, then fill it with Manage playlists.
+          Playlists are what Android Auto lists in the car.
 
           ''',
           child: FloatingActionButton.extended(
@@ -109,6 +131,45 @@ class PlaylistsScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _body(
+    BuildContext context,
+    AppProvider provider,
+    List<({Playlist playlist, List<Station> stations})> shown,
+  ) => provider.busy
+      ? const Center(child: CircularProgressIndicator())
+      : provider.playlists.isEmpty
+      ? _empty(context)
+      : shown.isEmpty
+      ? const Center(child: Text('No playlist matches the filter.'))
+      : NowPlayingBuilder(
+          // 20261005 gjw The playlists themselves reorder too, which
+          // is a different thing from the order of stations inside
+          // one. This is the order the driver scrolls past in the car
+          // before reaching All Stations.
+          //
+          // A reorderable list inside a reorderable list. Each handle
+          // binds to its NEAREST reorderable ancestor, so the grips on
+          // the station rows drive the inner list and the grip on a
+          // playlist header drives this one. Both set
+          // buildDefaultDragHandles: false, without which a long press
+          // anywhere would start a drag in whichever list caught it.
+
+          builder: (context, now) => ReorderableListView.builder(
+            padding: const EdgeInsets.only(bottom: 88),
+            buildDefaultDragHandles: false,
+            itemCount: shown.length,
+            onReorderItem: provider.reorderPlaylist,
+            itemBuilder: (context, i) => _tile(
+              context,
+              provider,
+              shown[i].playlist,
+              shown[i].stations,
+              now,
+              i,
+            ),
+          ),
+        );
 
   Widget _empty(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -143,11 +204,12 @@ class PlaylistsScreen extends StatelessWidget {
     BuildContext context,
     AppProvider provider,
     Playlist playlist,
+    List<Station> stations,
     NowPlaying now,
     int index,
   ) {
-    final stations = provider.stationsOf(playlist);
-    final n = stations.length;
+    final queue = provider.stationsOf(playlist);
+    final n = queue.length;
 
     return ExpansionTile(
       // Keyed by playlist id: stable across a reorder, where the index is
@@ -173,7 +235,7 @@ class PlaylistsScreen extends StatelessWidget {
             child: PopupMenuButton<String>(
               tooltip: '',
               onSelected: (value) => switch (value) {
-                'play' => _playAll(context, provider, stations),
+                'play' => _playAll(context, provider, queue),
                 'rename' => _rename(context, provider, playlist),
                 _ => _confirmDelete(context, provider, playlist),
               },
@@ -195,23 +257,21 @@ class PlaylistsScreen extends StatelessWidget {
           // No tooltip, for the reason given on the Stations screen: a
           // tooltip is an OverlayPortal and reordering re-parents the
           // dragged row, which asserts mid-drag.
-          ReorderableDragStartListener(
-            index: index,
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8),
-              child: Icon(Icons.drag_handle),
+          if (_query.isEmpty)
+            ReorderableDragStartListener(
+              index: index,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                child: Icon(Icons.drag_handle),
+              ),
             ),
-          ),
         ],
       ),
       children: [
         if (stations.isEmpty)
           const ListTile(
             dense: true,
-            title: Text(
-              'Empty. Add stations from the Stations screen, using the menu '
-              'at the end of a station row.',
-            ),
+            title: Text('Empty. Add stations with Manage playlists, above.'),
           )
         else
           // 20261005 gjw Reorderable, so a playlist can be put in the order
@@ -311,13 +371,14 @@ class PlaylistsScreen extends StatelessWidget {
         // DELIBERATELY WITHOUT A TOOLTIP, for the reason given on the
         // Stations screen: a tooltip is an OverlayPortal and reordering
         // re-parents the dragged row, which asserts mid-drag.
-        ReorderableDragStartListener(
-          index: index,
-          child: const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            child: Icon(Icons.drag_handle),
+        if (_query.isEmpty)
+          ReorderableDragStartListener(
+            index: index,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              child: Icon(Icons.drag_handle),
+            ),
           ),
-        ),
       ],
     ),
   );

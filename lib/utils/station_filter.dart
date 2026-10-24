@@ -54,5 +54,25 @@ bool stationMatches(Station station, List<Cast> casts, String query) {
 bool castMatches(Cast cast, String query) =>
     query.isEmpty || _has(cast.title, query) || _has(cast.description, query);
 
+/// The stations a playlist called [name] shows for the Playlists filter
+/// [query], already trimmed and lower-cased: all of [stations] when the
+/// name matches, else those [stationMatches] keeps. Null when the playlist
+/// does not match at all and should be hidden.
+
+List<Station>? playlistMatches(
+  String name,
+  List<Station> stations,
+  List<Cast> Function(String stationId) castsOf,
+  String query,
+) {
+  if (query.isEmpty || _has(name, query)) return stations;
+  final shown = [
+    for (final s in stations)
+      if (stationMatches(s, castsOf(s.id), query)) s,
+  ];
+
+  return shown.isEmpty ? null : shown;
+}
+
 bool _has(String? text, String query) =>
     text != null && text.toLowerCase().contains(query);
