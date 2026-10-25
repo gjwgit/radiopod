@@ -16,14 +16,17 @@ then please show some ❤️ and tap on the star at
 This app is authored by [Graham
 Williams](https://togaware.com/Graham.Williams.html).
 
-## 2.1 Tidy up import/export and fine tune
-+ Earbuds put away no longer start the phone's speaker [2.1.21 20261026 gjw]
-+ Play starts first podcast, Playlists get Play and Info [2.1.20 20261026 gjw]
-+ Podcast rows in Playlists show episodes to play [2.1.19 20261026 gjw]
-+ Tap an empty podcast plays the next station [2.1.18 20261026 gjw]
+## 2.2 Improvement to Podcast Workflows
 
-+ Manage playlists grid, filter on Playlists [2.1.17 20261025 gjw]
-+ Podcast description, episode info, Search Subscribe [2.1.16 20261025 gjw]
++ Earbuds put away no longer start the phone's speaker [2.2.5 20261026 gjw]
++ Play starts first podcast, Playlists get Play and Info [2.2.4 20261026 gjw]
++ Podcast rows in Playlists show episodes to play [2.2.3 20261026 gjw]
++ Tap an empty podcast plays the next station [2.2.2 20261026 gjw]
++ Manage playlists grid, filter on Playlists [2.2.1 20261025 gjw]
++ Podcast description, episode info, Search Subscribe [2.2.0 20261025 gjw]
+
+## 2.1 Tidy up import/export and fine tune
+
 + Settings chooses what plays when an episode finishes [2.1.15 20261024 gjw]
 + Every tooltip is Markdown with a title, solidui 1.5.13 [2.1.14 20261024 gjw]
 + Next and Previous pass over a podcast with nothing left [2.1.13 20261023 gjw]
