@@ -191,23 +191,60 @@ extension CastHandling on RadioAudioHandler {
   /// passed over; once the whole queue has been tried, it stops, so a library
   /// with nothing left cannot spin.
 
-  Future<void> _advanceFromPodcast() async {
-    final queue = _queueStations;
-    final from = _queueIndex;
-    final n = queue.length;
+  ///
+  /// [queue], [from] and [parentId] default to the queue on air; a tapped
+  /// podcast that never started passes its own. True when something started.
 
-    for (var step = 1; from >= 0 && step < n; step++) {
-      final next = queue[(from + step) % n];
+  Future<bool> _advanceFromPodcast({
+    List<Station>? queue,
+    int? from,
+    String? parentId,
+  }) async {
+    final q = queue ?? _queueStations;
+    final start = from ?? _queueIndex;
+    final parent = parentId ?? _queueParentId;
+    final n = q.length;
+
+    for (var step = 1; start >= 0 && step < n; step++) {
+      final next = q[(start + step) % n];
       try {
-        await playStation(next, queue: queue, parentId: _queueParentId);
+        await playStation(next, queue: q, parentId: parent);
 
-        return;
+        return true;
       } catch (e) {
         debugPrint('[RadioAudioHandler] ${next.name} would not start: $e');
       }
     }
 
     await stop();
+
+    return false;
+  }
+
+  /// Start [station] as a tap on its row does; a podcast with nothing to
+  /// play moves on through [queue] as an ended episode does.
+  ///
+  /// 20261026 gjw A podcast with no episodes used to answer a tap with a
+  /// dialog. Only when nothing in the queue will start is the listener told.
+
+  Future<void> _playOrMoveOn(
+    Station station,
+    List<Station>? queue,
+    String parentId,
+  ) async {
+    try {
+      await playStation(station, queue: queue, parentId: parentId);
+    } on NothingToPlay {
+      final q = (queue == null || queue.isEmpty) ? [station] : queue;
+      final from = q.indexWhere((s) => s.id == station.id);
+      if (!await _advanceFromPodcast(
+        queue: q,
+        from: from,
+        parentId: parentId,
+      )) {
+        rethrow;
+      }
+    }
   }
 
   /// Seek within the cast on air. Nothing to do for a live station.

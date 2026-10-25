@@ -1,7 +1,7 @@
 name: radiopod
 description: "Radio Pod - Internet Radio with Secure and Private Storage"
 publish_to: 'none'
-version: 2.1.17+76
+version: 2.1.18+77
 
 environment:
   sdk: ^3.13.4

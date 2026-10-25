@@ -309,6 +309,17 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   // ── Playback ──────────────────────────────────────────────────────────────
 
+  /// Start [station] from its row: as [playStation], but a podcast with
+  /// nothing to play gives way to the next station in [queue] that will
+  /// start, as at the end of an episode. Throws [NothingToPlay] only when
+  /// none will.
+
+  Future<void> playOrMoveOn(
+    Station station, {
+    List<Station>? queue,
+    String parentId = browseAllStationsId,
+  }) => _playOrMoveOn(station, queue, parentId);
+
   /// Start [station], with Next and Previous moving through [queue].
   ///
   /// [queue] is the list the station was picked from — a playlist, a filtered

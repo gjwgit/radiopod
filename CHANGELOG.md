@@ -17,6 +17,7 @@ This app is authored by [Graham
 Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.1 Tidy up import/export and fine tune
++ Tap an empty podcast plays the next station [2.1.18 20261026 gjw]
 
 + Manage playlists grid, filter on Playlists [2.1.17 20261025 gjw]
 + Podcast description, episode info, Search Subscribe [2.1.16 20261025 gjw]
