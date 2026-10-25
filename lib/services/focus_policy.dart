@@ -25,6 +25,8 @@
 
 library;
 
+import 'package:audio_session/audio_session.dart';
+
 /// How often to look whether the other app's sound has finished.
 
 const focusPollEvery = Duration(seconds: 2);
@@ -56,3 +58,27 @@ FocusWait focusWaitStep({required Duration waited, required int quietPolls}) {
 
   return FocusWait.keepWaiting;
 }
+
+/// The phone's own outputs. A headset button may start playback only while
+/// some OTHER output is connected (earbuds, headphones, a car), so earbuds
+/// put away in their case cannot set the phone's speaker going.
+///
+/// The phone's outputs are listed rather than the headphones, because
+/// audio_session predates LE Audio and reports such earbuds as unknown.
+
+const phoneOutputs = {
+  AndroidAudioDeviceType.builtInEarpiece,
+  AndroidAudioDeviceType.builtInSpeaker,
+  AndroidAudioDeviceType.builtInSpeakerSafe,
+  AndroidAudioDeviceType.builtInMic,
+  AndroidAudioDeviceType.telephony,
+  AndroidAudioDeviceType.remoteSubmix,
+  AndroidAudioDeviceType.fm,
+  AndroidAudioDeviceType.fmTuner,
+  AndroidAudioDeviceType.tvTuner,
+};
+
+/// Whether any of [outputs] takes sound away from the phone itself.
+
+bool hasOutputBeyondPhone(Iterable<AndroidAudioDeviceType> outputs) =>
+    outputs.any((t) => !phoneOutputs.contains(t));

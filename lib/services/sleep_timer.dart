@@ -73,6 +73,12 @@ class SleepTimer {
   Timer? _ticker;
   DateTime? _endsAt;
 
+  /// How long the timer last ran for, and whether it then fired: what a
+  /// headset tap after it has stopped playback starts again.
+
+  Duration? _lastDuration;
+  bool _fired = false;
+
   /// Whether the fade has lowered the volume, so it is restored only once.
 
   bool _faded = false;
@@ -98,8 +104,20 @@ class SleepTimer {
   /// for something to hear. A timer already running is left alone rather
   /// than restarted, so a pause and resume does not add time.
 
-  void onPlaybackStarted() {
-    if (startOnPlay && !isRunning) start(defaultDuration);
+  ///
+  /// 20261026 gjw A HEADSET TAP after the timer stopped playback starts it
+  /// again, for as long as it ran last time: half asleep, the listener taps
+  /// an earbud to hear a little more and still wants it to stop. Only a tap
+  /// does this; the next start from the app in the morning does not.
+
+  void onPlaybackStarted({bool headset = false}) {
+    final again = _fired && headset ? _lastDuration : null;
+    _fired = false;
+    if (again != null) {
+      start(again);
+    } else if (startOnPlay && !isRunning) {
+      start(defaultDuration);
+    }
   }
 
   /// Playback has been stopped, by the listener, the car, the end of the
@@ -160,6 +178,8 @@ class SleepTimer {
     if (duration <= Duration.zero) return;
 
     _endsAt = _now().add(duration);
+    _lastDuration = duration;
+    _fired = false;
     _publish();
 
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -214,6 +234,7 @@ class SleepTimer {
 
   void _fire() {
     _stopTicking();
+    _fired = true;
     unawaited(
       _onExpire()
           .catchError((Object e) {

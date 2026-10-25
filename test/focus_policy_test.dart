@@ -25,6 +25,7 @@
 
 library;
 
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:radiopod/services/focus_policy.dart';
@@ -66,5 +67,34 @@ void main() {
       focusWaitStep(waited: focusWaitLimit, quietPolls: focusQuietPolls),
       FocusWait.resume,
     );
+  });
+
+  group('a headset button may start playback', () {
+    const speaker = AndroidAudioDeviceType.builtInSpeaker;
+    const earpiece = AndroidAudioDeviceType.builtInEarpiece;
+
+    test('not with only the phone itself to play through', () {
+      // Earbuds back in their case: what is left is the phone.
+      expect(hasOutputBeyondPhone([speaker, earpiece]), isFalse);
+      expect(hasOutputBeyondPhone([]), isFalse);
+    });
+
+    test('with Bluetooth or wired headphones connected', () {
+      expect(
+        hasOutputBeyondPhone([speaker, AndroidAudioDeviceType.bluetoothA2dp]),
+        isTrue,
+      );
+      expect(
+        hasOutputBeyondPhone([speaker, AndroidAudioDeviceType.wiredHeadset]),
+        isTrue,
+      );
+    });
+
+    test('with LE Audio earbuds, which audio_session calls unknown', () {
+      expect(
+        hasOutputBeyondPhone([speaker, AndroidAudioDeviceType.unknown]),
+        isTrue,
+      );
+    });
   });
 }

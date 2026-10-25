@@ -139,8 +139,13 @@ class RadioAudioHandler extends BaseAudioHandler {
   /// Called when playback begins while nothing was playing — a first start,
   /// or a resume after Stop or Pause, but not a switch between stations or
   /// an automatic reconnect. Player.init points it at the sleep timer.
+  /// [headset] is true when a headset button started it (see [click]).
 
-  void Function()? onPlayFromSilence;
+  void Function({bool headset})? onPlayFromSilence;
+
+  /// True while a headset button's [click] is being carried out.
+
+  bool _byHeadset = false;
 
   /// What plays when a cast finishes, from Settings. Player.init loads it
   /// from [AfterCastPreference], so the car follows it with no screen open.
@@ -408,7 +413,7 @@ class RadioAudioHandler extends BaseAudioHandler {
       // completes only when playback later pauses or stops.
 
       if (cast != null) _startCastSaving();
-      if (fromSilence) onPlayFromSilence?.call();
+      if (fromSilence) onPlayFromSilence?.call(headset: _byHeadset);
       await _useSessionFor(speech: cast != null);
       await _player.play();
     } catch (e) {
@@ -459,7 +464,7 @@ class RadioAudioHandler extends BaseAudioHandler {
       return;
     }
 
-    if (!_player.playing) onPlayFromSilence?.call();
+    if (!_player.playing) onPlayFromSilence?.call(headset: _byHeadset);
 
     // A paused cast picks up a few seconds back, so the listener does not
     // come in mid-word. See [castResumeBack].
@@ -468,6 +473,32 @@ class RadioAudioHandler extends BaseAudioHandler {
       await _player.seek(resumeFrom(_player.position));
     }
     await _player.play();
+  }
+
+  /// A headset or earbud button: Play, Pause, Next or Previous.
+  ///
+  /// 20261026 gjw EARBUDS PUT AWAY MUST NOT START THE SPEAKER. After the
+  /// sleep timer stopped a cast, earbuds placed in their charging case sent
+  /// a button press, and the default click() started playback out loud from
+  /// the phone in the middle of the night. A tap on a worn earbud must still
+  /// work. The difference is where the sound would go, so a button that
+  /// would START playback is obeyed only while headphones are connected.
+  /// Stopping is always obeyed.
+
+  @override
+  Future<void> click([MediaButton button = MediaButton.media]) async {
+    if (!playbackState.value.playing && !await _headphonesConnected()) {
+      debugPrint('[RadioAudioHandler] $button ignored: no headphones');
+
+      return;
+    }
+
+    _byHeadset = true;
+    try {
+      await super.click(button);
+    } finally {
+      _byHeadset = false;
+    }
   }
 
   @override

@@ -149,6 +149,27 @@ extension FocusHandling on RadioAudioHandler {
     }
   }
 
+  /// Whether sound could go somewhere other than the phone itself: wired
+  /// or Bluetooth headphones, earbuds, a car. Only Android can say;
+  /// elsewhere, or if it cannot, the answer is yes, leaving a headset
+  /// button as it always was.
+
+  Future<bool> _headphonesConnected() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return true;
+
+    try {
+      final outputs = await AndroidAudioManager().getDevices(
+        AndroidGetAudioDevicesFlags.outputs,
+      );
+
+      return hasOutputBeyondPhone(outputs.map((d) => d.type));
+    } catch (e) {
+      debugPrint('[RadioAudioHandler] cannot list audio outputs: $e');
+
+      return true;
+    }
+  }
+
   /// Configure the session for speech (a cast) or music (a station), only
   /// when that changes. Best-effort: playback must not wait on it.
 

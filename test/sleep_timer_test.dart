@@ -342,6 +342,44 @@ void main() {
       });
     });
 
+    // Half asleep, an earbud tap brings the cast back and should still stop
+    // it later, for as long as last time. The app in the morning should not.
+
+    test('a headset tap after it fired starts it again', () {
+      withFakeClock((async, timer, fired) {
+        timer.start(const Duration(minutes: 15));
+        async.elapse(const Duration(minutes: 15));
+        timer.onPlaybackStopped();
+        expect(fired, hasLength(1));
+
+        timer.onPlaybackStarted(headset: true);
+        expect(timer.minutesLeft.value, 15);
+      });
+    });
+
+    test('a start from the app after it fired does not', () {
+      withFakeClock((async, timer, fired) {
+        timer.start(const Duration(minutes: 15));
+        async.elapse(const Duration(minutes: 15));
+        timer.onPlaybackStopped();
+
+        timer.onPlaybackStarted();
+        expect(timer.isRunning, isFalse);
+
+        // Nor does a later tap: the night is over.
+        timer.onPlaybackStopped();
+        timer.onPlaybackStarted(headset: true);
+        expect(timer.isRunning, isFalse);
+      });
+    });
+
+    test('a headset tap with no timer fired starts none', () {
+      withFakeClock((async, timer, fired) {
+        timer.onPlaybackStarted(headset: true);
+        expect(timer.isRunning, isFalse);
+      });
+    });
+
     test('a stop during the fade puts the volume back', () {
       withFakeClock((async, timer, fired) {
         timer.start(const Duration(minutes: 1));
