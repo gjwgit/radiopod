@@ -34,6 +34,7 @@ import 'package:radiopod/screens/playlists_widgets/manage_playlists_dialog.dart'
 /// The Playlists filter, drawn like the Stations one, and to its right the
 /// button that opens the grid of stations against playlists, which starts
 /// with the same filter. [onChanged] is called on every edit, and on Clear.
+/// [trailing], the Stop/Play button, sits at the right as on Stations.
 
 class PlaylistsBar extends StatelessWidget {
   const PlaylistsBar({
@@ -41,6 +42,7 @@ class PlaylistsBar extends StatelessWidget {
     required this.controller,
     required this.onChanged,
     required this.canManage,
+    this.trailing,
   });
 
   final TextEditingController controller;
@@ -49,6 +51,8 @@ class PlaylistsBar extends StatelessWidget {
   /// False while there is no playlist or no station to tick.
 
   final bool canManage;
+
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -97,14 +101,14 @@ class PlaylistsBar extends StatelessWidget {
           at least one playlist and one station.
 
           ''',
-          child: FilledButton.tonalIcon(
+          child: IconButton.filledTonal(
             icon: const Icon(Icons.playlist_add_check),
-            label: const Text('Manage playlists'),
             onPressed: canManage
                 ? () => showManagePlaylists(context, filter: controller.text)
                 : null,
           ),
         ),
+        if (trailing != null) ...[const SizedBox(width: 8), trailing!],
       ],
     ),
   );

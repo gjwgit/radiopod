@@ -25,6 +25,7 @@
 
 library;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -71,6 +72,50 @@ void main() {
     final button = tester.widget<IconButton>(find.byType(IconButton));
     expect(button.onPressed, isNull);
     expect(_message(tester), contains('Nothing is playing'));
+  });
+
+  testWidgets('before anything has played it can start a podcast', (
+    tester,
+  ) async {
+    var started = 0;
+    await _pump(
+      tester,
+      StopButton(
+        active: false,
+        onStop: () {},
+        onPodcast: () => started++,
+        podcastName: 'The Daily',
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.play_arrow));
+    await tester.pump(kDoubleTapTimeout);
+    expect(started, 1);
+    expect(_message(tester), contains('Start *The Daily*, the first podcast'));
+  });
+
+  testWidgets('a double tap starts the podcast while one plays', (
+    tester,
+  ) async {
+    var stopped = 0;
+    var podcast = 0;
+    await _pump(
+      tester,
+      StopButton(
+        active: true,
+        onStop: () => stopped++,
+        onPodcast: () => podcast++,
+        podcastName: 'The Daily',
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.stop));
+    await tester.pump(kDoubleTapMinTime);
+    await tester.tap(find.byIcon(Icons.stop));
+    await tester.pumpAndSettle();
+    expect(podcast, 1);
+    expect(stopped, 0);
+    expect(_message(tester), contains('Double tap to start *The Daily*'));
   });
 
   testWidgets('the tooltip names the station on air', (tester) async {

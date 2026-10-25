@@ -35,12 +35,14 @@ import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/playlists_widgets/playlist_name_dialog.dart';
 import 'package:radiopod/screens/playlists_widgets/playlists_bar.dart';
+import 'package:radiopod/screens/podcast_screen.dart';
 import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/services/player.dart';
 import 'package:radiopod/utils/station_filter.dart';
 import 'package:radiopod/widgets/app_snack_bar.dart';
 import 'package:radiopod/widgets/error_dialog.dart';
 import 'package:radiopod/widgets/now_playing.dart';
+import 'package:radiopod/widgets/now_playing_stop_button.dart';
 import 'package:radiopod/widgets/startup_overlay.dart';
 import 'package:radiopod/widgets/station_tile.dart';
 import 'package:radiopod/widgets/swipe_to_remove.dart';
@@ -109,6 +111,16 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
                     canManage:
                         provider.playlists.isNotEmpty &&
                         provider.stations.isNotEmpty,
+                    trailing: NowPlayingStopButton(
+                      stations: provider.stations,
+                      first: provider.firstPlaylistPodcastToPlay?.podcast,
+                      onFirst: (s) => _play(
+                        context,
+                        provider,
+                        s,
+                        provider.firstPlaylistPodcastToPlay?.queue ?? [s],
+                      ),
+                    ),
                   ),
                   Expanded(child: _body(context, provider, shown)),
                 ],
@@ -325,8 +337,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
   );
 
   /// The tile inside [_playlistRow], which a swipe left removes from the
-  /// playlist without asking, as its Remove button does: the station stays
-  /// in the library.
+  /// playlist without asking: the station stays in the library.
 
   Widget _playlistTile(
     BuildContext context,
@@ -358,22 +369,34 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
     trailing: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        MarkdownTooltip(
-          message:
-              '''
+        // 20261026 gjw The Episodes button, as on Stations, where a Remove
+        // button was: a swipe left still takes a station out. A radio row
+        // keeps the space, so the drag handles stay in line.
+        if (s.isPodcast)
+          MarkdownTooltip(
+            message: '''
 
-          **Remove from playlist**
+            **Episodes**
 
-          Take this station out of ${playlist.name}. It stays in your
-          library and in any other playlist it belongs to. Swiping the row
-          to the left does the same.
+            What this podcast is about, and its episodes: what each is
+            about, how long it runs and how far you got. Skip any you never
+            want to hear.
 
-          ''',
-          child: IconButton(
-            icon: const Icon(Icons.remove_circle_outline),
-            onPressed: () => provider.removeFromPlaylist(playlist.id, s.id),
-          ),
-        ),
+            ''',
+            child: IconButton(
+              icon: const Icon(Icons.info_outline),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => PodcastScreen(
+                    podcastId: s.id,
+                    initialFilter: _filter.text,
+                  ),
+                ),
+              ),
+            ),
+          )
+        else
+          const SizedBox(width: 48),
 
         // DELIBERATELY WITHOUT A TOOLTIP, for the reason given on the
         // Stations screen: a tooltip is an OverlayPortal and reordering

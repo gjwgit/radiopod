@@ -17,6 +17,7 @@ This app is authored by [Graham
 Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.1 Tidy up import/export and fine tune
++ Play starts first podcast, Playlists get Play and Info [2.1.20 20261026 gjw]
 + Podcast rows in Playlists show episodes to play [2.1.19 20261026 gjw]
 + Tap an empty podcast plays the next station [2.1.18 20261026 gjw]
 

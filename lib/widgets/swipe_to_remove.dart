@@ -27,8 +27,9 @@ library;
 
 import 'package:flutter/material.dart';
 
-/// A row that is removed by swiping it to the left, the same action as the
-/// row's own delete or remove button.
+/// A row that is removed by swiping it to the left: deleted from the library
+/// on Stations, as its Delete button does, and taken out of the playlist on
+/// Playlists.
 ///
 /// 20261023 gjw Used by the Stations and Playlists screens. [confirm] is
 /// asked before the row goes, and a false keeps it, so the library delete

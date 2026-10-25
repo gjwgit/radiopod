@@ -115,12 +115,17 @@ void main() {
             controller: filter,
             onChanged: () {},
             canManage: true,
+            trailing: IconButton(
+              icon: const Icon(Icons.stop),
+              onPressed: () {},
+            ),
           ),
         ),
       ),
     );
 
     expect(tester.takeException(), isNull);
-    expect(find.text('Manage playlists'), findsOneWidget);
+    expect(find.byIcon(Icons.playlist_add_check), findsOneWidget);
+    expect(find.byIcon(Icons.stop), findsOneWidget);
   });
 }

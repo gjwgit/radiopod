@@ -47,6 +47,27 @@ extension PodcastLibrary on AppProvider {
 
   int castsToPlay(String podcastId) => availableCount(castsOf(podcastId));
 
+  /// The first podcast, in the user's order, with an episode still to hear:
+  /// what Play starts before anything has played.
+
+  Station? get firstPodcastToPlay =>
+      _stations.where((s) => s.isPodcast && castsToPlay(s.id) > 0).firstOrNull;
+
+  /// The same, searched through the playlists in their order, with the
+  /// playlist it was found in as its queue: Play on the Playlists page.
+
+  ({Station podcast, List<Station> queue})? get firstPlaylistPodcastToPlay {
+    for (final p in _playlists) {
+      final queue = stationsOf(p);
+      final podcast = queue
+          .where((s) => s.isPodcast && castsToPlay(s.id) > 0)
+          .firstOrNull;
+      if (podcast != null) return (podcast: podcast, queue: queue);
+    }
+
+    return null;
+  }
+
   /// Never play this cast, or play it again.
 
   Future<String?> setCastDisabled(String podcastId, String guid, bool off) =>

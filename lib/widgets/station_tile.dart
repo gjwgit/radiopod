@@ -54,7 +54,7 @@ import 'package:radiopod/utils/station_icon.dart';
 /// station at a glance. The status label says the same thing in words.
 ///
 /// The trailing widget is supplied by the caller because the useful action
-/// differs by screen: an overflow menu in the library, a remove button
+/// differs by screen: an overflow menu in the library, an Episodes button
 /// inside a playlist, a save button in Search.
 
 class StationTile extends StatelessWidget {

@@ -39,6 +39,10 @@ import 'package:markdown_tooltip/markdown_tooltip.dart';
 ///
 /// Disabled only before anything has been played, when there is no station
 /// to start again: [onStart] is then null.
+///
+/// 20261026 gjw [onPodcast] starts the first podcast with episodes to play,
+/// named [podcastName]: on a double tap at any time, and on a single tap
+/// before anything has played, when there is nothing to start again.
 
 class StopButton extends StatelessWidget {
   const StopButton({
@@ -47,6 +51,8 @@ class StopButton extends StatelessWidget {
     required this.onStop,
     this.onStart,
     this.stationName,
+    this.onPodcast,
+    this.podcastName,
   });
 
   /// Whether a station is playing, connecting, buffering or paused.
@@ -64,38 +70,75 @@ class StopButton extends StatelessWidget {
 
   final String? stationName;
 
+  /// Start the first podcast with episodes to play, or null when none has.
+
+  final VoidCallback? onPodcast;
+
+  final String? podcastName;
+
   String get _station =>
       stationName == null ? 'the last station' : '*$stationName*';
 
+  String get _podcast => '*${podcastName ?? 'the first podcast'}*';
+
+  /// The double tap, said wherever a single tap does something else.
+
+  String get _doubleTap => onPodcast == null
+      ? ''
+      : '''
+
+    Double tap to start $_podcast, the first podcast in your list with
+    episodes to play.
+''';
+
   @override
-  Widget build(BuildContext context) => MarkdownTooltip(
-    message: active
-        ? '''
+  Widget build(BuildContext context) {
+    final start = onStart ?? onPodcast;
+
+    return MarkdownTooltip(
+      message: active
+          ? '''
 
     **Stop**
 
     Stop ${stationName == null ? 'the station on air' : '*$stationName*'}.
     Tap again to start it once more.
-
+$_doubleTap
     '''
-        : onStart != null
-        ? '''
+          : onStart != null
+          ? '''
 
     **Play**
 
     Start $_station again, at the live edge of its stream.
+$_doubleTap
+    '''
+          : onPodcast != null
+          ? '''
+
+    **Play**
+
+    Start $_podcast, the first podcast in your list with episodes to
+    play, and carry on through the list from there.
 
     '''
-        : '''
+          : '''
 
     **Stop**
 
     Nothing is playing. Tap a station in the list to start it.
 
     ''',
-    child: IconButton.filledTonal(
-      icon: Icon(active || onStart == null ? Icons.stop : Icons.play_arrow),
-      onPressed: active ? onStop : onStart,
-    ),
-  );
+
+      // The double tap holds a single tap back for a moment, until it is
+      // clear no second one is coming; without a podcast there is none.
+      child: GestureDetector(
+        onDoubleTap: onPodcast,
+        child: IconButton.filledTonal(
+          icon: Icon(active || start == null ? Icons.stop : Icons.play_arrow),
+          onPressed: active ? onStop : start,
+        ),
+      ),
+    );
+  }
 }

@@ -37,22 +37,46 @@ import 'package:radiopod/widgets/stop_button.dart';
 /// [stations] is where the name of the station on air is looked up: the
 /// library on Stations, and the results as well on Search, where a station
 /// can be previewed without being saved.
+///
+/// [first] and [onFirst] start the first podcast with episodes to play: on
+/// a double tap, and on Play before anything has played. Without them the
+/// button stays a disabled Stop until then.
 
 class NowPlayingStopButton extends StatelessWidget {
-  const NowPlayingStopButton({super.key, required this.stations});
+  const NowPlayingStopButton({
+    super.key,
+    required this.stations,
+    this.first,
+    this.onFirst,
+  });
 
   final Iterable<Station> stations;
 
-  @override
-  Widget build(BuildContext context) => NowPlayingBuilder(
-    builder: (context, now) => StopButton(
-      active: now.playing || now.connecting || now.loading || now.paused,
-      onStop: Player.handler.stop,
+  final Station? first;
 
-      // The media item outlives a Stop, so the station is still known and
-      // play() re-opens it.
-      onStart: now.stationId == null ? null : Player.handler.play,
-      stationName: stations.where((s) => now.isCurrent(s.id)).firstOrNull?.name,
-    ),
-  );
+  final void Function(Station)? onFirst;
+
+  @override
+  Widget build(BuildContext context) {
+    final first = this.first;
+    final onFirst = this.onFirst;
+    final podcast = first != null && onFirst != null;
+
+    return NowPlayingBuilder(
+      builder: (context, now) => StopButton(
+        active: now.playing || now.connecting || now.loading || now.paused,
+        onStop: Player.handler.stop,
+
+        // The media item outlives a Stop, so the station is still known and
+        // play() re-opens it.
+        onStart: now.stationId == null ? null : Player.handler.play,
+        stationName: stations
+            .where((s) => now.isCurrent(s.id))
+            .firstOrNull
+            ?.name,
+        onPodcast: podcast ? () => onFirst(first) : null,
+        podcastName: first?.name,
+      ),
+    );
+  }
 }

@@ -419,6 +419,16 @@ class _AppScaffoldState extends State<AppScaffold> {
             child: StationsScreen(),
           ),
           const SolidMenuItem(
+            title: 'Playlists',
+            icon: Icons.queue_music,
+            tooltip:
+                '**Playlists**\n\n'
+                'Group your stations into named lists. Playlists are the '
+                'folders Android Auto and CarPlay show you while driving. '
+                'Manage playlists ticks stations into them.',
+            child: PlaylistsScreen(),
+          ),
+          const SolidMenuItem(
             title: 'Subscribe',
             icon: Icons.search,
             tooltip:
@@ -428,16 +438,6 @@ class _AppScaffoldState extends State<AppScaffold> {
                 'subscribe to the ones you like. Only your search text is '
                 'sent.',
             child: SearchScreen(),
-          ),
-          const SolidMenuItem(
-            title: 'Playlists',
-            icon: Icons.queue_music,
-            tooltip:
-                '**Playlists**\n\n'
-                'Group your stations into named lists. Playlists are the '
-                'folders Android Auto and CarPlay show you while driving. '
-                'Manage playlists ticks stations into them.',
-            child: PlaylistsScreen(),
           ),
           const SolidMenuItem(
             title: 'Import/Export',

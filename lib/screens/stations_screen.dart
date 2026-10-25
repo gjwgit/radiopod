@@ -132,7 +132,11 @@ class _StationsScreenState extends State<StationsScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                NowPlayingStopButton(stations: provider.stations),
+                NowPlayingStopButton(
+                  stations: provider.stations,
+                  first: provider.firstPodcastToPlay,
+                  onFirst: (s) => _play(provider, s, provider.stations),
+                ),
               ],
             ),
           ),

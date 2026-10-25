@@ -445,12 +445,11 @@ class AppProvider extends ChangeNotifier {
   // ── Playback ──────────────────────────────────────────────────────────────
 
   /// Start [station] through the audio handler, with Next and Previous
-  /// moving through [queue] — the list the user picked it from. A podcast
-  /// with nothing to play moves on through [queue] (see `playOrMoveOn`).
+  /// moving through [queue] — the list the user picked it from.
 
   Future<void> play(Station station, {List<Station>? queue}) async {
     if (station.isPodcast) await _syncBeforePlay();
-    await Player.handler.playOrMoveOn(station, queue: queue);
+    await Player.handler.playStation(station, queue: queue);
   }
 
   // ── Loading and saving ────────────────────────────────────────────────────
