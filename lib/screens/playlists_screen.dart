@@ -345,6 +345,13 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
     paused: now.paused,
     failed: now.failed,
     track: now.track,
+    details: s.isPodcast
+        ? podcastDetails(
+            s,
+            toPlay: provider.castsToPlay(s.id),
+            total: provider.castsOf(s.id).length,
+          )
+        : null,
     onTap: () => now.isCurrent(s.id)
         ? _toggle(now)
         : _play(context, provider, s, stations),
