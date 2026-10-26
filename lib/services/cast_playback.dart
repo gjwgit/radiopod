@@ -72,12 +72,13 @@ class NothingToPlay implements Exception {
   String get title => noEpisodes ? 'No episodes yet' : 'Nothing left to play';
 
   String get message => noEpisodes
-      ? '$podcast has no episodes yet. Open its Episodes page, the list '
-            'button on its row, and Refresh.'
-      : 'Every episode of $podcast has been heard or switched off. New '
+      ? '$podcast has no episodes yet. Open its Episodes page, the '
+            'information button on its row, and Refresh.'
+      : 'Every episode of $podcast has been heard or skipped. New '
             'episodes are fetched as they are published.\n\n'
-            'To hear one again, open its Episodes page, the list button on '
-            'its row, and choose Mark as not played from the episode\'s menu.';
+            'To hear one again, open its Episodes page, the information '
+            'button on its row, and double tap the episode\'s play button '
+            'to mark it as not played.';
 
   @override
   String toString() => message;

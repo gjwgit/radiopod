@@ -28,7 +28,7 @@ library;
 import 'package:flutter/material.dart';
 
 /// An episode row that a swipe to the LEFT skips and a swipe to the RIGHT
-/// unskips: the same as flipping the row's switch.
+/// unskips: the same as a double tap on the row's information button.
 ///
 /// 20261023 gjw Only the swipe that would change the row is offered, so an
 /// episode in its turn swipes left and a [skipped] one swipes right. A

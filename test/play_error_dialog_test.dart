@@ -67,7 +67,7 @@ void main() {
 
     expect(none.title, 'No episodes yet');
     expect(heard.title, 'Nothing left to play');
-    expect(heard.message, contains('Mark as not played'));
+    expect(heard.message, contains('mark it as not played'));
     expect(heard.toString(), heard.message);
   });
 

@@ -37,8 +37,9 @@ import 'package:radiopod/utils/cast_text.dart';
 /// 20261016 gjw A PLAYED CAST STAYS, GREYED. It is still worth seeing — to
 /// find something heard last week, or to hear it again — so it is dimmed
 /// rather than removed, and a tap still plays it. A SKIPPED (disabled) cast is
-/// dimmed the same way; the switch says which it is. Neither is played when
-/// the podcast is working backwards through its casts.
+/// dimmed the same way; the ring's glyph says which it is, a tick or a
+/// barred circle. Neither is played when the podcast is working backwards
+/// through its casts.
 ///
 /// A plain widget, given everything it draws, so it can be tested without
 /// a media session, like StationTile.
@@ -88,7 +89,26 @@ class _CastTileState extends State<CastTile> {
       child: ListTile(
         selected: widget.current,
         selectedTileColor: cs.primaryContainer.withValues(alpha: 0.38),
-        leading: _leading(cs, c),
+        leading: MarkdownTooltip(
+          message:
+              '''
+
+          **Play**
+
+          Tap to play this episode${c.played ? ' again' : ''}.
+
+          **Double tap** to mark it as ${_playedTurn(c)}.
+          The ring shows how much has been heard: a tick once played, a
+          barred circle when skipped.
+
+          ''',
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onTap,
+            onDoubleTap: () => widget.onPlayed(!c.played),
+            child: _leading(cs, c),
+          ),
+        ),
         title: Text(
           c.title,
           maxLines: 2,
@@ -118,67 +138,47 @@ class _CastTileState extends State<CastTile> {
         ),
         isThreeLine: c.description.isNotEmpty,
         onTap: widget.onTap,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            MarkdownTooltip(
-              message: '''
+        // 20261026 gjw No switch and no menu: the row was crowded on a
+        // phone. A DOUBLE TAP on the play ring marks the episode played or
+        // not, and on the information button skips it or brings it back.
+        // Each single tap does what it did; it waits a moment first, to
+        // see whether a second is coming.
+        trailing: MarkdownTooltip(
+          message:
+              '''
 
-              **Episode information**
+          **Episode information**
 
-              The whole of what the publisher says about this episode. The
-              list shows only its first lines.
+          Tap to read the whole of what the publisher says about this
+          episode. The list shows only its first lines.
 
-              ''',
-              child: IconButton(
-                icon: const Icon(Icons.info_outline),
-                onPressed: widget.onInfo,
-              ),
+          **Double tap** to ${_skipTurn(c)}.
+          Swiping the row left skips it, and right brings it back.
+
+          ''',
+          child: GestureDetector(
+            onDoubleTap: () => widget.onEnabled(c.disabled),
+            child: IconButton(
+              icon: const Icon(Icons.info_outline),
+              onPressed: widget.onInfo,
             ),
-            MarkdownTooltip(
-              message: '''
-
-              **Play this episode**
-
-              On, this episode is played in its turn, newest first. Off, it
-              is skipped, though a tap still plays it. Swipe the row left to
-              skip it, and right to bring it back.
-
-              ''',
-              child: Switch(value: !c.disabled, onChanged: widget.onEnabled),
-            ),
-            MarkdownTooltip(
-              message: '''
-
-              **Episode actions**
-
-              Mark this episode as played, so it is passed over, or as not
-              played, to hear it again in its turn.
-
-              ''',
-              // An empty tooltip turns off the menu's own plain "Show menu",
-              // which would otherwise show alongside this one.
-              child: PopupMenuButton<bool>(
-                tooltip: '',
-                onSelected: widget.onPlayed,
-                itemBuilder: (_) => [
-                  c.played
-                      ? const PopupMenuItem(
-                          value: false,
-                          child: Text('Mark as not played'),
-                        )
-                      : const PopupMenuItem(
-                          value: true,
-                          child: Text('Mark as played'),
-                        ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
+
+  /// What a double tap on the ring does to [c], for its tooltip.
+
+  String _playedTurn(Cast c) => c.played
+      ? 'not played, to hear it again in its turn'
+      : 'played, so it is passed over';
+
+  /// What a double tap on the information button does to [c].
+
+  String _skipTurn(Cast c) => c.disabled
+      ? 'bring this skipped episode back, so it is played in its turn'
+      : 'skip this episode, so it is passed over when the podcast plays';
 
   /// A ring showing how much has been heard, with a play or pause glyph
   /// when this cast is on air.
@@ -207,6 +207,8 @@ class _CastTileState extends State<CastTile> {
                 ? Icons.pause
                 : c.played
                 ? Icons.check
+                : c.disabled
+                ? Icons.block
                 : Icons.play_arrow,
             size: 20,
             color: cs.primary,

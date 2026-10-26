@@ -52,7 +52,7 @@ import 'package:radiopod/widgets/station_tile.dart';
 /// 20261016 gjw Reached from the Casts action on a podcast's row in
 /// Stations. The row itself stays the quick way in — a tap plays the
 /// latest cast still to hear — and this page is for choosing: reading the
-/// show notes, playing an older cast, or switching off the ones not wanted
+/// show notes, playing an older cast, or skipping the ones not wanted
 /// so the podcast skips them.
 ///
 /// 20261025 gjw The filter starts with [initialFilter], the Stations
@@ -309,7 +309,9 @@ class _PodcastScreenState extends State<PodcastScreen> {
                       'you were part-way through, or else the latest still to '
                       'hear. When one finishes, what plays next is chosen in '
                       'Settings. Played episodes stay here, greyed, as do '
-                      'skipped episodes.',
+                      'skipped episodes. Double tap an episode\'s play button '
+                      'to mark it played or not, and its information button '
+                      'to skip it or bring it back.',
             style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
           ),
         ],

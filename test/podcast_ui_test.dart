@@ -25,6 +25,7 @@
 
 library;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'package:audio_service/audio_service.dart';
@@ -252,7 +253,9 @@ void main() {
 
       expect(_opacity(tester), 1);
       expect(find.text(_cast.title), findsOneWidget);
-      expect(tester.widget<Switch>(find.byType(Switch)).value, isTrue);
+      expect(find.byIcon(Icons.play_arrow), findsOneWidget);
+      expect(find.byType(Switch), findsNothing);
+      expect(find.byType(PopupMenuButton<bool>), findsNothing);
     });
 
     testWidgets('a played cast stays listed, greyed', (tester) async {
@@ -263,13 +266,13 @@ void main() {
       expect(find.byIcon(Icons.check), findsOneWidget);
     });
 
-    testWidgets('a switched-off cast is greyed with its switch off', (
+    testWidgets('a skipped cast is greyed with a barred circle', (
       tester,
     ) async {
       await _pump(tester, tile(_cast.withState(disabled: true)));
 
       expect(_opacity(tester), lessThan(1));
-      expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
+      expect(find.byIcon(Icons.block), findsOneWidget);
     });
 
     testWidgets('the cast on air is never greyed', (tester) async {
@@ -278,21 +281,77 @@ void main() {
       expect(_opacity(tester), 1);
     });
 
-    testWidgets('the switch reports the new setting', (tester) async {
-      bool? enabled;
+    /// Tap [icon] twice, quickly enough to count as a double tap.
+
+    Future<void> doubleTap(WidgetTester tester, IconData icon) async {
+      await tester.tap(find.byIcon(icon));
+      await tester.pump(kDoubleTapMinTime);
+      await tester.tap(find.byIcon(icon));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a double tap on the ring marks it played, or not', (
+      tester,
+    ) async {
+      bool? played;
+      var tapped = 0;
+      Widget row(Cast c) => CastTile(
+        cast: c,
+        onTap: () => tapped++,
+        onEnabled: (_) {},
+        onPlayed: (p) => played = p,
+        onInfo: () {},
+      );
+
+      await _pump(tester, row(_cast));
+      await doubleTap(tester, Icons.play_arrow);
+      expect(played, isTrue);
+      expect(tapped, 0, reason: 'a double tap does not also play');
+
+      await _pump(tester, row(_cast.withState(played: true)));
+      await doubleTap(tester, Icons.check);
+      expect(played, isFalse);
+    });
+
+    testWidgets('a single tap on the ring still plays', (tester) async {
+      var tapped = 0;
       await _pump(
         tester,
         CastTile(
           cast: _cast,
-          onTap: () {},
-          onEnabled: (on) => enabled = on,
+          onTap: () => tapped++,
+          onEnabled: (_) {},
           onPlayed: (_) {},
           onInfo: () {},
         ),
       );
-      await tester.tap(find.byType(Switch));
+      await tester.tap(find.byIcon(Icons.play_arrow));
+      await tester.pump(kDoubleTapTimeout);
 
+      expect(tapped, 1);
+    });
+
+    testWidgets('a double tap on Info skips it, or brings it back', (
+      tester,
+    ) async {
+      bool? enabled;
+      var asked = false;
+      Widget row(Cast c) => CastTile(
+        cast: c,
+        onTap: () {},
+        onEnabled: (on) => enabled = on,
+        onPlayed: (_) {},
+        onInfo: () => asked = true,
+      );
+
+      await _pump(tester, row(_cast));
+      await doubleTap(tester, Icons.info_outline);
       expect(enabled, isFalse);
+      expect(asked, isFalse, reason: 'a double tap does not open the text');
+
+      await _pump(tester, row(_cast.withState(disabled: true)));
+      await doubleTap(tester, Icons.info_outline);
+      expect(enabled, isTrue);
     });
 
     testWidgets('Info asks for the whole text', (tester) async {
@@ -308,6 +367,7 @@ void main() {
         ),
       );
       await tester.tap(find.byIcon(Icons.info_outline));
+      await tester.pump(kDoubleTapTimeout);
 
       expect(asked, isTrue);
     });

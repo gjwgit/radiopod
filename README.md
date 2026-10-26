@@ -68,7 +68,9 @@ many more apps using the Solid ecosystem.
   on with the episode you were part-way through, or else plays the
   latest you have not heard, then each older one in turn. A podcast's
   Episodes page lists its episodes with their show notes; heard ones
-  stay listed, greyed, and any you switch off are skipped. Search them
+  stay listed, greyed, as do any you skip. Double tap an episode's play
+  button to mark it played or not, and its information button to skip
+  it or bring it back. Search them
   in the open [Podcast Index](https://podcastindex.org).
 + **Save** the stations you like into a library that is stored locally
   or encrypted on your Pod.
