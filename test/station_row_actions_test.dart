@@ -11,14 +11,13 @@
 library;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:solidui/solidui.dart' show NavigationConstants;
 
 import 'package:radiopod/screens/stations_screen.dart';
 
 void main() {
   // 20261008 gjw A phone keeps the three dot menu; a desktop window gets the
-  // three actions as buttons. The point of pinning it is that the row and
-  // the navigation must change at the SAME width — see rowShowsButtons.
+  // three actions as buttons. 20261026 gjw Even a narrow one: see
+  // rowButtonsMinWidth.
 
   test('a phone keeps the menu', () {
     expect(rowShowsButtons(400), isFalse);
@@ -28,8 +27,16 @@ void main() {
     expect(rowShowsButtons(1280), isTrue);
   });
 
-  test('the switch is solidui s own narrow threshold, not a local guess', () {
-    const t = NavigationConstants.narrowScreenThreshold;
+  test('so does a narrow desktop window, at 600', () {
+    expect(rowShowsButtons(600), isTrue);
+  });
+
+  test('a large phone held upright keeps the menu', () {
+    expect(rowShowsButtons(430), isFalse);
+  });
+
+  test('the switch is at rowButtonsMinWidth', () {
+    const t = rowButtonsMinWidth;
 
     expect(rowShowsButtons(t - 1), isFalse);
     expect(rowShowsButtons(t), isTrue, reason: 'inclusive at the threshold');

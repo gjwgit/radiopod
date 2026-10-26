@@ -18,6 +18,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.2 Improvement to Podcast Workflows
 
++ Station row buttons shown on narrower windows [2.2.7 20261026 gjw]
 + Episodes: double tap play for played, info for skip [2.2.6 20261026 gjw]
 + Earbuds put away no longer start the phone's speaker [2.2.5 20261026 gjw]
 + Play starts first podcast, Playlists get Play and Info [2.2.4 20261026 gjw]

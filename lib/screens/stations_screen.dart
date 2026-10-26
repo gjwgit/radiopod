@@ -29,9 +29,6 @@ import 'package:flutter/material.dart';
 
 import 'package:markdown_tooltip/markdown_tooltip.dart';
 import 'package:provider/provider.dart';
-// Only the breakpoint. A bare solidui import would collide with this file's
-// own showPositiveSnackBar.
-import 'package:solidui/solidui.dart' show NavigationConstants;
 
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/podcast_screen.dart';
@@ -279,10 +276,8 @@ class _StationsScreenState extends State<StationsScreen> {
 
   /// The row's actions: a button each where there is room, else one menu.
   ///
-  /// 20261008 gjw Measured against the SCREEN rather than the row, and
-  /// against solidui's own narrow/wide threshold, so the row changes at the
-  /// same width as the navigation does. Two breakpoints a hundred pixels
-  /// apart would read as a glitch while a window is dragged.
+  /// 20261008 gjw Measured against the SCREEN rather than the row. See
+  /// [rowButtonsMinWidth] for where it changes.
   ///
   /// The actions themselves are identical either way, and so are their
   /// tooltips — only the number of taps to reach them differs.
@@ -477,17 +472,21 @@ class _StationsScreenState extends State<StationsScreen> {
   }
 }
 
+/// The narrowest screen on which a station row shows its actions as
+/// buttons rather than one menu.
+///
+/// 20261026 gjw It was solidui's narrow/wide threshold (800), so the row
+/// changed with the navigation, but a 600 pixel desktop window then had a
+/// menu beside plenty of room. The buttons need only some 70 pixels more
+/// than the menu. 520 is below such a window and above every phone held
+/// upright (360 to 430), which keeps its menu and the room for the name.
+
+const rowButtonsMinWidth = 520.0;
+
 /// Whether a station row has room to show its actions as separate buttons.
 ///
 /// 20261008 gjw Pure, and tested, because the alternative is not testable at
 /// all: pumping StationsScreen needs a live Player, so a widget test cannot
 /// reach this decision.
-///
-/// The threshold is solidui's own narrow/wide one rather than a number
-/// chosen here, so the row's actions change at the same width as the
-/// navigation does. Two breakpoints a hundred pixels apart would read as a
-/// glitch while a window is being dragged, and this way the app has one
-/// answer to "is this a narrow screen".
 
-bool rowShowsButtons(double screenWidth) =>
-    screenWidth >= NavigationConstants.narrowScreenThreshold;
+bool rowShowsButtons(double screenWidth) => screenWidth >= rowButtonsMinWidth;
