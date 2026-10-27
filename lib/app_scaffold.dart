@@ -412,7 +412,8 @@ class _AppScaffoldState extends State<AppScaffold> {
                 'the order you want. That order is saved, and is the order '
                 'the car and an export see. Dragging is unavailable while '
                 'the filter box has something in it. Swipe a station to the '
-                'left to delete it.\n\n'
+                'left to delete it. Pull the list down to refresh it from '
+                'your Pod and check your podcasts for new episodes.\n\n'
                 'The filter matches names, and for a podcast its description '
                 'and the titles and show notes of its episodes, so a topic '
                 'finds the podcast that covered it.',

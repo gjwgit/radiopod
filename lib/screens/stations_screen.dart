@@ -34,6 +34,7 @@ import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/podcast_screen.dart';
 import 'package:radiopod/screens/stations_widgets/station_empty_state.dart';
 import 'package:radiopod/screens/stations_widgets/station_properties_dialog.dart';
+import 'package:radiopod/screens/stations_widgets/station_pull_refresh.dart';
 import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/services/player.dart';
 import 'package:radiopod/utils/station_filter.dart';
@@ -149,13 +150,22 @@ class _StationsScreenState extends State<StationsScreen> {
             // through the scrim would be worse than the extra spinner, and
             // is exactly what AppProvider.busy folds isStartingUp in to
             // prevent.
+            //
+            // 20261028 gjw Pulling the list down refreshes it from the Pod
+            // and checks the podcasts; see StationPullRefresh.
             child: provider.isStartingUp
                 ? const SizedBox.shrink()
-                : provider.busy
-                ? const Center(child: CircularProgressIndicator())
-                : visible.isEmpty
-                ? StationEmptyState(filtered: query.isNotEmpty)
-                : _list(provider, visible, reorderable: query.isEmpty),
+                : StationPullRefresh(
+                    builder: (context, pulling) => provider.busy && !pulling
+                        ? const Center(child: CircularProgressIndicator())
+                        : visible.isEmpty
+                        ? PullableFill(
+                            child: StationEmptyState(
+                              filtered: query.isNotEmpty,
+                            ),
+                          )
+                        : _list(provider, visible, reorderable: query.isEmpty),
+                  ),
           ),
         ],
       ),
@@ -193,6 +203,7 @@ class _StationsScreenState extends State<StationsScreen> {
 
         if (!reorderable) {
           return ListView.builder(
+            physics: pullableScrollPhysics,
             itemCount: visible.length,
             itemBuilder: (context, i) => row(i),
           );
@@ -204,6 +215,7 @@ class _StationsScreenState extends State<StationsScreen> {
           // behaviour: with the default handles a long press anywhere on
           // mobile starts a drag, which fights with tapping to play.
           buildDefaultDragHandles: false,
+          physics: pullableScrollPhysics,
           itemCount: visible.length,
           itemBuilder: (context, i) => row(i),
           onReorderItem: (oldIndex, newIndex) =>

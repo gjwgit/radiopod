@@ -18,6 +18,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.2 Improvement to Podcast Workflows
 
++ Pull down Stations to refresh from Pod and podcasts [2.2.8 20261028 gjw]
 + Station row buttons shown on narrower windows [2.2.7 20261026 gjw]
 + Episodes: double tap play for played, info for skip [2.2.6 20261026 gjw]
 + Earbuds put away no longer start the phone's speaker [2.2.5 20261026 gjw]
