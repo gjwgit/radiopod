@@ -132,9 +132,10 @@ tgz::
 
 # Android: Upload to Solid Community installers for general access.
 
-# Make apk on this machine to deal with signing. Then a ginstall of
-# the built bundles from github, installed to solidcommunity.au and
-# moved into ARCHIVE.
+# 20261028 gjw The workflow now builds and signs the apk and aab, and
+# `make ginstall` fetches them (installers/update.sh). These targets
+# remain for uploading a build made on this machine with `make apk` or
+# `make appbundle`.
 
 apk::
 	rsync -avzh installers/$(APP).apk $(REPO):$(RLOC)
@@ -230,10 +231,10 @@ snapstore:
 	@echo ''
 
 # 20261018 gjw The Play counterpart of upload_ios: send the bundle to
-# the internal testing track, Play's TestFlight. The bundle is built and
-# signed HERE, as signing is local by design, so this reuses `make
-# appbundle` (which also copies it to $(REPO) and moves it to ARCHIVE)
-# unless this version is already archived. support/play_upload.py needs
+# the internal testing track, Play's TestFlight. The bundle is the one
+# the workflow signed and `make ginstall` archived (20261028); failing
+# that, `make appbundle` builds and signs one here (it also copies it to
+# $(REPO) and moves it to ARCHIVE). support/play_upload.py needs
 # the service account key in $$PLAY_SERVICE_ACCOUNT or
 # ~/.config/radiopod/play-service-account.json, never in the repository,
 # and says so if Play already has this build number.
@@ -246,8 +247,9 @@ upload_android:
 	python3 support/play_upload.py $(AAB_FILE)
 	@echo ''
 
-# 20250110 gjw A ginstall of the github built bundles, and the locally
-# built apk installed to the repository and moved into ARCHIVE.
+# 20250110 gjw A ginstall of the github built bundles, installed to the
+# repository and moved into ARCHIVE. From 20261028 these include the
+# signed apk and aab.
 #
 # 20250218 gjw Remove the deb build for now as it is placing the data
 # and lib folders into /ust/bin/ which when we try to add another
@@ -277,7 +279,7 @@ debin:
 ifeq ($(DIRBASE),rattle)
 GINSTALLS := upload
 else
-GINSTALLS := upload prod apk appbundle
+GINSTALLS := upload prod
 endif
 
 .PHONY: ginstall

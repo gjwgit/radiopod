@@ -14,15 +14,11 @@ plugins {
 // COMMITTED — android/.gitignore already excludes key.properties, **/*.jks
 // and **/*.keystore.
 //
-// Signing is done on this machine FOR NOW, as innerpod does it: `make
-// appbundle` builds and signs locally and the Makefile rsyncs the result, so
-// there are no keystore secrets in GitHub yet.
-//
-// Moving it to CI needs nothing here. The job writes key.properties from
-// secrets before it builds — base64 the .jks into one secret, the four
-// property values into others — and this file reads it exactly as it does on
-// a developer machine. Follow the pattern package-ios-ipa already uses for
-// IOS_CERTIFICATE and IOS_PROVISION_PROFILE.
+// 20261028 gjw Signing has moved to CI. package-android in
+// .github/workflows/installers.yaml writes key.properties and the keystore
+// from the ANDROID_* secrets before it builds, and this file reads them
+// exactly as it does on a developer machine, where `make appbundle` still
+// builds and signs locally.
 
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
@@ -114,7 +110,7 @@ android {
 // Checked against the task graph rather than at configuration, so `flutter
 // build apk --debug` and the integration_test run in .github/workflows/
 // screenshots.yaml are untouched on a machine that has no keystore — which
-// is every CI runner, since the key is deliberately not a GitHub secret.
+// is every CI runner but package-android.
 
 if (!hasUploadKey) {
     gradle.taskGraph.whenReady {
