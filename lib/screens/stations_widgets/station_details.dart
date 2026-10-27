@@ -51,7 +51,13 @@ import 'package:radiopod/models/station.dart';
 class StationDetails extends StatelessWidget {
   final Station station;
 
-  const StationDetails({super.key, required this.station});
+  /// Also show the logo's address and the Radio-Browser id, which only
+  /// Properties has a use for: they are what a saved station's Download and
+  /// Update details work from.
+
+  final bool full;
+
+  const StationDetails({super.key, required this.station, this.full = false});
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +68,8 @@ class StationDetails extends StatelessWidget {
         _row('Language', s.language),
         _row('Genre', s.tags.isEmpty ? null : s.tags.join(', ')),
         _row('Homepage', s.homepage, copy: true, link: true),
+        if (full) _row('Logo', s.favicon, copy: true, link: true),
+        if (full) _row('Radio-Browser id', s.stationUuid, copy: true),
       ]),
       _section(context, 'Location', [
         _row('Country', s.country),

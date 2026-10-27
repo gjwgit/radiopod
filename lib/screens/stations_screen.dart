@@ -304,10 +304,12 @@ class _StationsScreenState extends State<StationsScreen> {
   Widget _buttons(AppProvider provider, Station station) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
+      // 20261025 gjw The information glyph, not a list, which read as a
+      // playlist button. 20261028 gjw ONE button for what a row is and what
+      // can be set about it: a podcast's Episodes page carries its
+      // Properties, and a station's Properties carries its information.
       if (station.isPodcast)
         _button(
-          // 20261025 gjw The information glyph, not a list, which read as a
-          // playlist button.
           icon: Icons.info_outline,
           tooltip: '''
 
@@ -315,23 +317,25 @@ class _StationsScreenState extends State<StationsScreen> {
 
           What this podcast is about, and its episodes: what each is about,
           how long it runs and how far you got. Skip any you never want to
-          hear.
+          hear. Rename the podcast or give it an icon from there too.
 
           ''',
           onPressed: () => _openCasts(station),
+        )
+      else
+        _button(
+          icon: Icons.info_outline,
+          tooltip: '''
+
+          **Information**
+
+          Everything known about this station, and while it is on air the
+          whole title of what is playing. Rename it here, give it an icon,
+          and say what should happen when its stream ends.
+
+          ''',
+          onPressed: () => editStationProperties(context, station),
         ),
-      _button(
-        icon: Icons.tune,
-        tooltip: '''
-
-        **Properties**
-
-        Rename this station, give it an icon, and say what should happen
-        when its stream ends.
-
-        ''',
-        onPressed: () => _editProperties(provider, station),
-      ),
       _button(
         icon: Icons.delete_outline,
         tooltip: '''
@@ -373,8 +377,9 @@ class _StationsScreenState extends State<StationsScreen> {
 
     **Station actions**
 
-    Rename this station, give it an icon, say what should happen when its
-    stream ends, or remove it from your library. Its playlists are chosen
+    See everything about this station, including the whole title of what
+    is on air, and rename it, give it an icon, say what should happen when
+    its stream ends, or remove it from your library. Its playlists are chosen
     with Manage playlists on the Playlists page.
 
     ''',
@@ -383,13 +388,14 @@ class _StationsScreenState extends State<StationsScreen> {
       tooltip: '',
       onSelected: (value) => switch (value) {
         'casts' => _openCasts(station),
-        'properties' => _editProperties(provider, station),
+        'info' => editStationProperties(context, station),
         _ => _confirmDelete(provider, station),
       },
       itemBuilder: (context) => [
         if (station.isPodcast)
-          const PopupMenuItem(value: 'casts', child: Text('Episodes…')),
-        const PopupMenuItem(value: 'properties', child: Text('Properties…')),
+          const PopupMenuItem(value: 'casts', child: Text('Episodes…'))
+        else
+          const PopupMenuItem(value: 'info', child: Text('Information…')),
         const PopupMenuItem(value: 'delete', child: Text('Delete station')),
       ],
     ),
@@ -430,17 +436,6 @@ class _StationsScreenState extends State<StationsScreen> {
                   'finding it again in Subscribe.',
       );
     }
-  }
-
-  /// Rename the station, set its icon, and choose what a stream end means.
-
-  Future<void> _editProperties(AppProvider provider, Station station) async {
-    final updated = await showStationPropertiesDialog(context, station);
-    if (updated == null || !mounted) return;
-
-    await provider.updateStation(updated);
-    if (!mounted) return;
-    showPositiveSnackBar(context, 'Updated ${updated.name}.');
   }
 
   /// Confirm before deleting, because a deleted station also disappears from

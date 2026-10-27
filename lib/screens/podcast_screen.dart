@@ -38,6 +38,7 @@ import 'package:radiopod/screens/podcast_widgets/cast_tile.dart';
 import 'package:radiopod/screens/podcast_widgets/episode_filter.dart';
 import 'package:radiopod/screens/podcast_widgets/podcast_description.dart';
 import 'package:radiopod/screens/podcast_widgets/swipe_to_skip.dart';
+import 'package:radiopod/screens/stations_widgets/station_properties_dialog.dart';
 import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/services/player.dart';
 import 'package:radiopod/utils/station_filter.dart';
@@ -111,6 +112,22 @@ class _PodcastScreenState extends State<PodcastScreen> {
         title: Text(podcast.name),
         actions: [
           if (casts.isNotEmpty) _skipAll(provider, podcast, casts, filtered),
+          // 20261028 gjw The podcast's Properties live here, so its row on
+          // Stations has the one button, as a station's has.
+          MarkdownTooltip(
+            message: '''
+
+            **Properties**
+
+            Rename this podcast, give it an icon, see its feed's details, or
+            update them from the feed.
+
+            ''',
+            child: IconButton(
+              icon: const Icon(Icons.tune),
+              onPressed: () => editStationProperties(context, podcast),
+            ),
+          ),
           MarkdownTooltip(
             message: '''
 

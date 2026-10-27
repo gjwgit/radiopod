@@ -30,15 +30,42 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:gap/gap.dart';
 import 'package:markdown_tooltip/markdown_tooltip.dart';
+import 'package:provider/provider.dart';
 
 import 'package:radiopod/models/station.dart';
+import 'package:radiopod/screens/stations_widgets/on_air_track.dart';
 import 'package:radiopod/screens/stations_widgets/station_details.dart';
 import 'package:radiopod/screens/stations_widgets/station_icon_field.dart';
+import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/services/station_logo_cache.dart';
 import 'package:radiopod/services/station_update.dart';
 import 'package:radiopod/utils/station_icon.dart';
+import 'package:radiopod/widgets/app_snack_bar.dart';
 
-/// Edit [station], returning the changed copy, or null if cancelled.
+/// Show and edit [station], saving any change to the library.
+///
+/// The one way in, from a station's Information on Stations and Playlists
+/// and a podcast's Episodes page alike, so both save and report a change the same way.
+
+Future<void> editStationProperties(
+  BuildContext context,
+  Station station,
+) async {
+  final provider = context.read<AppProvider>();
+  final updated = await showStationPropertiesDialog(context, station);
+  if (updated == null || !context.mounted) return;
+
+  await provider.updateStation(updated);
+  if (!context.mounted) return;
+  showPositiveSnackBar(context, 'Updated ${updated.name}.');
+}
+
+/// Show everything about [station] and edit it, returning the changed copy,
+/// or null if cancelled or left unchanged.
+///
+/// 20261028 gjw Also the station's information, which had a dialog of its
+/// own for a day: one button, one place. While the station is on air it
+/// opens with the whole title of what is playing.
 
 Future<Station?> showStationPropertiesDialog(
   BuildContext context,
@@ -112,7 +139,7 @@ class _DialogState extends State<_StationPropertiesDialog> {
     final podcast = widget.station.isPodcast;
 
     return AlertDialog(
-      title: Text(podcast ? 'Podcast properties' : 'Station properties'),
+      title: Text(podcast ? 'Podcast properties' : 'Station information'),
       content: SizedBox(
         width: 420,
         child: SingleChildScrollView(
@@ -120,9 +147,14 @@ class _DialogState extends State<_StationPropertiesDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // A podcast's episode on air is on the Episodes page.
+              if (!podcast) OnAirTrackFollower(stationId: widget.station.id),
+
+              // 20261028 gjw No autofocus. The dialog is opened as often to
+              // read as to edit, and on a phone a focused field brings up
+              // the keyboard over what there is to read.
               TextField(
                 controller: _name,
-                autofocus: true,
                 textCapitalization: TextCapitalization.words,
                 decoration: InputDecoration(
                   labelText: 'Name',
@@ -185,7 +217,7 @@ class _DialogState extends State<_StationPropertiesDialog> {
 
               // What is known about the station, below what can be changed
               // about it. Read-only, and quiet about anything unknown.
-              StationDetails(station: _station),
+              StationDetails(station: _station, full: true),
 
               const Gap(16),
               _refreshControl(cs),
@@ -196,7 +228,8 @@ class _DialogState extends State<_StationPropertiesDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          // Close while there is nothing to lose, as when only reading.
+          child: Text(_changed ? 'Cancel' : 'Close'),
         ),
         FilledButton(
           onPressed: _changed && !_busy ? _save : null,

@@ -307,14 +307,18 @@ details remain on display when it is playing.
 
 ### Station options
 
-Every station row has a **⋮** menu for operations on the station
-entry.
+Every station row has an **ⓘ** button, or on a phone a **⋮** menu,
+for operations on the station entry. On a podcast it opens the
+Episodes page, which has the podcast's Properties. The **ⓘ** on the
+Playlists page does the same.
 
 ![The station properties
 dialog](assets/screenshots/radiopod_stations_properties.png)
 
-**Properties** allows you to rename a station, give it a logo, and say
-what should happen when its stream ends.
+**Information** shows everything known about a station, and while it is
+on air the whole title of what is playing. It also allows you to rename
+the station, give it a logo, and say what should happen when its stream
+ends.
 
 Radio-Browser names sometimes contain transmitter details and other
 information so you can rename the stations to suit yourself. The

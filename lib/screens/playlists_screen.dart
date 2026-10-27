@@ -36,6 +36,7 @@ import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/playlists_widgets/playlist_name_dialog.dart';
 import 'package:radiopod/screens/playlists_widgets/playlists_bar.dart';
 import 'package:radiopod/screens/podcast_screen.dart';
+import 'package:radiopod/screens/stations_widgets/station_properties_dialog.dart';
 import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/services/player.dart';
 import 'package:radiopod/utils/station_filter.dart';
@@ -370,8 +371,8 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         // 20261026 gjw The Episodes button, as on Stations, where a Remove
-        // button was: a swipe left still takes a station out. A radio row
-        // keeps the space, so the drag handles stay in line.
+        // button was: a swipe left still takes a station out. 20261028 gjw
+        // A radio row's opens its Information, as on Stations.
         if (s.isPodcast)
           MarkdownTooltip(
             message: '''
@@ -396,7 +397,21 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
             ),
           )
         else
-          const SizedBox(width: 48),
+          MarkdownTooltip(
+            message: '''
+
+            **Information**
+
+            Everything known about this station, and while it is on air the
+            whole title of what is playing. Rename it here, give it an
+            icon, and say what should happen when its stream ends.
+
+            ''',
+            child: IconButton(
+              icon: const Icon(Icons.info_outline),
+              onPressed: () => editStationProperties(context, s),
+            ),
+          ),
 
         // DELIBERATELY WITHOUT A TOOLTIP, for the reason given on the
         // Stations screen: a tooltip is an OverlayPortal and reordering
