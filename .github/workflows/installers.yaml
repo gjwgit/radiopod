@@ -366,8 +366,8 @@ jobs:
           sudo apt-get install -y libgtk-3-dev
           printf '#%.0s' {1..72}; printf '\nclang cmake\n'
           sudo apt-get install -y clang cmake
-          printf '#%.0s' {1..72}; printf '\nflatpak flatpak-builder\n'
-          sudo apt-get install -y flatpak flatpak-builder
+          printf '#%.0s' {1..72}; printf '\nflatpak\n'
+          sudo apt-get install -y flatpak
 
       - name: Install extra Linux packages
         if: env.LINUX_PKGS != ''
@@ -382,10 +382,14 @@ jobs:
       - name: Allow the build sandbox
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
-      - name: Install the GNOME SDK
+      # 20261028 gjw flatpak-builder from Flathub, as `make flatpak` uses,
+      # not Ubuntu's. The apt one (1.4.2 on 24.04) built libplacebo and
+      # then mpv could not find it: "Dependency libplacebo not found".
+
+      - name: Install the GNOME SDK and flatpak-builder
         run: |
           flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-          flatpak install --user -y --noninteractive flathub org.gnome.Platform//49 org.gnome.Sdk//49
+          flatpak install --user -y --noninteractive flathub org.gnome.Platform//49 org.gnome.Sdk//49 org.flatpak.Builder
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -421,12 +425,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.FLATPAK_DIR }}/state
-          key: flatpak-${{ hashFiles('flatpak/*.yml') }}
-          restore-keys: flatpak-
+          key: flatpak-builder-${{ hashFiles('flatpak/*.yml') }}
+          restore-keys: flatpak-builder-
 
       - name: Build Flatpak
         run: |
-          flatpak-builder --user --force-clean --disable-rofiles-fuse \
+          flatpak run org.flatpak.Builder --user --force-clean --disable-rofiles-fuse \
             --state-dir=${FLATPAK_DIR}/state --repo=${FLATPAK_DIR}/repo \
             ${FLATPAK_DIR}/build flatpak/${FLATPAK_ID}.yml
           flatpak build-bundle \
