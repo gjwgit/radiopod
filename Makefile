@@ -182,9 +182,12 @@ FLATPAK_BUILDER = flatpak run org.flatpak.Builder
 FLATPAK_DIR = $(HOME)/.cache/$(APP)-flatpak
 
 .PHONY: flatpak
+#
+# 20261029 gjw DART_DEFINES (support/flutter.mk) passes dart_defines.json
+# only when it exists, so an app with no keys, such as innerpod, builds too.
+
 flatpak:
-	flutter build linux --release --dart-define-from-file=dart_defines.json \
-	  $(OBFUSCATE)
+	flutter build linux --release $(DART_DEFINES) $(OBFUSCATE)
 	$(FLATPAK_BUILDER) --user --install --force-clean --disable-rofiles-fuse \
 	  --state-dir=$(FLATPAK_DIR)/state --repo=$(FLATPAK_DIR)/repo \
 	  $(FLATPAK_DIR)/build flatpak/$(FLATPAK_ID).yml
