@@ -59,6 +59,12 @@ then please show some ❤️ and tap on the star at
 the [AU Solid Community](https://solidcommunity.au) **showcase** for
 many more apps using the Solid ecosystem.
 
+## Installation
+
+See the [Install
+Guide](https://gjwgit.github.io/radiopod/INSTALL.html) for
+installation instructions for any platform.
+
 ## Features
 
 + **Search** the community-run
@@ -150,17 +156,6 @@ station names and stream addresses** is kept in the app's private
 storage on the device for the car to browse. It holds no more than a
 playlist file would, never your security key or WebID, and never
 leaves the device. **Settings** has a button to clear it.
-
-## Installation
-
-You can install the released version of the app from different
-repositories including:
-
-+ [SnapCraft](https://snapcraft.io/radiopod) for Linux.
-
-See the [Install
-Guide](https://gjwgit.github.io/radiopod/INSTALL.html) for
-installation instructions for any platform.
 
 ### GNU/Linux prerequisite
 
