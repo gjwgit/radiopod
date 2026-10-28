@@ -10,8 +10,10 @@
 [![Github Last Updated](https://img.shields.io/github/last-commit/gjwgit/radiopod?label=last%20updated)](https://github.com/gjwgit/radiopod/commits/dev/)
 [![GitHub Issues](https://img.shields.io/github/issues/gjwgit/radiopod)](https://github.com/gjwgit/radiopod/issues)
 
-Privacy-first: your data is encrypted for secure and private storage
-in your Pod on a Solid server of your choice. You choose, not us.
+Privacy-first: if you decide to move your app data to the cloud to
+share it across all your devices then your data is encrypted for
+secure and private storage in your Pod on a Solid server of your
+choice. You choose, not us.
 
 [RadioPod](https://gjwgit.github.io/radiopod/) plays internet radio
 and podcasts.  It is a simple privacy-first alternative to the many
@@ -60,6 +62,11 @@ the [AU Solid Community](https://solidcommunity.au) **showcase** for
 many more apps using the Solid ecosystem.
 
 ## Installation
+
+You can install the released version of the app from different
+repositories including:
+
++ Linux [Snap Store](https://snapcraft.io/radiopod).
 
 See the [Install
 Guide](https://gjwgit.github.io/radiopod/INSTALL.html) for
