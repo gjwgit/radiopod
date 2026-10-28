@@ -160,7 +160,7 @@ repositories including:
 
 See the [Install
 Guide](https://gjwgit.github.io/radiopod/INSTALL.html) for
-installation instructions.
+installation instructions for any platform.
 
 ### GNU/Linux prerequisite
 

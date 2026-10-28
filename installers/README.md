@@ -23,6 +23,7 @@ Download the latest version:
 + **GNU/Linux**
   [deb](https://solidcommunity.au/installers/radiopod_amd64.deb) or
   [snap](https://solidcommunity.au/installers/radiopod_amd64.snap) or
+  [flatpak](https://solidcommunity.au/installers/radiopod_amd64.flatpak) or
   [zip](https://solidcommunity.au/installers/radiopod-linux.zip);
 + **macOS**
   [dmg](https://solidcommunity.au/installers/radiopod-macos.dmg) or
@@ -68,6 +69,19 @@ and install:
 ```bash
 wget https://solidcommunity.au/installers/radiopod_amd64.snap -O radiopod_amd64.snap
 sudo snap install --dangerous radiopod_amd64.snap
+```
+
+### Linux Flatpak Install
+
+Download
+[radiopod_amd64.flatpak](https://solidcommunity.au/installers/radiopod_amd64.flatpak)
+and install for yourself. The GNOME runtime it needs is fetched from
+Flathub if it is not already installed:
+
+```bash
+wget https://solidcommunity.au/installers/radiopod_amd64.flatpak -O radiopod_amd64.flatpak
+flatpak install --user radiopod_amd64.flatpak
+flatpak run com.togaware.radiopod
 ```
 
 ### Linux Zip Install
