@@ -286,22 +286,14 @@ class _StationsScreenState extends State<StationsScreen> {
     ),
   );
 
-  /// The row's actions: a button each where there is room, else one menu.
+  /// The row's actions: Information, and Delete where there is room.
   ///
   /// 20261008 gjw Measured against the SCREEN rather than the row. See
-  /// [rowButtonsMinWidth] for where it changes.
-  ///
-  /// The actions themselves are identical either way, and so are their
-  /// tooltips — only the number of taps to reach them differs.
+  /// [rowDeleteMinWidth] for where it changes. 20261028 gjw A narrow screen
+  /// had a menu of Information and Delete; it now has the Information
+  /// button alone, a swipe left being how a phone deletes.
 
-  Widget _actions(AppProvider provider, Station station) =>
-      rowShowsButtons(MediaQuery.sizeOf(context).width)
-      ? _buttons(provider, station)
-      : _menu(provider, station);
-
-  /// The same actions, each on its own button.
-
-  Widget _buttons(AppProvider provider, Station station) => Row(
+  Widget _actions(AppProvider provider, Station station) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
       // 20261025 gjw The information glyph, not a list, which read as a
@@ -336,27 +328,27 @@ class _StationsScreenState extends State<StationsScreen> {
           ''',
           onPressed: () => editStationProperties(context, station),
         ),
-      _button(
-        icon: Icons.delete_outline,
-        tooltip: '''
+      if (rowShowsDelete(MediaQuery.sizeOf(context).width))
+        _button(
+          icon: Icons.delete_outline,
+          tooltip: '''
 
-        **Delete station**
+          **Delete station**
 
-        Remove this station from your library and from every playlist it
-        appears in. You will be asked to confirm. Swiping the row to the
-        left does the same.
+          Remove this station from your library and from every playlist it
+          appears in. You will be asked to confirm. Swiping the row to the
+          left does the same.
 
-        ''',
-        onPressed: () => _confirmDelete(provider, station),
-      ),
+          ''',
+          onPressed: () => _confirmDelete(provider, station),
+        ),
     ],
   );
 
-  /// One action button, sized so three of them fit where the menu was.
+  /// One action button.
   ///
-  /// visualDensity is tightened because the default IconButton is 48 wide:
-  /// three at that size push a long station name into an ellipsis on the
-  /// very screens that were supposed to have more room.
+  /// visualDensity is tightened because the default IconButton is 48 wide,
+  /// which pushes a long station name into an ellipsis.
 
   Widget _button({
     required IconData icon,
@@ -369,35 +361,6 @@ class _StationsScreenState extends State<StationsScreen> {
       onPressed: onPressed,
       visualDensity: VisualDensity.compact,
       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-    ),
-  );
-
-  Widget _menu(AppProvider provider, Station station) => MarkdownTooltip(
-    message: '''
-
-    **Station actions**
-
-    See everything about this station, including the whole title of what
-    is on air, and rename it, give it an icon, say what should happen when
-    its stream ends, or remove it from your library. Its playlists are chosen
-    with Manage playlists on the Playlists page.
-
-    ''',
-    // An empty tooltip turns off the menu's own plain "Show menu".
-    child: PopupMenuButton<String>(
-      tooltip: '',
-      onSelected: (value) => switch (value) {
-        'casts' => _openCasts(station),
-        'info' => editStationProperties(context, station),
-        _ => _confirmDelete(provider, station),
-      },
-      itemBuilder: (context) => [
-        if (station.isPodcast)
-          const PopupMenuItem(value: 'casts', child: Text('Episodes…'))
-        else
-          const PopupMenuItem(value: 'info', child: Text('Information…')),
-        const PopupMenuItem(value: 'delete', child: Text('Delete station')),
-      ],
     ),
   );
 
@@ -479,21 +442,20 @@ class _StationsScreenState extends State<StationsScreen> {
   }
 }
 
-/// The narrowest screen on which a station row shows its actions as
-/// buttons rather than one menu.
+/// The narrowest screen on which a station row shows a Delete button.
 ///
 /// 20261026 gjw It was solidui's narrow/wide threshold (800), so the row
-/// changed with the navigation, but a 600 pixel desktop window then had a
-/// menu beside plenty of room. The buttons need only some 70 pixels more
-/// than the menu. 520 is below such a window and above every phone held
-/// upright (360 to 430), which keeps its menu and the room for the name.
+/// changed with the navigation, but a 600 pixel desktop window then went
+/// without beside plenty of room. 520 is below such a window and above
+/// every phone held upright (360 to 430), which keeps the room for the
+/// name and deletes with a swipe left.
 
-const rowButtonsMinWidth = 520.0;
+const rowDeleteMinWidth = 520.0;
 
-/// Whether a station row has room to show its actions as separate buttons.
+/// Whether a station row has room to show a Delete button.
 ///
 /// 20261008 gjw Pure, and tested, because the alternative is not testable at
 /// all: pumping StationsScreen needs a live Player, so a widget test cannot
 /// reach this decision.
 
-bool rowShowsButtons(double screenWidth) => screenWidth >= rowButtonsMinWidth;
+bool rowShowsDelete(double screenWidth) => screenWidth >= rowDeleteMinWidth;

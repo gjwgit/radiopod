@@ -307,10 +307,11 @@ details remain on display when it is playing.
 
 ### Station options
 
-Every station row has an **ⓘ** button, or on a phone a **⋮** menu,
-for operations on the station entry. On a podcast it opens the
-Episodes page, which has the podcast's Properties. The **ⓘ** on the
-Playlists page does the same.
+Every station row has an **ⓘ** button for operations on the station
+entry. On a podcast it opens the Episodes page, which has the
+podcast's Properties. The **ⓘ** on the Playlists page does the same.
+Swipe a row to the left to delete it, or on a wider screen use the
+delete button beside the **ⓘ**.
 
 ![The station properties
 dialog](assets/screenshots/radiopod_stations_properties.png)

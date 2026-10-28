@@ -18,6 +18,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.2 Improvement to Podcast Workflows
 
++ Info button only on phones, solidui 1.5.15 login fixes [2.2.10 20261028 gjw]
 + One info button: track on air, details, edit in place [2.2.9 20261028 gjw]
 + Pull down Stations to refresh from Pod and podcasts [2.2.8 20261028 gjw]
 + Station row buttons shown on narrower windows [2.2.7 20261026 gjw]
