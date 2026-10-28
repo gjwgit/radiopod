@@ -332,14 +332,22 @@ jobs:
           path: ${{ steps.build.outputs.snap }}
 
   # 20261028 gjw The Flatpak, as `make flatpak` builds it locally: the
-  # Flutter bundle is built here with the scrambled Podcast Index pair,
-  # as for the deb, and flatpak/com.togaware.radiopod.yml wraps it with a
-  # libmpv built from source. Built on the runner, not in a flatpak
-  # container, so Flutter is set up the same way as for the other Linux
-  # jobs. The bundle names Flathub as its runtime repository, so
-  # `flatpak install` fetches the GNOME runtime when it is missing.
+  # Flutter bundle is built with the scrambled Podcast Index pair, as for
+  # the deb, and flatpak/com.togaware.radiopod.yml wraps it with a libmpv
+  # built from source. The bundle names Flathub as its runtime
+  # repository, so `flatpak install` fetches the GNOME runtime when it is
+  # missing.
+  #
+  # TWO JOBS, because neither tool will run where the other does. Ubuntu's
+  # flatpak-builder (1.4.2 on 24.04) built libplacebo and then mpv could
+  # not find it, "Dependency libplacebo not found"; Flathub's
+  # org.flatpak.Builder, as used locally, asks the host flatpak for the
+  # SDK over the session bus, which a runner does not have, "Unable to
+  # find sdk org.gnome.Sdk version 49". So the Flutter bundle is built on
+  # the runner, and wrapped in Flathub's own build container, which has
+  # the SDK and a current flatpak-builder, and no Flutter.
 
-  package-linux-flatpak:
+  package-linux-flatpak-bundle:
     if: |
       contains(github.event.head_commit.message, 'bump version') ||
       contains(github.event.head_commit.message, 'build installers') ||
@@ -347,10 +355,6 @@ jobs:
       contains(github.event.head_commit.message, 'build flatpak')
 
     runs-on: ubuntu-latest
-
-    env:
-      FLATPAK_ID: com.togaware.radiopod
-      FLATPAK_DIR: ${{ github.workspace }}/.flatpak
 
     steps:
 
@@ -366,30 +370,12 @@ jobs:
           sudo apt-get install -y libgtk-3-dev
           printf '#%.0s' {1..72}; printf '\nclang cmake\n'
           sudo apt-get install -y clang cmake
-          printf '#%.0s' {1..72}; printf '\nflatpak\n'
-          sudo apt-get install -y flatpak
 
       - name: Install extra Linux packages
         if: env.LINUX_PKGS != ''
         run: |
           printf '#%.0s' {1..72}; printf '\n${{env.LINUX_PKGS}}\n'
           sudo apt-get install -y ${{env.LINUX_PKGS}}
-
-      # Ubuntu 24.04 restricts unprivileged user namespaces through
-      # AppArmor, and the bubblewrap sandbox flatpak-builder builds in
-      # needs them.
-
-      - name: Allow the build sandbox
-        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-
-      # 20261028 gjw flatpak-builder from Flathub, as `make flatpak` uses,
-      # not Ubuntu's. The apt one (1.4.2 on 24.04) built libplacebo and
-      # then mpv could not find it: "Dependency libplacebo not found".
-
-      - name: Install the GNOME SDK and flatpak-builder
-        run: |
-          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-          flatpak install --user -y --noninteractive flathub org.gnome.Platform//49 org.gnome.Sdk//49 org.flatpak.Builder
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -418,24 +404,56 @@ jobs:
           PODCAST_INDEX_KEY: ${{ secrets.PODCAST_INDEX_KEY }}
           PODCAST_INDEX_SECRET: ${{ secrets.PODCAST_INDEX_SECRET }}
 
-      # libass, libplacebo and mpv are built from source and change only
-      # with the manifest, so their build state is kept between runs.
+      # A tarball, because an artifact does not keep the executable bit.
 
-      - name: Restore the libmpv build
-        uses: actions/cache@v4
+      - name: Pack the bundle
+        run: tar -C build/linux/x64/release -cf bundle.tar bundle
+
+      - name: Upload the bundle
+        uses: actions/upload-artifact@v6
         with:
-          path: ${{ env.FLATPAK_DIR }}/state
-          key: flatpak-builder-${{ hashFiles('flatpak/*.yml') }}
-          restore-keys: flatpak-builder-
+          name: ${{env.APP}}-flatpak-bundle
+          path: bundle.tar
+          retention-days: 1
+
+  package-linux-flatpak:
+    needs: package-linux-flatpak-bundle
+
+    runs-on: ubuntu-latest
+
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-49
+      options: --privileged
+
+    steps:
+
+      - name: Clone Repository
+        uses: actions/checkout@v6
+
+      - name: Download the bundle
+        uses: actions/download-artifact@v6
+        with:
+          name: ${{env.APP}}-flatpak-bundle
+
+      # Where the manifest looks for it, as after a local build.
+
+      - name: Unpack the bundle
+        run: |
+          mkdir -p build/linux/x64/release
+          tar -C build/linux/x64/release -xf bundle.tar
+          rm bundle.tar
+
+      # The action keeps the libass, libplacebo and mpv builds between
+      # runs under cache-key, so they are rebuilt only when the manifest
+      # changes.
 
       - name: Build Flatpak
-        run: |
-          flatpak run org.flatpak.Builder --user --force-clean --disable-rofiles-fuse \
-            --state-dir=${FLATPAK_DIR}/state --repo=${FLATPAK_DIR}/repo \
-            ${FLATPAK_DIR}/build flatpak/${FLATPAK_ID}.yml
-          flatpak build-bundle \
-            --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo \
-            ${FLATPAK_DIR}/repo ${{env.APP}}_amd64.flatpak ${FLATPAK_ID}
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          manifest-path: flatpak/com.togaware.radiopod.yml
+          bundle: ${{env.APP}}_amd64.flatpak
+          cache-key: flatpak-builder-${{ hashFiles('flatpak/*.yml') }}
+          upload-artifact: false
 
       - name: Upload flatpak artifact
         uses: actions/upload-artifact@v6
