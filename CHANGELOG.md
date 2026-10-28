@@ -22,6 +22,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.2 Improvement to Podcast Workflows
 
++ Flatpak installer for GNU/Linux built with the others [2.2.11 20261028 gjw]
 + Info button only on phones, solidui 1.5.15 login fixes [2.2.10 20261028 gjw]
 + One info button: track on air, details, edit in place [2.2.9 20261028 gjw]
 + Pull down Stations to refresh from Pod and podcasts [2.2.8 20261028 gjw]

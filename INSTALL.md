@@ -7,7 +7,7 @@ install a package for your platform from the platform repository or
 else directly from the [Solid Community AU](https://solidcommunity.au)
 repository. The choice is yours:
 
-<!-- markdownlint-disable MD036 -->
+<!-- markdownlint-disable MD036 MD013-->
 
 + **Web**
   [solidcommunity](https://radiopod.solidcommunity.au/);

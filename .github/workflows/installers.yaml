@@ -331,6 +331,114 @@ jobs:
           name: ${{ env.APP }}-linux-snap
           path: ${{ steps.build.outputs.snap }}
 
+  # 20261028 gjw The Flatpak, as `make flatpak` builds it locally: the
+  # Flutter bundle is built here with the scrambled Podcast Index pair,
+  # as for the deb, and flatpak/com.togaware.radiopod.yml wraps it with a
+  # libmpv built from source. Built on the runner, not in a flatpak
+  # container, so Flutter is set up the same way as for the other Linux
+  # jobs. The bundle names Flathub as its runtime repository, so
+  # `flatpak install` fetches the GNOME runtime when it is missing.
+
+  package-linux-flatpak:
+    if: |
+      contains(github.event.head_commit.message, 'bump version') ||
+      contains(github.event.head_commit.message, 'build installers') ||
+      contains(github.event.head_commit.message, 'build linux') ||
+      contains(github.event.head_commit.message, 'build flatpak')
+
+    runs-on: ubuntu-latest
+
+    env:
+      FLATPAK_ID: com.togaware.radiopod
+      FLATPAK_DIR: ${{ github.workspace }}/.flatpak
+
+    steps:
+
+      - name: Clone Repository
+        uses: actions/checkout@v6
+
+      - name: Install OS Dependencies
+        run: |
+          sudo apt-get update -y
+          printf '#%.0s' {1..72}; printf '\nninja-build\n'
+          sudo apt-get install -y ninja-build
+          printf '#%.0s' {1..72}; printf '\nlibgtk-3-dev\n'
+          sudo apt-get install -y libgtk-3-dev
+          printf '#%.0s' {1..72}; printf '\nclang cmake\n'
+          sudo apt-get install -y clang cmake
+          printf '#%.0s' {1..72}; printf '\nflatpak flatpak-builder\n'
+          sudo apt-get install -y flatpak flatpak-builder
+
+      - name: Install extra Linux packages
+        if: env.LINUX_PKGS != ''
+        run: |
+          printf '#%.0s' {1..72}; printf '\n${{env.LINUX_PKGS}}\n'
+          sudo apt-get install -y ${{env.LINUX_PKGS}}
+
+      # Ubuntu 24.04 restricts unprivileged user namespaces through
+      # AppArmor, and the bubblewrap sandbox flatpak-builder builds in
+      # needs them.
+
+      - name: Allow the build sandbox
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: Install the GNOME SDK
+        run: |
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user -y --noninteractive flathub org.gnome.Platform//49 org.gnome.Sdk//49
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          architecture: x64
+          flutter-version: ${{env.FLUTTER_VERSION}}
+
+      - name: Confirm Flutter Version
+        run: flutter --version
+
+      - name: Enable Linux Build
+        run: flutter config --enable-linux-desktop
+
+      - name: Build Flutter Linux app
+        # RADIOPOD SPECIAL
+        #
+        # 20261016 gjw The Podcast Index pair is scrambled into dart_defines.json
+        # (support/scramble_defines.dart) and the build obfuscated, so neither
+        # secret sits in the binary as plain text.
+        run: |
+          flutter pub get
+          dart run support/scramble_defines.dart
+          flutter build linux --release --dart-define-from-file=dart_defines.json --obfuscate --split-debug-info=build/symbols
+        env:
+          PODCAST_INDEX_KEY: ${{ secrets.PODCAST_INDEX_KEY }}
+          PODCAST_INDEX_SECRET: ${{ secrets.PODCAST_INDEX_SECRET }}
+
+      # libass, libplacebo and mpv are built from source and change only
+      # with the manifest, so their build state is kept between runs.
+
+      - name: Restore the libmpv build
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.FLATPAK_DIR }}/state
+          key: flatpak-${{ hashFiles('flatpak/*.yml') }}
+          restore-keys: flatpak-
+
+      - name: Build Flatpak
+        run: |
+          flatpak-builder --user --force-clean --disable-rofiles-fuse \
+            --state-dir=${FLATPAK_DIR}/state --repo=${FLATPAK_DIR}/repo \
+            ${FLATPAK_DIR}/build flatpak/${FLATPAK_ID}.yml
+          flatpak build-bundle \
+            --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo \
+            ${FLATPAK_DIR}/repo ${{env.APP}}_amd64.flatpak ${FLATPAK_ID}
+
+      - name: Upload flatpak artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{env.APP}}-linux-flatpak
+          path: ${{env.APP}}_amd64.flatpak
+
   # publish:
   #   needs: build
   #   runs-on: ubuntu-latest
