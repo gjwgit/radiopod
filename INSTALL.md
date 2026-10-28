@@ -12,6 +12,7 @@ repository. The choice is yours:
 + **Web**
   [solidcommunity](https://radiopod.solidcommunity.au/);
 + **Android**
+  [play store](https://play.google.com/store/apps) or
   [apk](https://solidcommunity.au/installers/radiopod.apk) or
   [aab](https://solidcommunity.au/installers/radiopod.aab);
 + **GNU/Linux**
