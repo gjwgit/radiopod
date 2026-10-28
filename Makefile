@@ -165,13 +165,13 @@ deb:
 	rm -f $(APP)_amd64.deb
 	mv -f installers/$(APP)_*.deb installers/ARCHIVE/
 
-# 20261020 gjw A Flatpak, built locally for now. The Flutter bundle is
-# built on the host with the scrambled Podcast Index pair, as deb.sh
-# does, and flatpak/com.togaware.radiopod.yml wraps it with a libmpv
+# 20261020 gjw A Flatpak, built locally for now. For radiopod the Flutter
+# bundle is built on the host with the scrambled Podcast Index pair, as
+# deb.sh does, and flatpak/com.togaware.radiopod.yml wraps it with a libmpv
 # built from source. Needs `flatpak install --user flathub
 # org.flatpak.Builder org.gnome.Sdk//49`.
 
-FLATPAK_ID = com.togaware.radiopod
+FLATPAK_ID = com.togaware.$(APP)
 FLATPAK_BUILDER = flatpak run org.flatpak.Builder
 
 # 20261021 gjw Built OUTSIDE the project. The build directory holds a whole

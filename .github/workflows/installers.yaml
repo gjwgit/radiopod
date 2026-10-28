@@ -55,7 +55,7 @@ env:
   MACOS_APP_RELEASE_UNSIGNED_PATH: build/macos/Build/Products/Release-unsigned
   MACOS_APP_RELEASE_STAGING_PATH: build/macos/Build/Products/Release-staging
   MACOS_APP_RELEASE_DEV_PATH: build/macos/Build/Products/Release-dev
-  FLUTTER_VERSION: "3.47.6"
+  FLUTTER_VERSION: "3.47.8"
 
 jobs:
 
@@ -128,6 +128,8 @@ jobs:
         run: flutter config --enable-linux-desktop
 
       - name: Build Flutter Linux app
+        # RADIOPOD SPECIAL
+   	#
         # 20261016 gjw The Podcast Index pair is scrambled into dart_defines.json
         # (support/scramble_defines.dart) and the build obfuscated, so neither
         # secret sits in the binary as plain text.
@@ -261,6 +263,8 @@ jobs:
         run: flutter config --enable-linux-desktop
 
       - name: Build Flutter Linux app
+        # RADIOPOD SPECIAL
+   	#
         # 20261016 gjw The Podcast Index pair is scrambled into dart_defines.json
         # (support/scramble_defines.dart) and the build obfuscated, so neither
         # secret sits in the binary as plain text.
@@ -497,6 +501,8 @@ jobs:
       # by the codesign step further below.
 
       - name: Build Flutter macOS app
+        # RADIOPOD SPECIAL
+   	#
         # 20261016 gjw The Podcast Index pair is scrambled into dart_defines.json
         # (support/scramble_defines.dart) and the build obfuscated, so neither
         # secret sits in the binary as plain text.
@@ -971,6 +977,8 @@ jobs:
         # Connect refuses a number it has seen before, so that increment is
         # what makes a second upload possible. Nothing is passed here: one
         # source of truth, and `flutter build` already reads it.
+        # RADIOPOD SPECIAL
+   	#
         # 20261016 gjw The Podcast Index pair is scrambled into dart_defines.json
         # (support/scramble_defines.dart) and the build obfuscated, so neither
         # secret sits in the binary as plain text.
@@ -1273,6 +1281,8 @@ jobs:
         run: flutter config --enable-windows-desktop
 
       - name: Build Flutter Windows app
+        # RADIOPOD SPECIAL
+   	#
         # 20261016 gjw The Podcast Index pair is scrambled into dart_defines.json
         # (support/scramble_defines.dart) and the build obfuscated, so neither
         # secret sits in the binary as plain text.
