@@ -15,15 +15,15 @@ repository. The choice is yours:
   play store - coming soon or
   [apk](https://solidcommunity.au/installers/radiopod.apk) or
   [aab](https://solidcommunity.au/installers/radiopod.aab);
++ **iOS**
+  app store - coming soon or
+  [ipa](https://solidcommunity.au/installers/radiopod.ipa);
 + **Linux**
   [snap store](https://snapcraft.io/radiopod) or
   [deb](https://solidcommunity.au/installers/radiopod_amd64.deb) or
   [flatpak](https://solidcommunity.au/installers/radiopod_amd64.flatpak) or
   [snap](https://solidcommunity.au/installers/radiopod_amd64.snap) or
   [zip](https://solidcommunity.au/installers/radiopod-linux.zip);
-+ **iOS**
-  app store - coming soon or
-  [ipa](https://solidcommunity.au/installers/radiopod.ipa);
 + **macOS**
   [dmg](https://solidcommunity.au/installers/radiopod-macos.dmg) or
   [zip](https://solidcommunity.au/installers/radiopod-macos.zip);
