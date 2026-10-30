@@ -54,6 +54,8 @@ install:
   host: solidcommunity.au
   prod: true
   url: https://solidcommunity.au/installers/
+stores:
+  snap: true
 description: |
   RadioPod plays internet radio and podcasts. Find stations in the
   community-run Radio-Browser database and podcasts in Podcast Index,

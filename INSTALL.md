@@ -13,11 +13,9 @@ repository. The choice is yours:
   [solidcommunity](https://radiopod.solidcommunity.au/);
 + **Android**
   Google Play Store - coming soon or
-  [apk](https://solidcommunity.au/installers/radiopod.apk) or
-  [aab](https://solidcommunity.au/installers/radiopod.aab);
+  [apk](https://solidcommunity.au/installers/radiopod.apk);
 + **iOS**
-  Apple App Store - coming soon or
-  [ipa](https://solidcommunity.au/installers/radiopod.ipa);
+  Apple App Store - coming soon;
 + **Linux**
   [Snap Store](https://snapcraft.io/radiopod) or
   [deb](https://solidcommunity.au/installers/radiopod_amd64.deb) or
