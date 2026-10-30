@@ -17,8 +17,7 @@ Run the app online: [**web**](https://radiopod.solidcommunity.au).
 Download the latest version:
 
 + **Android**
-  [apk](https://solidcommunity.au/installers/radiopod.apk) or
-  [aab](https://solidcommunity.au/installers/radiopod.aab);
+  [apk](https://solidcommunity.au/installers/radiopod.apk);
 
 + **GNU/Linux**
   [deb](https://solidcommunity.au/installers/radiopod_amd64.deb) or
