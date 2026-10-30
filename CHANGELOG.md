@@ -20,6 +20,10 @@ then please show some ❤️ and tap on the star at
 This app is implemented by [Graham
 Williams](https://togaware.com/Graham.Williams.html).
 
+## 2.3 Migrate to using copier for templates
+
++ Using copier [2.3.0 20261030 gjw]
+
 ## 2.2 Improvement to Podcast Workflows
 
 + CI builds linux just once now [2.2.12 20261029 gjw]

@@ -1,90 +1,127 @@
 #!/bin/bash
 
-APP=$(pwd | rev | cut -d'/' -f2 | rev)
-
-VER=$(egrep '^version:' ../pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1)
-
-# Build the release.
+# Build the Debian package for RadioPod.
 #
-# 20261018 gjw Pass dart_defines.json, as support/flutter.mk and CI do.
-# Without it the Podcast Index pair is not compiled in and podcast search
-# says it is unavailable. Obfuscated like the other release builds, so the
-# scrambled pair is harder to dig out of the binary.
+# From the gjwgit/fluttertmpl Copier template, with the package details
+# from .copier-answers.yml. Local edits are kept by `copier update`.
+#
+# 20261030 gjw One script for the local `make deb` and the installers
+# workflow. Locally it builds the Flutter Linux release first. With
+# --bundle it packages the bundle already in build/linux/x64/release, as
+# the workflow's build-linux job leaves it, so every Linux installer
+# carries the same binary.
+#
+# Run from the installers folder. Leaves radiopod_<version>_amd64.deb
+# here.
 
-DEFINES=""
-if [ -f ../dart_defines.json ]; then
-  DEFINES="--dart-define-from-file=dart_defines.json"
-else
-  echo "Warning: no dart_defines.json, so podcast search will be unavailable."
-  echo "Run: dart run support/scramble_defines.dart"
+set -e
+
+APP=radiopod
+
+VER=$(grep '^version:' ../pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1)
+
+if [ "$1" != "--bundle" ]; then
+
+  # 20261018 gjw Pass dart_defines.json, as support/flutter.mk and CI do,
+  # or the build.secrets are not compiled in:
+  #
+  #   PODCAST_INDEX_KEY PODCAST_INDEX_SECRET
+  #
+  # Obfuscated like the other release builds, so the scrambled values
+  # are harder to dig out of the binary.
+
+  DEFINES=""
+  if [ -f ../dart_defines.json ]; then
+    DEFINES="--dart-define-from-file=dart_defines.json --obfuscate --split-debug-info=build/symbols"
+  else
+    echo "Warning: no dart_defines.json, so the build.secrets are missing."
+    echo "Run: dart run support/scramble_defines.dart"
+  fi
+  (cd ..; flutter build linux --release ${DEFINES})
 fi
 
-(cd ..; flutter build linux --release ${DEFINES} \
-  --obfuscate --split-debug-info=build/symbols)
+ROOT=${APP}_${VER}_amd64
 
 # Create debian package structure.
 
-mkdir -p ${APP}_${VER}_amd64/DEBIAN
-mkdir -p ${APP}_${VER}_amd64/usr/bin
-mkdir -p ${APP}_${VER}_amd64/usr/lib/${APP}
-mkdir -p ${APP}_${VER}_amd64/usr/share/applications
-mkdir -p ${APP}_${VER}_amd64/usr/share/icons/hicolor/512x512/apps
+mkdir -p ${ROOT}/DEBIAN
+mkdir -p ${ROOT}/usr/bin
+mkdir -p ${ROOT}/usr/lib/${APP}
+mkdir -p ${ROOT}/usr/share/applications
+mkdir -p ${ROOT}/usr/share/icons/hicolor/512x512/apps
 
-# Create control file.
+# Create control file. The heredocs are quoted so the description is
+# written as it is.
 
-cat > ${APP}_${VER}_amd64/DEBIAN/control << EOL
-Package: ${APP}
-Version: ${VER}
+cat > ${ROOT}/DEBIAN/control << 'EOL'
+Package: radiopod
 Section: sound
 Priority: optional
 Architecture: amd64
 Depends: libgtk-3-0, libblkid1, liblzma5, libmpv2
 Maintainer: Graham Williams <graham.williams@togaware.com>
 Description: Privacy-first internet radio and podcast player
- With ${APP} you can find internet radio stations in the community-run
- Radio-Browser database and podcasts in Podcast Index, group them into
- playlists, and listen. Your library and listening progress are stored
- encrypted in your Pod, so nobody can see what you listen to. Playlists
- import and export as M3U and PLS, podcasts as OPML.
+ RadioPod plays internet radio and podcasts. Find stations in the
+ community-run Radio-Browser database and podcasts in Podcast Index,
+ group them into playlists, and listen — at your desk, on your phone,
+ or in the car through Android Auto.
+ .
+ A podcast sits in your list beside the stations. Tap it to resume the
+ episode you were part way through, or else start the newest. Each
+ episode remembers where you stopped, so you can pick it up on another
+ device, and you can skip back and forward or mark it played.
+ .
+ Your stations, podcasts, playlists and listening progress are stored
+ encrypted in your personal online data store (Pod) within a Data
+ Vault hosted by your Solid Server of choice, so nobody — not even the
+ server administrator — can see what you listen to. Without a login
+ the library is kept on this device instead and nothing is sent
+ anywhere.
+ .
+ Playlists import and export as M3U and PLS, the open formats every
+ other radio player reads. Podcasts import and export as OPML, so you
+ can bring your subscriptions from another podcast app.
 EOL
+echo "Version: ${VER}" >> ${ROOT}/DEBIAN/control
 
 # Create desktop entry.
 
-cat > ${APP}_${VER}_amd64/usr/share/applications/com.togaware.${APP}.desktop << EOL
+cat > ${ROOT}/usr/share/applications/com.togaware.${APP}.desktop << 'EOL'
 [Desktop Entry]
 Name=RadioPod
-Comment=Simple, Private, Secure Internet Radio and Podcasts with your Solid Pod
-Exec=/usr/bin/${APP}
-Icon=${APP}
+Comment=Simple, Private, Secure Internet Radio and Podcasts
+Exec=/usr/bin/radiopod
+Icon=radiopod
 Terminal=false
 Type=Application
-Categories=Utility;
+Categories=AudioVideo;Audio;Player;Network;
+Keywords=radio;internet radio;streaming;shoutcast;icecast;podcast;podcasts;solid;pod;
 EOL
 
 # Copy the built flutter application.
 
-cp -r ../build/linux/x64/release/bundle/* ${APP}_${VER}_amd64/usr/lib/${APP}/
+cp -r ../build/linux/x64/release/bundle/* ${ROOT}/usr/lib/${APP}/
 
 # Ensure /usr/bin/${APP} points to the actual executable.
 
-(cd ${APP}_${VER}_amd64/usr/bin; ln -s ../lib/${APP}/${APP} ${APP})
+(cd ${ROOT}/usr/bin; ln -s ../lib/${APP}/${APP} ${APP})
 
-# Copy the app icon which is assumed to be named ${APP}.png in the
-# installers folder.
+# The app icon.
 
-cp ../assets/images/app_icon.png ${APP}_${VER}_amd64/usr/share/icons/hicolor/512x512/apps/${APP}.png
+cp ../assets/images/app_icon.png ${ROOT}/usr/share/icons/hicolor/512x512/apps/${APP}.png
 
 # Set correct permissions.
 
-chmod -R 755 ${APP}_${VER}_amd64/DEBIAN
-find ${APP}_${VER}_amd64/usr -type d -exec chmod 755 {} \;
-find ${APP}_${VER}_amd64/usr -type f -exec chmod 644 {} \;
-chmod 755 ${APP}_${VER}_amd64/usr/lib/${APP}/${APP}
+chmod 755 ${ROOT}
+chmod -R 755 ${ROOT}/DEBIAN
+find ${ROOT}/usr -type d -exec chmod 755 {} \;
+find ${ROOT}/usr -type f -exec chmod 644 {} \;
+chmod 755 ${ROOT}/usr/lib/${APP}/${APP}
 
 # Build the debian package.
 
-dpkg-deb --build --root-owner-group ${APP}_${VER}_amd64
+dpkg-deb --build --root-owner-group ${ROOT}
 
 # Cleanup.
 
-rm -rf ${APP}_${VER}_amd64
+rm -rf ${ROOT}

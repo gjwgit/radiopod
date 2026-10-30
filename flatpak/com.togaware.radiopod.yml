@@ -1,16 +1,21 @@
 # RadioPod as a Flatpak.
 #
-# 20261020 gjw A first, local build. It wraps the Flutter release bundle
-# built on the host (`make flatpak` builds it first, with the scrambled
-# Podcast Index pair from dart_defines.json, exactly as deb.sh does) and
-# builds libmpv, which no Flatpak runtime ships, from source.
+# From the gjwgit/fluttertmpl Copier template. Values come from
+# .copier-answers.yml. Local edits are kept by `copier update`, which
+# merges template changes in.
+#
+# 20261029 gjw Wraps the Flutter release bundle built on the host (`make
+# flatpak` builds it first, as the installers workflow does) in the GNOME
+# runtime. Build with `make flatpak`, which builds outside the project
+# (see the Makefile), then run with `flatpak run com.togaware.radiopod`.
+#
+# 20261020 gjw The bundle is built with the scrambled Podcast Index pair
+# from dart_defines.json, exactly as deb.sh does, and libmpv, which no
+# Flatpak runtime ships, is built from source (mpv.yml).
 #
 # Flathub is NOT the target yet: it builds from public source and has no
 # access to the Podcast Index pair, so its build would have no podcast
 # search. This manifest makes a .flatpak bundle to hand out ourselves.
-#
-# Build with `make flatpak`, which builds outside the project (see the
-# Makefile), then run with `flatpak run com.togaware.radiopod`.
 
 id: com.togaware.radiopod
 runtime: org.gnome.Platform
@@ -23,16 +28,28 @@ finish-args:
   - --socket=wayland
   - --socket=fallback-x11
   - --device=dri
+
   # Streams, Radio-Browser, Podcast Index, the feeds and the Pod.
+
   - --share=network
-  # Without it the stream connects, the row says Playing, and nothing is
-  # heard: the same quiet failure the snap's audio-playback plug avoids.
-  - --socket=pulseaudio
+
   # solidpod keeps the security key through flutter_secure_storage, which
   # on GNU/Linux is libsecret talking to the keyring over this name. The
-  # snap needed password-manager-service connected by hand (CLAUDE.md §12);
-  # here it is granted by the manifest.
+  # snap needs password-manager-service connected by hand; here it is
+  # granted by the manifest.
+
   - --talk-name=org.freedesktop.secrets
+
+  # From .copier-answers.yml flatpak.finish-args.
+  #
+  # Without pulseaudio the stream connects, the row says Playing, and
+  # nothing is heard: the same quiet failure the snap's audio-playback plug
+  # avoids.
+
+  - --socket=pulseaudio
+
+# Only the libraries the app needs at runtime are kept from the modules
+# built from source.
 
 cleanup:
   - /include
@@ -43,13 +60,19 @@ cleanup:
 
 modules:
 
+  # From .copier-answers.yml flatpak.modules, each a file in flatpak/
+  # holding a module that flatpak-builder builds before the app.
+  #
   # 20261030 gjw libmpv, with libass and libplacebo, from mpv.yml (see
-  # there), as .copier-answers.yml's flatpak.modules lists it.
+  # there).
 
   - mpv.yml
 
   # The app: the Flutter bundle as built, under /app/radiopod, since the
   # executable finds its lib/ and data/ beside itself.
+  #
+  # 20261030 gjw The AppStream release is the pubspec version, written in
+  # at build time, so it cannot go stale as a hand-kept one did.
 
   - name: radiopod
     buildsystem: simple
@@ -59,7 +82,10 @@ modules:
       - ln -s /app/radiopod/radiopod /app/bin/radiopod
       - install -Dm644 com.togaware.radiopod.desktop
           /app/share/applications/com.togaware.radiopod.desktop
-      - install -Dm644 com.togaware.radiopod.metainfo.xml
+      - sed -e "s/@VERSION@/$(grep '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d+ -f1)/"
+          -e "s/@DATE@/$(date +%F)/" com.togaware.radiopod.metainfo.xml
+          > com.togaware.radiopod.metainfo.xml.new
+      - install -Dm644 com.togaware.radiopod.metainfo.xml.new
           /app/share/metainfo/com.togaware.radiopod.metainfo.xml
       - install -Dm644 icon.png
           /app/share/icons/hicolor/512x512/apps/com.togaware.radiopod.png
@@ -72,4 +98,11 @@ modules:
       - type: file
         path: com.togaware.radiopod.metainfo.xml
       - type: file
+        path: ../pubspec.yaml
+
+      # A Flatpak icon must be square, and no larger than the 512x512
+      # folder it installs into.
+
+      - type: file
         path: ../snap/gui/icon.png
+        dest-filename: icon.png

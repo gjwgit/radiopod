@@ -1,0 +1,77 @@
+# Changes here will be overwritten by Copier. Change a value with
+# `copier update --data key=value` or by editing it here and running
+# `copier update`.
+_commit: v0.7.0
+_src_path: gh:gjwgit/fluttertmpl
+app: radiopod
+build:
+  secrets:
+  - PODCAST_INDEX_KEY
+  - PODCAST_INDEX_SECRET
+categories:
+- AudioVideo
+- Audio
+- Player
+- Network
+comment: Simple, Private, Secure Internet Radio and Podcasts
+deb:
+  depends:
+  - libmpv2
+  section: sound
+flatpak:
+  finish-args:
+  - --socket=pulseaudio
+  modules:
+  - mpv.yml
+keywords:
+- radio
+- internet radio
+- streaming
+- shoutcast
+- icecast
+- podcast
+- podcasts
+- solid
+- pod
+name: RadioPod
+snap:
+  environment:
+    LD_LIBRARY_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/blas:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/lapack:$LD_LIBRARY_PATH
+  plugs:
+  - audio-playback
+  stage-packages:
+  - libmpv2
+summary: Privacy-first internet radio and podcast player
+windows:
+  appid: 7493cbba-5d0e-4f7d-af4e-ed90ced9e050
+copyright: 2026, Togaware Pty Ltd
+kind: app
+android: true
+owner: gjwgit
+publisher: Togaware Pty Ltd
+install:
+  folder: /var/www/html/web/installers/
+  host: solidcommunity.au
+  prod: true
+  url: https://solidcommunity.au/installers/
+description: |
+  RadioPod plays internet radio and podcasts. Find stations in the
+  community-run Radio-Browser database and podcasts in Podcast Index,
+  group them into playlists, and listen — at your desk, on your phone,
+  or in the car through Android Auto.
+
+  A podcast sits in your list beside the stations. Tap it to resume the
+  episode you were part way through, or else start the newest. Each
+  episode remembers where you stopped, so you can pick it up on another
+  device, and you can skip back and forward or mark it played.
+
+  Your stations, podcasts, playlists and listening progress are stored
+  encrypted in your personal online data store (Pod) within a Data
+  Vault hosted by your Solid Server of choice, so nobody — not even the
+  server administrator — can see what you listen to. Without a login
+  the library is kept on this device instead and nothing is sent
+  anywhere.
+
+  Playlists import and export as M3U and PLS, the open formats every
+  other radio player reads. Podcasts import and export as OPML, so you
+  can bring your subscriptions from another podcast app.

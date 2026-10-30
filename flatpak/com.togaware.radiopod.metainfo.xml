@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- 20261020 gjw AppStream metadata: what GNOME Software, KDE Discover and
-     Flathub show for the app. The description follows the snap's. -->
+<!-- AppStream metadata: what GNOME Software, KDE Discover and Flathub show
+     for the app. From the gjwgit/fluttertmpl Copier template, with the
+     summary and description from .copier-answers.yml. @VERSION@ and
+     @DATE@ are filled in from pubspec.yaml when the Flatpak is built. -->
 <component type="desktop-application">
   <id>com.togaware.radiopod</id>
   <name>RadioPod</name>
@@ -18,22 +20,27 @@
     <p>
       RadioPod plays internet radio and podcasts. Find stations in the
       community-run Radio-Browser database and podcasts in Podcast Index,
-      group them into playlists, and listen.
+      group them into playlists, and listen — at your desk, on your phone,
+      or in the car through Android Auto.
     </p>
     <p>
       A podcast sits in your list beside the stations. Tap it to resume the
       episode you were part way through, or else start the newest. Each
       episode remembers where you stopped, so you can pick it up on another
-      device.
+      device, and you can skip back and forward or mark it played.
     </p>
     <p>
       Your stations, podcasts, playlists and listening progress are stored
-      encrypted in your own Solid Pod, so nobody, not even the server
-      administrator, can see what you listen to. Without a login the library
-      is kept on this device instead and nothing is sent anywhere.
+      encrypted in your personal online data store (Pod) within a Data
+      Vault hosted by your Solid Server of choice, so nobody — not even the
+      server administrator — can see what you listen to. Without a login
+      the library is kept on this device instead and nothing is sent
+      anywhere.
     </p>
     <p>
-      Playlists import and export as M3U and PLS, and podcasts as OPML.
+      Playlists import and export as M3U and PLS, the open formats every
+      other radio player reads. Podcasts import and export as OPML, so you
+      can bring your subscriptions from another podcast app.
     </p>
   </description>
 
@@ -41,17 +48,24 @@
     <category>AudioVideo</category>
     <category>Audio</category>
     <category>Player</category>
+    <category>Network</category>
   </categories>
 
   <keywords>
     <keyword>radio</keyword>
+    <keyword>internet radio</keyword>
+    <keyword>streaming</keyword>
+    <keyword>shoutcast</keyword>
+    <keyword>icecast</keyword>
     <keyword>podcast</keyword>
+    <keyword>podcasts</keyword>
     <keyword>solid</keyword>
+    <keyword>pod</keyword>
   </keywords>
 
   <content_rating type="oars-1.1"/>
 
   <releases>
-    <release version="2.1.2" date="2026-10-21"/>
+    <release version="@VERSION@" date="@DATE@"/>
   </releases>
 </component>

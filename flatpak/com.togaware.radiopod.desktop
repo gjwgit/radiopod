@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=RadioPod
-Comment=Simple, Private, Secure Internet Radio and Podcasts with your Solid Pod
+Comment=Simple, Private, Secure Internet Radio and Podcasts
 Exec=radiopod
 Icon=com.togaware.radiopod
 Terminal=false
