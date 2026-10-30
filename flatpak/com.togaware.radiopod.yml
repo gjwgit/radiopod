@@ -43,53 +43,10 @@ cleanup:
 
 modules:
 
-  # libmpv and the two libraries it needs that the GNOME runtime lacks.
-  # Configured for audio from a library, not a video player: no mpv
-  # command, no scripting, no Vulkan. ffmpeg is the runtime's own.
+  # 20261030 gjw libmpv, with libass and libplacebo, from mpv.yml (see
+  # there), as .copier-answers.yml's flatpak.modules lists it.
 
-  - name: libass
-    config-opts:
-      - --disable-static
-      - --enable-fontconfig
-    sources:
-      - type: git
-        url: https://github.com/libass/libass.git
-        tag: 0.17.5
-        commit: 4a05d8127f525943ebf45fdc6497c9e665947f0d
-
-  - name: libplacebo
-    buildsystem: meson
-    config-opts:
-      - -Dvulkan=disabled
-      - -Dshaderc=disabled
-      - -Dglslang=disabled
-      - -Ddemos=false
-      - -Dtests=false
-    sources:
-      - type: git
-        url: https://github.com/haasn/libplacebo.git
-        tag: v7.360.1
-        commit: cee9b076f2c63104ccfd497fa79c39a867293ec4
-
-  - name: mpv
-    buildsystem: meson
-    config-opts:
-      - -Dlibmpv=true
-      - -Dcplayer=false
-      - -Dlua=disabled
-      - -Djavascript=disabled
-      - -Dvulkan=disabled
-      - -Dpulse=enabled
-      - -Dmanpage-build=disabled
-      - -Dhtml-build=disabled
-      - -Dpdf-build=disabled
-      - -Dbuild-date=false
-      - -Dwerror=false
-    sources:
-      - type: git
-        url: https://github.com/mpv-player/mpv.git
-        tag: v0.41.0
-        commit: 41f6a645068483470267271e1d09966ca3b9f413
+  - mpv.yml
 
   # The app: the Flutter bundle as built, under /app/radiopod, since the
   # executable finds its lib/ and data/ beside itself.

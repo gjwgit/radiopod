@@ -42,8 +42,14 @@ on:
       - installers
 
 env:
-  APP: radiopod
+
+  # 20261030 gjw This installers.yaml is hard linked into every app
+  # by support/update.sh, so nothing here names the app. The repository
+  # name is assumed to be the app name.
+
+  APP: ${{ github.event.repository.name }}
   RELEASE: dev
+
   # 20260925 gjw media_kit/media_kit_video add two Linux build
   # dependencies. volume_controller (pulled in by media_kit_video) does
   # find_package(ALSA) in its CMakeLists, which fails the build with
@@ -51,14 +57,26 @@ env:
   # unless libasound2-dev is present. media_kit itself links against
   # libmpv, so libmpv-dev is needed too - otherwise the build gets past
   # ALSA and then fails looking for mpv.
-  LINUX_PKGS: libsecret-1-dev libjsoncpp-dev
+  #
+  # 20261011 gjw Most apps needs libsecret-1-dev and libjsoncpp-dev for
+  # flutter_secure_storage_linux, which otherwise fails in CMake with
+  # "The following required packages were not found: libsecret-1".
+  #
+  # 20261030 gjw The union of what the apps need, since the file is
+  # shared: GStreamer for audioplayers (innerpod, healthpod), ALSA and
+  # libmpv for media_kit (geopod, photopod). A package an app does not
+  # use costs only install time in build-linux.
+
+  LINUX_PKGS: libsecret-1-dev libjsoncpp-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-good gstreamer1.0-plugins-bad libasound2-dev libmpv-dev
   MACOS_APP_RELEASE_UNSIGNED_PATH: build/macos/Build/Products/Release-unsigned
   MACOS_APP_RELEASE_STAGING_PATH: build/macos/Build/Products/Release-staging
   MACOS_APP_RELEASE_DEV_PATH: build/macos/Build/Products/Release-dev
+
+  FLUTTER_VERSION: "3.47.8"
+
   # 20261029 gjw Every subosito/flutter-action step sets cache: true, so
   # the Flutter SDK and the pub packages are kept between runs, keyed on
   # this version, rather than downloaded again by every job.
-  FLUTTER_VERSION: "3.47.8"
 
 jobs:
 
@@ -84,12 +102,12 @@ jobs:
   # tacked onto the ZIP build. By being separate it is easier to test
   # separately or to build separately as required.
 
-  # 20261029 gjw BUILT ONCE. The Flutter Linux release is built by
-  # build-linux alone and handed to the deb, zip, snap and flatpak jobs as
-  # a one day artifact, so every Linux installer carries the same binary,
-  # with the same scrambled Podcast Index pair, and Flutter is built once
-  # rather than four times. Each packaging job keeps its own commit
-  # message trigger, and build-linux runs for any of them.
+  # 20261029 gjw BUILT ONCE. The Flutter Linux release is
+  # built by build-linux alone and handed to the deb, zip, snap and flatpak
+  # jobs as a one day artifact, so every Linux installer carries the same
+  # binary and Flutter is built once rather than four times. Each packaging
+  # job keeps its own commit message trigger, and build-linux runs for any
+  # of them.
   #
   # Pinned to ubuntu-24.04 rather than ubuntu-latest: the binary links
   # against the libraries it is built with, and the snap's core24 base and
@@ -145,18 +163,33 @@ jobs:
       - name: Enable Linux Build
         run: flutter config --enable-linux-desktop
 
-      - name: Build Flutter Linux app
-        # RADIOPOD SPECIAL
-        #
-        # 20261016 gjw The Podcast Index pair is scrambled into dart_defines.json
-        # (support/scramble_defines.dart) and the build obfuscated, so neither
-        # secret sits in the binary as plain text.
+      # 20261030 gjw RADIOPOD SPECIAL, skipped by an app without
+      # support/scramble_defines.dart. The repository secrets that
+      # .copier-answers.yml names in build.secrets (radiopod's Podcast Index pair) are exported
+      # under those names and scrambled into dart_defines.json, and the
+      # build obfuscated, so no secret sits in the binary as plain text.
+      # GitHub cannot look a secret up by a name held in a variable, so the
+      # step receives them all as JSON, masked in the log, and exports only
+      # the ones listed. DEFINES carries the flags to the build step, and is
+      # empty for every other app. APP_VERSION names the Android debug
+      # symbols for the release they decode. Bash, so the step reads the
+      # same on the Windows runner.
+
+      - name: Scramble the dart defines
+        if: hashFiles('support/scramble_defines.dart') != ''
+        shell: bash
         run: |
+          for name in $(yq '.build.secrets[]' .copier-answers.yml); do
+            export "$name=$(yq -p json ".[\"$name\"] // \"\"" <<< "$SECRETS")"
+          done
           dart run support/scramble_defines.dart
-          flutter build linux --release --dart-define-from-file=dart_defines.json --obfuscate --split-debug-info=build/symbols
+          echo "DEFINES=--dart-define-from-file=dart_defines.json --obfuscate --split-debug-info=build/symbols" >> "$GITHUB_ENV"
+          echo "APP_VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d+ -f1)" >> "$GITHUB_ENV"
         env:
-          PODCAST_INDEX_KEY: ${{ secrets.PODCAST_INDEX_KEY }}
-          PODCAST_INDEX_SECRET: ${{ secrets.PODCAST_INDEX_SECRET }}
+          SECRETS: ${{ toJSON(secrets) }}
+
+      - name: Build Flutter Linux app
+        run: flutter build linux --release ${{ env.DEFINES }}
 
       # A tarball, because an artifact does not keep the executable bit.
 
@@ -266,7 +299,6 @@ jobs:
 
           dpkg-deb --build build/${{env.APP}}_${VERSION}_amd64
 
-
       - name: Upload deb artifact
         uses: actions/upload-artifact@v6
         with:
@@ -312,8 +344,7 @@ jobs:
 
   # 20261029 gjw The snap wraps the shared bundle too: snap/snapcraft.yaml
   # dumps build/linux/x64/release/bundle rather than building with
-  # snapcraft's flutter plugin, which compiled the app a fourth time and
-  # without the Podcast Index pair.
+  # snapcraft's flutter plugin, which compiled the app a fourth time.
 
   package-linux-snap:
     needs: build-linux
@@ -353,17 +384,18 @@ jobs:
           name: ${{ env.APP }}-linux-snap
           path: ${{ steps.build.outputs.snap }}
 
-  # 20261028 gjw The Flatpak, as `make flatpak` builds it locally:
-  # flatpak/com.togaware.radiopod.yml wraps the shared bundle with a libmpv
-  # built from source. The bundle names Flathub as its runtime repository,
-  # so `flatpak install` fetches the GNOME runtime when it is missing.
+  # 20261029 gjw The Flatpak, as `make flatpak` builds it locally:
+  # flatpak/com.togaware.APP.yml wraps the shared bundle in the GNOME
+  # runtime. The bundle names Flathub as its runtime repository, so
+  # `flatpak install` fetches the GNOME runtime when it is missing.
   #
-  # IN FLATHUB'S CONTAINER, because the plain runner will not do it.
-  # Ubuntu's flatpak-builder (1.4.2 on 24.04) built libplacebo and then mpv
-  # could not find it, "Dependency libplacebo not found"; Flathub's
-  # org.flatpak.Builder, as used locally, asks the host flatpak for the
-  # SDK over the session bus, which a runner does not have, "Unable to
-  # find sdk org.gnome.Sdk version 49". The container has the SDK and a
+  # 20261030 gjw As for the snap, an app without a flatpak/ folder skips
+  # the build steps, so the shared file suits every app.
+  #
+  # IN FLATHUB'S CONTAINER, because the plain runner will not do it, as
+  # radiopod found: Ubuntu's flatpak-builder is too old, and Flathub's
+  # org.flatpak.Builder asks the host for the SDK over a session bus the
+  # runner does not have. The container has the SDK and a
   # current flatpak-builder, and no Flutter, hence the shared bundle.
 
   package-linux-flatpak:
@@ -386,6 +418,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Download the bundle
+        if: hashFiles('flatpak/**') != ''
         uses: actions/download-artifact@v6
         with:
           name: ${{env.APP}}-linux-bundle
@@ -393,24 +426,23 @@ jobs:
       # Where the manifest looks for it, as after a local build.
 
       - name: Unpack the bundle
+        if: hashFiles('flatpak/**') != ''
         run: |
           mkdir -p build/linux/x64/release
           tar -C build/linux/x64/release -xf bundle.tar
           rm bundle.tar
 
-      # The action keeps the libass, libplacebo and mpv builds between
-      # runs under cache-key, so they are rebuilt only when the manifest
-      # changes.
-
       - name: Build Flatpak
+        if: hashFiles('flatpak/**') != ''
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
-          manifest-path: flatpak/com.togaware.radiopod.yml
+          manifest-path: flatpak/com.togaware.${{env.APP}}.yml
           bundle: ${{env.APP}}_amd64.flatpak
           cache-key: flatpak-builder-${{ hashFiles('flatpak/*.yml') }}
           upload-artifact: false
 
       - name: Upload flatpak artifact
+        if: hashFiles('flatpak/**') != ''
         uses: actions/upload-artifact@v6
         with:
           name: ${{env.APP}}-linux-flatpak
@@ -566,6 +598,21 @@ jobs:
             fi
           done
 
+      # 20261030 gjw RADIOPOD SPECIAL, as in build-linux.
+
+      - name: Scramble the dart defines
+        if: hashFiles('support/scramble_defines.dart') != ''
+        shell: bash
+        run: |
+          for name in $(yq '.build.secrets[]' .copier-answers.yml); do
+            export "$name=$(yq -p json ".[\"$name\"] // \"\"" <<< "$SECRETS")"
+          done
+          dart run support/scramble_defines.dart
+          echo "DEFINES=--dart-define-from-file=dart_defines.json --obfuscate --split-debug-info=build/symbols" >> "$GITHUB_ENV"
+          echo "APP_VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d+ -f1)" >> "$GITHUB_ENV"
+        env:
+          SECRETS: ${{ toJSON(secrets) }}
+
       # 20260814 gjw macos/Runner.xcodeproj is committed with my own
       # signing settings - automatic signing against team G7843T3SD3
       # with an "Apple Development" identity - which the runner cannot
@@ -587,18 +634,8 @@ jobs:
       # by the codesign step further below.
 
       - name: Build Flutter macOS app
-        # RADIOPOD SPECIAL
-   	#
-        # 20261016 gjw The Podcast Index pair is scrambled into dart_defines.json
-        # (support/scramble_defines.dart) and the build obfuscated, so neither
-        # secret sits in the binary as plain text.
-        run: |
-          flutter pub get
-          dart run support/scramble_defines.dart
-          flutter build macos --release --dart-define-from-file=dart_defines.json --obfuscate --split-debug-info=build/symbols
+        run: flutter build macos --release ${{ env.DEFINES }}
         env:
-          PODCAST_INDEX_KEY: ${{ secrets.PODCAST_INDEX_KEY }}
-          PODCAST_INDEX_SECRET: ${{ secrets.PODCAST_INDEX_SECRET }}
           FLUTTER_XCODE_CODE_SIGN_STYLE: Manual
           FLUTTER_XCODE_CODE_SIGN_IDENTITY: "-"
           FLUTTER_XCODE_DEVELOPMENT_TEAM: ""
@@ -1048,6 +1085,21 @@ jobs:
       - name: List installed provisioning profiles
         run: ls -lh ~/Library/MobileDevice/Provisioning\ Profiles
 
+      # 20261030 gjw RADIOPOD SPECIAL, as in build-linux.
+
+      - name: Scramble the dart defines
+        if: hashFiles('support/scramble_defines.dart') != ''
+        shell: bash
+        run: |
+          for name in $(yq '.build.secrets[]' .copier-answers.yml); do
+            export "$name=$(yq -p json ".[\"$name\"] // \"\"" <<< "$SECRETS")"
+          done
+          dart run support/scramble_defines.dart
+          echo "DEFINES=--dart-define-from-file=dart_defines.json --obfuscate --split-debug-info=build/symbols" >> "$GITHUB_ENV"
+          echo "APP_VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d+ -f1)" >> "$GITHUB_ENV"
+        env:
+          SECRETS: ${{ toJSON(secrets) }}
+
       # Build and sign the app
 
       - name: Build Flutter iOS app archive
@@ -1064,18 +1116,7 @@ jobs:
         # Connect refuses a number it has seen before, so that increment is
         # what makes a second upload possible. Nothing is passed here: one
         # source of truth, and `flutter build` already reads it.
-        # RADIOPOD SPECIAL
-   	#
-        # 20261016 gjw The Podcast Index pair is scrambled into dart_defines.json
-        # (support/scramble_defines.dart) and the build obfuscated, so neither
-        # secret sits in the binary as plain text.
-        run: |
-          flutter pub get
-          dart run support/scramble_defines.dart
-          flutter build ipa --export-options-plist=ios/GithubActionsExportOptions.plist --dart-define-from-file=dart_defines.json --obfuscate --split-debug-info=build/symbols
-        env:
-          PODCAST_INDEX_KEY: ${{ secrets.PODCAST_INDEX_KEY }}
-          PODCAST_INDEX_SECRET: ${{ secrets.PODCAST_INDEX_SECRET }}
+        run: flutter build ipa --export-options-plist=ios/GithubActionsExportOptions.plist ${{ env.DEFINES }}
 
       - name: Note the xcarchive created
         run: |
@@ -1188,8 +1229,9 @@ jobs:
   ########################################################################
   # ANDROID
   #
-  # 20261028 gjw The apk and aab are built and signed here rather than on
-  # Graham's machine. The upload key reaches the runner as four secrets:
+  # 20261029 gjw The apk and aab are built and signed here rather than on
+  # Graham's machine. The upload key reaches the runner as
+  # four secrets:
   #
   #   ANDROID_KEYSTORE       the .jks, base64 encoded
   #   ANDROID_KEYSTORE_PWD   storePassword
@@ -1279,26 +1321,28 @@ jobs:
             echo "storeFile=upload-keystore.jks"
           } > android/key.properties
 
-      - name: Get Version from pubspec.yaml
-        run: |
-          version=$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d+ -f1)
-          echo "APP_VERSION=$version" >> $GITHUB_ENV
+      # 20261030 gjw RADIOPOD SPECIAL, as in build-linux.
 
-      # 20261016 gjw The Podcast Index pair is scrambled into dart_defines.json
-      # (support/scramble_defines.dart) and the build obfuscated, so neither
-      # secret sits in the binary as plain text.
+      - name: Scramble the dart defines
+        if: hashFiles('support/scramble_defines.dart') != ''
+        shell: bash
+        run: |
+          for name in $(yq '.build.secrets[]' .copier-answers.yml); do
+            export "$name=$(yq -p json ".[\"$name\"] // \"\"" <<< "$SECRETS")"
+          done
+          dart run support/scramble_defines.dart
+          echo "DEFINES=--dart-define-from-file=dart_defines.json --obfuscate --split-debug-info=build/symbols" >> "$GITHUB_ENV"
+          echo "APP_VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d+ -f1)" >> "$GITHUB_ENV"
+        env:
+          SECRETS: ${{ toJSON(secrets) }}
 
       - name: Build Flutter Android apk and aab
         run: |
-          dart run support/scramble_defines.dart
-          flutter build apk --release --dart-define-from-file=dart_defines.json --obfuscate --split-debug-info=build/symbols
-          flutter build appbundle --release --dart-define-from-file=dart_defines.json --obfuscate --split-debug-info=build/symbols
+          flutter build apk --release ${{ env.DEFINES }}
+          flutter build appbundle --release ${{ env.DEFINES }}
           mkdir -p installers
           cp build/app/outputs/flutter-apk/app-release.apk installers/${{ env.APP }}.apk
           cp build/app/outputs/bundle/release/app-release.aab installers/${{ env.APP }}.aab
-        env:
-          PODCAST_INDEX_KEY: ${{ secrets.PODCAST_INDEX_KEY }}
-          PODCAST_INDEX_SECRET: ${{ secrets.PODCAST_INDEX_SECRET }}
 
       # A debug-signed artefact is unshippable and looks fine until Play
       # refuses it, so say whose key signed it and fail on the debug one.
@@ -1329,6 +1373,7 @@ jobs:
       # Needed to read an obfuscated stack trace from this build.
 
       - name: Upload debug symbols
+        if: env.DEFINES != ''
         uses: actions/upload-artifact@v6
         with:
           name: ${{ env.APP }}-android-symbols-${{ env.APP_VERSION }}
@@ -1369,19 +1414,23 @@ jobs:
       - name: Enable Windows Desktop
         run: flutter config --enable-windows-desktop
 
-      - name: Build Flutter Windows app
-        # RADIOPOD SPECIAL
-   	#
-        # 20261016 gjw The Podcast Index pair is scrambled into dart_defines.json
-        # (support/scramble_defines.dart) and the build obfuscated, so neither
-        # secret sits in the binary as plain text.
+      # 20261030 gjw RADIOPOD SPECIAL, as in build-linux.
+
+      - name: Scramble the dart defines
+        if: hashFiles('support/scramble_defines.dart') != ''
+        shell: bash
         run: |
-          flutter pub get
+          for name in $(yq '.build.secrets[]' .copier-answers.yml); do
+            export "$name=$(yq -p json ".[\"$name\"] // \"\"" <<< "$SECRETS")"
+          done
           dart run support/scramble_defines.dart
-          flutter build windows --release --dart-define-from-file=dart_defines.json --obfuscate --split-debug-info=build/symbols
+          echo "DEFINES=--dart-define-from-file=dart_defines.json --obfuscate --split-debug-info=build/symbols" >> "$GITHUB_ENV"
+          echo "APP_VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d+ -f1)" >> "$GITHUB_ENV"
         env:
-          PODCAST_INDEX_KEY: ${{ secrets.PODCAST_INDEX_KEY }}
-          PODCAST_INDEX_SECRET: ${{ secrets.PODCAST_INDEX_SECRET }}
+          SECRETS: ${{ toJSON(secrets) }}
+
+      - name: Build Flutter Windows app
+        run: flutter build windows --release ${{ env.DEFINES }}
 
       # Package as ZIP
 
@@ -1402,6 +1451,10 @@ jobs:
 
       - name: Check the DLLs for Inclusion in the .iss script
         run: dir D:\a\${{ env.APP }}\${{ env.APP }}\build\windows\x64\runner\Release\
+
+      # 20261030 gjw installers/app-windows.iss reads APP_VERSION as
+      # the installer's AppVersion, which winget matches against the
+      # manifest's PackageVersion. The .iss fails without it.
 
       - name: Get Version from pubspec.yaml
         run: |
