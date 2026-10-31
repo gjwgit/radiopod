@@ -405,9 +405,27 @@ class RadioAudioHandler extends BaseAudioHandler {
           )
           .timeout(_openTimeout);
 
+      // 20261031 gjw EARBUDS PUT AWAY WHILE THE STATION OPENS. After the
+      // sleep timer's stop, an earbud going into its case sends a button
+      // press while still connected, so [click] lets it start playback.
+      // Opening the station again takes seconds, the earbuds disconnect
+      // meanwhile, and just_audio's pause on the disconnect finds nothing
+      // yet playing to pause: the station then came out of the phone's
+      // speaker in the middle of the night. So a start from a headset
+      // looks again, once the station has opened, before it plays.
+
+      final headphonesGone = _byHeadset && !await _headphonesConnected();
+
       // Another station, or a Stop, came along while this one loaded.
 
       if (open != _openCount) return;
+
+      if (headphonesGone) {
+        debugPrint('[RadioAudioHandler] headphones gone: not playing');
+        await stop();
+
+        return;
+      }
 
       // 20261013 gjw BEFORE play(), not after: just_audio's play() future
       // completes only when playback later pauses or stops.
@@ -493,6 +511,7 @@ class RadioAudioHandler extends BaseAudioHandler {
       return;
     }
 
+    debugPrint('[RadioAudioHandler] $button from a headset');
     _byHeadset = true;
     try {
       await super.click(button);
