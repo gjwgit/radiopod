@@ -4,7 +4,24 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3
+/// Licensed under the GNU General Public License, Version 3 (the "License").
+///
+/// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -14,6 +31,8 @@ import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/services/browse_tree.dart';
+import 'package:radiopod/services/station_icon_cache.dart';
+import 'package:radiopod/services/station_logo_cache.dart';
 
 const _stations = [
   Station(id: 's1', name: 'Zulu FM', url: 'https://live.example/z'),
@@ -145,6 +164,64 @@ void main() {
       expect(stationMediaItem(station, browseAllStationsId).artUri, isNull);
     });
 
+    // 20261005 gjw A picture the user chose beats the station's own logo.
+    //
+    // Station.icon is base64 in the Pod data and there is nothing for a head
+    // unit to fetch, so these were invisible in the car while the app showed
+    // them. StationIconCache writes the icon out and the artUri points at
+    // that file. These tests drive the cache through its test seam rather
+    // than touching the filesystem.
+
+    test('a chosen icon wins over the station logo, on every surface', () {
+      StationIconCache.resetForTest();
+      StationIconCache.debugSetPath('s1', '/tmp/station_icons/s1.png');
+      addTearDown(StationIconCache.resetForTest);
+
+      const station = Station(
+        id: 's1',
+        name: 'Alpha FM',
+        url: 'https://live.example/a',
+        favicon: 'https://logo.example/alpha.png',
+      );
+
+      // 20261006 gjw This asserted the OPPOSITE for a day, because a chosen
+      // icon was a file:// URI that Android Auto's own process could not
+      // read: preferring it on a browse row showed nothing at all, which was
+      // worse than the logo. StationIconProvider serves the icons as
+      // content://, so the row and the now playing item agree again.
+
+      expect(
+        stationMediaItem(station, browseAllStationsId).artUri,
+        sessionArtUri(station),
+      );
+      expect(sessionArtUri(station)?.toFilePath(), '/tmp/station_icons/s1.png');
+    });
+
+    // 20261018 gjw The logo reaches the session as the KEPT copy, never as
+    // its https address, which audio_service and the car would each fetch
+    // as the station played and so tell the logo's host what was on.
+
+    test('the kept logo is used when there is no chosen icon', () {
+      StationIconCache.resetForTest();
+      StationLogoCache.resetForTest();
+      StationLogoCache.debugSetKept(
+        'https://logo.example/alpha.png',
+        '/tmp/station_icons',
+      );
+      addTearDown(StationLogoCache.resetForTest);
+
+      const station = Station(
+        id: 's1',
+        name: 'Alpha FM',
+        url: 'https://live.example/a',
+        favicon: 'https://logo.example/alpha.png',
+      );
+      final art = stationMediaItem(station, browseAllStationsId).artUri;
+
+      expect(art?.isScheme('file'), isTrue);
+      expect(art?.toFilePath(), startsWith('/tmp/station_icons/logo_'));
+    });
+
     test('the subtitle is the station details when no track is known', () {
       const station = Station(
         id: 's1',
@@ -155,7 +232,7 @@ void main() {
       );
       final item = stationMediaItem(station, browseAllStationsId);
 
-      expect(item.artist, 'Australia · MP3');
+      expect(item.artist, 'Radio · Australia · MP3');
       expect(item.extras?['track'], isNull);
     });
 
@@ -188,7 +265,10 @@ void main() {
       expect(item.artist, 'Some Song');
     });
 
-    test('accepts an https favicon', () {
+    test('a logo not kept yet gives no artwork, never its address', () {
+      StationIconCache.resetForTest();
+      StationLogoCache.resetForTest();
+
       const station = Station(
         id: 's9',
         name: 'Logo',
@@ -196,10 +276,7 @@ void main() {
         favicon: 'https://live.example/logo.png',
       );
 
-      expect(
-        stationMediaItem(station, browseAllStationsId).artUri.toString(),
-        'https://live.example/logo.png',
-      );
+      expect(stationMediaItem(station, browseAllStationsId).artUri, isNull);
     });
   });
 }

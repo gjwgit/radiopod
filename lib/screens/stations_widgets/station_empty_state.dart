@@ -1,12 +1,27 @@
 /// StationEmptyState — what the Stations screen shows before anything is saved.
 ///
-// Time-stamp: <Tuesday 2026-09-29 16:07:27 +1000 Graham Williams>
+// Time-stamp: <Wednesday 2026-10-21 08:21:55 +1100 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3 (the "License");
+/// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
 /// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -48,8 +63,9 @@ class StationEmptyState extends StatelessWidget {
               filtered
                   ? 'No saved station matches what you typed. Clear the '
                         'filter to see your whole library.'
-                  : 'Use the Search button 🔍 to find stations in the '
-                        'Radio-Browser database, or the Export/Import '
+                  : 'Use the Subscribe button 🔍 to find stations in the '
+                        'Radio-Browser database and podcasts in the Podcast '
+                        'Index, or the Import/Export '
                         'button 📥 to import a M3U or PLS playlist you '
                         'already have, perhaps from another app or '
                         'perhaps from a friend.',

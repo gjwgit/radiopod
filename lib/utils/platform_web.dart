@@ -4,9 +4,22 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3 (the "License");
+/// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
 /// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
 ///
 /// Authors: Graham Williams
 
@@ -28,6 +41,21 @@ bool get needsIcyPolling => false;
 /// still be heard. See the io version for the platforms that do pause.
 
 bool get stopByPause => false;
+
+/// False on the web for a different reason than the desktop: CORS.
+///
+/// 20261005 gjw audio_service fetches artwork BYTES through
+/// flutter_cache_manager, and station artwork is an arbitrary third-party URL
+/// that essentially never sends Access-Control-Allow-Origin — the same wall
+/// that forces WebHtmlElementStrategy.fallback on the station list
+/// (CLAUDE.md §13). So nearly every fetch fails and prints a stack trace.
+
+bool get showsMediaArt => false;
+
+/// The web has no content:// scheme, and no media session art at all — see
+/// showsMediaArt just above.
+
+bool get usesContentIcons => false;
 
 /// No-op on web: just_audio plays through the browser's own audio element,
 /// and the libmpv LC_NUMERIC workaround applies to native Linux only.

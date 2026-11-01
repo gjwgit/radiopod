@@ -4,9 +4,24 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3 (the "License");
+/// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
 /// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -15,6 +30,8 @@ import 'package:audio_service/audio_service.dart';
 import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
+import 'package:radiopod/services/station_icon_cache.dart';
+import 'package:radiopod/services/station_logo_cache.dart';
 
 /// The two levels of the browse tree, built as plain functions over the
 /// library so the audio handler stays about playback.
@@ -89,11 +106,17 @@ List<MediaItem> browseRoot(List<Playlist> playlists) => [
 /// can ask for a folder that has since been deleted, and an empty folder is
 /// the honest answer.
 
+///
+/// [detailsOf] may supply a row's second line in place of the station's
+/// own details; the handler uses it to give each podcast its count of casts
+/// still to hear, which this pure function has no way to know.
+
 List<MediaItem> browseChildren(
   String parentId,
   List<Station> stations,
-  List<Playlist> playlists,
-) {
+  List<Playlist> playlists, {
+  String? Function(Station)? detailsOf,
+}) {
   if (parentId == browseRootId) return browseRoot(playlists);
 
   // 20260922 gjw Library order, NOT alphabetical. The user arranges the
@@ -102,7 +125,10 @@ List<MediaItem> browseChildren(
   // driver wants first in the car. Re-sorting here would throw that away.
 
   if (parentId == browseAllStationsId) {
-    return [for (final s in stations) stationMediaItem(s, parentId)];
+    return [
+      for (final s in stations)
+        stationMediaItem(s, parentId, details: detailsOf?.call(s)),
+    ];
   }
 
   if (!parentId.startsWith(browsePlaylistPrefix)) return [];
@@ -118,7 +144,12 @@ List<MediaItem> browseChildren(
 
   return [
     for (final id in playlist.stationIds)
-      if (byId[id] != null) stationMediaItem(byId[id]!, parentId),
+      if (byId[id] != null)
+        stationMediaItem(
+          byId[id]!,
+          parentId,
+          details: detailsOf?.call(byId[id]!),
+        ),
   ];
 }
 
@@ -136,34 +167,71 @@ List<MediaItem> browseChildren(
 /// is where a listener glancing down expects to find what they are hearing.
 /// The artist is left empty so iOS does not print the same thing twice.
 
+///
+/// [details], when given, stands in for the station's own details. A podcast
+/// is not live: it is a row that plays recorded casts.
+
 MediaItem stationMediaItem(
   Station station,
   String parentId, {
   String? track,
+  String? details,
   String? caption,
 }) => MediaItem(
   id: stationMediaId(parentId, station.id),
   title: caption ?? station.name,
   artist: caption != null
       ? null
-      : track ?? (station.subtitle.isEmpty ? null : station.subtitle),
+      : track ??
+            details ??
+            (station.subtitle.isEmpty ? null : station.subtitle),
   album: caption != null ? [station.name, ?track].join(' · ') : appName,
-  artUri: _artUri(station.favicon),
+  artUri: sessionArtUri(station),
   playable: true,
-  isLive: true,
+  isLive: !station.isPodcast,
   extras: {'stationId': station.id, 'track': ?track, 'caption': ?caption},
 );
 
-/// A station logo URL as a [Uri], or null when there is none or it will not
-/// parse. Only http(s) is accepted — a head unit will not fetch anything
-/// else, and an odd scheme in Pod data should not reach the media session.
+/// Artwork for a station: the picture the user chose if there is one,
+/// otherwise the station's own logo.
+///
+/// 20261005 gjw THE USER'S CHOICE WINS. They went out of their way to pick
+/// it, usually because the station's own logo was missing or wrong, so
+/// preferring the logo would undo the very thing they did.
+///
+/// 20261006 gjw THIS IS NOW ONE RULE FOR EVERY SURFACE, which it could not
+/// be while a chosen icon was a file:// URI.
+///
+/// A browse row and the NARROW now-playing card beside the map carry only a
+/// URI: audio_service builds a MediaDescriptionCompat with setIconUri
+/// (AudioServicePlugin.java:1174) and ANDROID AUTO'S OWN PROCESS fetches it.
+/// It cannot read our app-private files, so a chosen icon was blank on both
+/// while an https station logo was not. Only the WIDE now-playing view
+/// worked, because that one draws the bitmap audio_service loads in our
+/// process (AudioService.java:811).
+///
+/// That is why this was split in two for a day: preferring the chosen icon
+/// everywhere made the car's list WORSE than before the feature existed, a
+/// station with both an icon and a logo going from showing the logo to
+/// showing nothing. StationIconProvider removes the reason for the split by
+/// serving the icons to Auto as content://, readable across processes —
+/// see StationIconCache.uriFor.
+///
+/// 20261018 gjw THE LOGO IS THE KEPT COPY, NEVER ITS URL. Handing the
+/// session the https address made audio_service fetch it, and Android Auto
+/// fetch it again in Google's process, each time a station played: the logo
+/// host learnt what was on. StationLogoCache keeps each library logo as a
+/// file served like a chosen icon. A logo not kept yet (a Search preview, a
+/// dead link) shows no artwork rather than going to fetch it.
 
-Uri? _artUri(String? favicon) {
-  if (favicon == null || favicon.isEmpty) return null;
-  final uri = Uri.tryParse(favicon);
-  if (uri == null || !uri.hasScheme) return null;
-
-  return (uri.isScheme('http') || uri.isScheme('https')) ? uri : null;
-}
+Uri? sessionArtUri(Station station) =>
+    StationIconCache.uriFor(station.id) ??
+    StationLogoCache.uriFor(station.favicon);
 
 String _stationCount(int n) => '$n station${n == 1 ? '' : 's'}';
+
+/// A podcast row's second line in the car: short, because a head unit
+/// gives it little room.
+
+String podcastCarDetails(int toPlay) =>
+    toPlay == 0 ? 'Podcast · all heard' : 'Podcast · $toPlay to play';

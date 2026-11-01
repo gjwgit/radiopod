@@ -4,7 +4,24 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3
+/// Licensed under the GNU General Public License, Version 3 (the "License").
+///
+/// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -54,6 +71,32 @@ void main() {
 
     test('falls back to the whole string when there is no host', () {
       expect(nameFromUrl('not a url'), 'not a url');
+    });
+  });
+
+  group('exportFileName', () {
+    final day = DateTime(2026, 10, 21, 23, 59);
+
+    test('the whole library is the app name, lower case, and the date', () {
+      expect(exportFileName('', 'm3u', now: day), 'radiopod_20261021.m3u');
+    });
+
+    test('a playlist adds its own name, lower case, one underscore', () {
+      expect(
+        exportFileName('Drive / Work', 'pls', now: day),
+        'radiopod_drive_work_20261021.pls',
+      );
+      expect(
+        exportFileName('Jazz: _late_ night!', 'm3u', now: day),
+        'radiopod_jazz_late_night_20261021.m3u',
+      );
+    });
+
+    test('podcasts are dated too', () {
+      expect(
+        exportFileName('podcasts', 'opml', now: DateTime(2026, 3, 4)),
+        'radiopod_podcasts_20260304.opml',
+      );
     });
   });
 

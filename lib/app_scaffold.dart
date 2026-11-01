@@ -1,6 +1,6 @@
 /// RadioPod — application scaffold configuration.
 ///
-// Time-stamp: <Friday 2026-09-25 05:44:56 +1000 Graham Williams>
+// Time-stamp: <Wednesday 2026-10-21 08:20:43 +1100 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -25,6 +25,8 @@
 
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
@@ -40,12 +42,16 @@ import 'package:radiopod/screens/stations_screen.dart';
 import 'package:radiopod/screens/stations_widgets/new_station_dialog.dart';
 import 'package:radiopod/screens/transfer_screen.dart';
 import 'package:radiopod/services/app_provider.dart'
-    show AppProvider, StartupPhase;
+    show AppProvider, PodcastLibrary, StartupPhase;
 import 'package:radiopod/services/captions/caption_service.dart';
 import 'package:radiopod/services/captions/speech_model.dart';
 import 'package:radiopod/services/player.dart';
+import 'package:radiopod/services/station_lookup.dart';
+import 'package:radiopod/utils/sleep_timer_text.dart';
 import 'package:radiopod/widgets/caption_panel.dart';
-import 'package:radiopod/widgets/pod_refresh_action.dart';
+import 'package:radiopod/widgets/copy_to_pod_offer.dart';
+import 'package:radiopod/widgets/error_dialog.dart';
+import 'package:radiopod/widgets/podcast_refresh_action.dart';
 
 const appScaffold = AppScaffold();
 
@@ -86,6 +92,14 @@ class _AppScaffoldState extends State<AppScaffold> {
         )
       : Stream.value(null);
 
+  /// Whole minutes left on the sleep timer, or null when none is set.
+  ///
+  /// Mirrored into State so the app bar can show it. SleepTimer notifies
+  /// only when the MINUTE changes, so this rebuilds the scaffold once a
+  /// minute rather than once a second.
+
+  int? _sleepMinutes;
+
   /// Add a station by hand.
   ///
   /// Lives here rather than in StationsScreen because the app bar is built
@@ -102,6 +116,7 @@ class _AppScaffoldState extends State<AppScaffold> {
     if (station == null || !mounted) return;
 
     await provider.addStation(station);
+    unawaited(fillFromRadioBrowser(provider, station.id));
     if (!mounted) return;
     showPositiveSnackBar(
       context,
@@ -109,10 +124,52 @@ class _AppScaffoldState extends State<AppScaffold> {
     );
   }
 
+  /// Keeps episode progress moving between devices through the Pod.
+  ///
+  /// 20261017 gjw Progress is written when the app leaves the screen, as it
+  /// may then be closed or frozen, and read back when it returns, so an
+  /// episode heard on the phone carries on from the same place here.
+
+  late final AppLifecycleListener _lifecycle;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _initKeys());
+    _lifecycle = AppLifecycleListener(
+      onInactive: () => unawaited(context.read<AppProvider>().flushCasts()),
+      onResume: () => unawaited(context.read<AppProvider>().syncCasts()),
+    );
+
+    _sleepMinutes = Player.sleepTimer.minutesLeft.value;
+    Player.sleepTimer.minutesLeft.addListener(_onSleepTick);
+  }
+
+  @override
+  void dispose() {
+    // The timer OUTLIVES this scaffold and keeps counting — that is the
+    // point of it. Only the listener goes.
+
+    Player.sleepTimer.minutesLeft.removeListener(_onSleepTick);
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  void _toggleSleepTimer() {
+    final timer = Player.sleepTimer;
+    final started = timer.toggle();
+
+    showPositiveSnackBar(
+      context,
+      started
+          ? 'Playback will stop in ${sleepTimerLabel(timer.defaultDuration)}'
+          : 'Sleep timer turned off',
+    );
+  }
+
+  void _onSleepTick() {
+    if (!mounted) return;
+    setState(() => _sleepMinutes = Player.sleepTimer.minutesLeft.value);
   }
 
   Future<void> _initKeys() async {
@@ -127,7 +184,43 @@ class _AppScaffoldState extends State<AppScaffold> {
       // Stations list and no way to tell why.
 
       final webId = await getWebId();
-      final loggedIn = webId != null && webId.isNotEmpty;
+      final hasWebId = webId != null && webId.isNotEmpty;
+
+      // 20261004 gjw A STORED WEBID IS NOT A SESSION.
+      //
+      // `getWebId()` reports only that a WebID sits in secure storage.
+      // `isUserLoggedIn()` also requires a non-expired access token, and the
+      // two part company once a token ages out: the WebID is still there, so
+      // this used to decide "logged in", prompt for the security key, and
+      // display the WebID while every operation behind the prompt failed
+      // with "Authentication data not available. Please login first". No key
+      // the user typed could have worked.
+      //
+      // Short-circuited deliberately, so someone who tapped Continue — no
+      // WebID — never reaches isUserLoggedIn and never touches the keychain.
+      // That is what the note below is protecting.
+
+      final loggedIn = hasWebId && await isUserLoggedIn();
+
+      if (hasWebId && !loggedIn) {
+        provider.markSessionExpired();
+
+        if (!mounted) return;
+
+        // Worth interrupting for: the app is about to behave differently
+        // from how it was left, and the remedy is a deliberate act.
+
+        await showErrorDialog(
+          context,
+          title: 'Your Pod session has expired',
+          message:
+              'RadioPod is using the copy of your stations held on this '
+              'device. Your Pod has not been touched.\n\n'
+              'Log in again from the profile menu to reconnect it.',
+        );
+
+        if (!mounted) return;
+      }
 
       // 20260922 gjw Tell the provider what we just found out rather than
       // letting it ask solidpod again. `isUserLoggedIn` starts by probing the
@@ -139,10 +232,46 @@ class _AppScaffoldState extends State<AppScaffold> {
 
       provider.setLoggedIn(loggedIn);
 
+      // 20261002 gjw Ask for the security key AT MOST ONCE a session.
+      //
+      // solidui's key screen is fullscreen, and its Cancel runs
+      // `pushReplacement(context, widget.child)` — the child being this very
+      // AppScaffold. Cancelling therefore rebuilt the scaffold, whose
+      // initState called _initKeys again, which prompted again: an endless
+      // loop with no way into the app, and no way out of it on a restart
+      // either, since the Pod session persists.
+      //
+      // getKeyFromUserIfRequired returns void and cannot say whether the key
+      // was entered or the prompt dismissed, so ask the key store afterwards.
+      // Still no key means dismissed — or a failure, which wants the same
+      // treatment: let them into the app on the device library instead of
+      // asking again.
+
       if (loggedIn) {
-        if (!mounted) return;
-        await getKeyFromUserIfRequired(context, widget);
-        if (!mounted) return;
+        if (provider.claimKeyPrompt()) {
+          if (!mounted) return;
+          await getKeyFromUserIfRequired(context, widget);
+          if (!mounted) return;
+        }
+
+        // Checked by EVERY instance, not only the one that prompted. The
+        // scaffold Cancel builds gets here having skipped the prompt, and
+        // without this it would load from the Pod it cannot decrypt and
+        // throw twice over.
+
+        if (!await KeyManager.hasSecurityKey()) {
+          provider.declineKeyPrompt();
+          if (!mounted) return;
+        } else {
+          // 20261014 gjw Tell the footer NOW. solidui checks the key once as
+          // the scaffold is first drawn, before the prompt has been answered,
+          // so it reads "not saved" and lagged until some later check. The
+          // provider is set first so its onKeyStatusChanged sees no change
+          // and does not start a second load alongside the one below.
+
+          provider.setKeySaved(true);
+          securityKeyNotifier.updateStatus(true);
+        }
       }
 
       provider.setStartupPhase(StartupPhase.loading);
@@ -156,18 +285,23 @@ class _AppScaffoldState extends State<AppScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    // Only rebuild this scaffold when isKeySaved itself changes — not on every
-    // AppProvider notify, which happens on loads, edits and imports.
+    // Only rebuild this scaffold when isKeySaved, or whether there are any
+    // podcasts to refresh, changes — not on every AppProvider notify, which
+    // happens on loads, edits and imports. A record compares by value.
 
-    return Selector<AppProvider, bool>(
-      selector: (_, p) => p.isKeySaved,
-      builder: (context, isKeySaved, _) => ValueListenableBuilder<bool>(
+    return Selector<AppProvider, ({bool isKeySaved, bool hasPodcasts})>(
+      selector: (_, p) => (
+        isKeySaved: p.isKeySaved,
+        hasPodcasts: p.stations.any((s) => s.isPodcast),
+      ),
+      builder: (context, state, _) => ValueListenableBuilder<bool>(
         valueListenable: CaptionService.instance.active,
         builder: (context, captionsOn, _) => StreamBuilder<Station?>(
           stream: _station,
           builder: (context, station) => _scaffold(
             context,
-            isKeySaved: isKeySaved,
+            isKeySaved: state.isKeySaved,
+            hasPodcasts: state.hasPodcasts,
             captionsOn: captionsOn,
             station: station.data,
           ),
@@ -243,6 +377,7 @@ class _AppScaffoldState extends State<AppScaffold> {
   Widget _scaffold(
     BuildContext context, {
     required bool isKeySaved,
+    required bool hasPodcasts,
     required bool captionsOn,
     required Station? station,
   }) => SolidScaffold(
@@ -269,9 +404,12 @@ class _AppScaffoldState extends State<AppScaffold> {
           ### Key features
 
           - Search the community-run Radio-Browser station database
+          - Follow podcasts from the open Podcast Index, resuming each episode
+            where you left off
           - Save stations and group them into playlists
           - Import and export M3U and PLS playlist files
-          - Android Auto support for browsing and playing while driving
+          - Android Auto and Apple CarPlay support for browsing and playing
+            while driving
           - Background playback with lock screen and headset controls
           - Live captions for English and Chinese stations, recognised on the
             device, on iOS and macOS
@@ -281,14 +419,16 @@ class _AppScaffoldState extends State<AppScaffold> {
 
           ### Privacy
 
-          RadioPod collects nothing and reports nothing. The only third party
-          it contacts is Radio-Browser, and only when you search — the search
-          text and an app name are all that are sent. Live captions, when you
-          first switch them on, download a speech model; recognition then
-          happens on your device. RadioPod deliberately
-          does not call the Radio-Browser click-reporting endpoint, so no
-          record of what you listen to leaves your device. Your stations,
-          playlists and listening are never shared.
+          RadioPod collects nothing and reports nothing. The only third
+          parties it contacts are Radio-Browser and Podcast Index, and only
+          when you search — the search text and an app name are all that are
+          sent. Live captions, when you first switch them on, download a
+          speech model; recognition then happens on your device. RadioPod
+          deliberately does not call the Radio-Browser
+          click-reporting endpoint, so no record of what you listen to leaves
+          your device. Stations and podcasts are played straight from the
+          broadcaster or publisher. Your stations, podcasts, playlists and
+          listening are never shared.
 
           For more information, visit the
           [RadioPod](https://github.com/gjwgit/radiopod) GitHub repository and
@@ -304,6 +444,10 @@ class _AppScaffoldState extends State<AppScaffold> {
         changelogUrl:
             'https://github.com/gjwgit/radiopod/blob/dev/CHANGELOG.md',
       ),
+      // 20261017 gjw Refresh from Pod lives in the profile menu, offered
+      // only while logged in, above Change POD Password.
+
+      onRefreshFromPod: context.read<AppProvider>().refreshFromPod,
       actions: [
         // Captions belong to what is playing, not to any one screen, so
         // the button lives in the app bar that every screen shares, and
@@ -336,10 +480,38 @@ class _AppScaffoldState extends State<AppScaffold> {
               ''',
           onPressed: _newStation,
         ),
-        buildPodRefreshAction(
-          context: context,
-          onRefresh: context.read<AppProvider>().refreshFromPod,
+        // 20261006 gjw A PLAIN ON/OFF SWITCH. How long it runs for is
+        // a Settings choice made once; deciding to sleep is nightly and
+        // costs one tap. The bar can only carry an icon, so the time
+        // remaining lives in the tooltip.
+        //
+        // A timer glyph, not a moon: bedtime_outlined read as the dark
+        // mode toggle sitting a few icons away.
+
+        SolidAppBarAction(
+          id: 'sleep-timer',
+          icon: _sleepMinutes == null ? Icons.timer_outlined : Icons.timer,
+          color: _sleepMinutes == null
+              ? null
+              : Theme.of(context).colorScheme.primary,
+          tooltip:
+              '''
+
+              **Sleep timer**
+
+              Tap to keep playing for
+              ${sleepTimerLabel(Player.sleepTimer.defaultDuration)} and then
+              fade out and stop. Tap again to turn it off, which also brings
+              back the volume if it is already fading. Playback
+              ${sleepTimerSummary(Player.sleepTimer.remaining)}.
+
+              Change how long it runs in Settings. Only playback stops — the
+              app stays open, so a station is one tap away again.
+
+              ''',
+          onPressed: _toggleSleepTimer,
         ),
+        buildPodcastRefreshAction(context: context, visible: hasPodcasts),
       ],
     ),
     onMenuSelected: (i) => setState(() => _tab = i),
@@ -353,17 +525,13 @@ class _AppScaffoldState extends State<AppScaffold> {
             'Drag a station by the grip on the right to put the list in '
             'the order you want. That order is saved, and is the order '
             'the car and an export see. Dragging is unavailable while '
-            'the filter box has something in it.',
+            'the filter box has something in it. Swipe a station to the '
+            'left to delete it. Pull the list down to refresh it from '
+            'your Pod and check your podcasts for new episodes.\n\n'
+            'The filter matches names, and for a podcast its description '
+            'and the titles and show notes of its episodes, so a topic '
+            'finds the podcast that covered it.',
         child: CaptionArea(child: StationsScreen()),
-      ),
-      const SolidMenuItem(
-        title: 'Search',
-        icon: Icons.search,
-        tooltip:
-            '**Search**\n\n'
-            'Find stations in the community-run Radio-Browser database '
-            'and save the ones you like. Only your search text is sent.',
-        child: CaptionArea(child: SearchScreen()),
       ),
       const SolidMenuItem(
         title: 'Playlists',
@@ -371,15 +539,27 @@ class _AppScaffoldState extends State<AppScaffold> {
         tooltip:
             '**Playlists**\n\n'
             'Group your stations into named lists. Playlists are the '
-            'folders Android Auto shows you while driving.',
+            'folders Android Auto and CarPlay show you while driving. '
+            'Manage playlists ticks stations into them.',
         child: CaptionArea(child: PlaylistsScreen()),
       ),
       const SolidMenuItem(
-        title: 'Export/Import',
+        title: 'Subscribe',
+        icon: Icons.search,
+        tooltip:
+            '**Subscribe**\n\n'
+            'Find radio stations in the community-run Radio-Browser '
+            'database, and podcasts in the open Podcast Index, and '
+            'subscribe to the ones you like. Only your search text is '
+            'sent.',
+        child: CaptionArea(child: SearchScreen()),
+      ),
+      const SolidMenuItem(
+        title: 'Import/Export',
         icon: Icons.save_alt,
         tooltip:
-            '**Export/Import**\n\n'
-            'Export and import playlists in the open M3U and PLS formats.',
+            '**Import/Export**\n\n'
+            'Import and export playlists in the open M3U and PLS formats.',
         child: CaptionArea(child: TransferScreen()),
       ),
       const SolidMenuItem(
@@ -415,7 +595,9 @@ class _AppScaffoldState extends State<AppScaffold> {
             // its keychain access, because the answer has genuinely
             // changed and the user is already in a login flow.
 
-            provider.resolveSource().then((_) => provider.load());
+            provider.resolveSource().then((_) => provider.load()).then((_) {
+              if (mounted) offerCopyToPod(this.context);
+            });
           }
         },
       ),

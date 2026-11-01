@@ -52,8 +52,16 @@
 	<key>generateAppStoreInformation</key>
 	<false/>
 
+	<!--
+		20260929 gjw FALSE deliberately. This runs a strip over the exported
+		app, and the reported signature of the fast_rsa fault is exactly that
+		it survives a local Release build and only breaks once the archive has
+		been exported and uploaded. STRIP_STYLE in Flutter/Release.xcconfig is
+		the primary fix; this removes the second place the symbol could be
+		taken out. The cost is a slightly larger upload.
+	-->
 	<key>stripSwiftSymbols</key>
-	<true/>
+	<false/>
 
 	<key>uploadSymbols</key>
 	<true/>

@@ -4,9 +4,24 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3 (the "License");
+/// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
 /// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -15,37 +30,42 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:gap/gap.dart';
 import 'package:markdown_tooltip/markdown_tooltip.dart';
+import 'package:provider/provider.dart';
 
 import 'package:radiopod/models/station.dart';
+import 'package:radiopod/screens/stations_widgets/on_air_track.dart';
 import 'package:radiopod/screens/stations_widgets/station_details.dart';
 import 'package:radiopod/screens/stations_widgets/station_icon_field.dart';
-import 'package:radiopod/services/radio_browser.dart';
+import 'package:radiopod/services/app_provider.dart';
+import 'package:radiopod/services/station_logo_cache.dart';
+import 'package:radiopod/services/station_update.dart';
 import 'package:radiopod/utils/station_icon.dart';
+import 'package:radiopod/widgets/app_snack_bar.dart';
 
-/// What a freshly fetched record becomes once the listener's own choices
-/// are laid back over it.
+/// Show and edit [station], saving any change to the library.
 ///
-/// Radio-Browser owns the facts — the address, the codec, where the station
-/// broadcasts from. The listener owns three things that a refresh must never
-/// touch:
-///
-/// - the local [Station.id], which playlists reference; replacing it would
-///   silently drop the station out of every playlist holding it,
-/// - [Station.reconnectOnEnd], which answers a question about this listener's
-///   experience that the database has no opinion on,
-/// - [Station.icon], a picture they went out of their way to choose.
-///
-/// Pure, so the rule can be tested without a network.
+/// The one way in, from a station's Information on Stations and Playlists
+/// and a podcast's Episodes page alike, so both save and report a change the same way.
 
-Station applyRefresh(
-  Station fresh,
-  Station current, {
-  required bool reconnectOnEnd,
-  required String? icon,
-}) =>
-    fresh.copyWith(id: current.id, reconnectOnEnd: reconnectOnEnd, icon: icon);
+Future<void> editStationProperties(
+  BuildContext context,
+  Station station,
+) async {
+  final provider = context.read<AppProvider>();
+  final updated = await showStationPropertiesDialog(context, station);
+  if (updated == null || !context.mounted) return;
 
-/// Edit [station], returning the changed copy, or null if cancelled.
+  await provider.updateStation(updated);
+  if (!context.mounted) return;
+  showPositiveSnackBar(context, 'Updated ${updated.name}.');
+}
+
+/// Show everything about [station] and edit it, returning the changed copy,
+/// or null if cancelled or left unchanged.
+///
+/// 20261028 gjw Also the station's information, which had a dialog of its
+/// own for a day: one button, one place. While the station is on air it
+/// opens with the whole title of what is playing.
 
 Future<Station?> showStationPropertiesDialog(
   BuildContext context,
@@ -116,9 +136,10 @@ class _DialogState extends State<_StationPropertiesDialog> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final podcast = widget.station.isPodcast;
 
     return AlertDialog(
-      title: const Text('Station properties'),
+      title: Text(podcast ? 'Podcast properties' : 'Station information'),
       content: SizedBox(
         width: 420,
         child: SingleChildScrollView(
@@ -126,9 +147,14 @@ class _DialogState extends State<_StationPropertiesDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // A podcast's episode on air is on the Episodes page.
+              if (!podcast) OnAirTrackFollower(stationId: widget.station.id),
+
+              // 20261028 gjw No autofocus. The dialog is opened as often to
+              // read as to edit, and on a phone a focused field brings up
+              // the keyboard over what there is to read.
               TextField(
                 controller: _name,
-                autofocus: true,
                 textCapitalization: TextCapitalization.words,
                 decoration: InputDecoration(
                   labelText: 'Name',
@@ -151,9 +177,13 @@ class _DialogState extends State<_StationPropertiesDialog> {
                 }),
               ),
 
-              const Gap(12),
-              MarkdownTooltip(
-                message: '''
+              // 20261017 gjw No reconnect switch for a podcast. An episode
+              // that ends has finished, and the next older one plays; there
+              // is no connection to pick back up.
+              if (!podcast) ...[
+                const Gap(12),
+                MarkdownTooltip(
+                  message: '''
 
                 **Reconnect when the stream ends**
 
@@ -166,24 +196,28 @@ class _DialogState extends State<_StationPropertiesDialog> {
                 RadioPod moves to the next station instead.
 
                 ''',
-                child: SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Reconnect when the stream ends'),
-                  subtitle: Text(
-                    _reconnect
-                        ? 'A continuous station: open it again.'
-                        : 'A programme that finishes: move to the next '
-                              'station.',
-                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                  child: SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Reconnect when the stream ends'),
+                    subtitle: Text(
+                      _reconnect
+                          ? 'A continuous station: open it again.'
+                          : 'A programme that finishes: move to the next '
+                                'station.',
+                      style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                    value: _reconnect,
+                    onChanged: (v) => setState(() => _reconnect = v),
                   ),
-                  value: _reconnect,
-                  onChanged: (v) => setState(() => _reconnect = v),
                 ),
-              ),
+              ],
 
               // What is known about the station, below what can be changed
               // about it. Read-only, and quiet about anything unknown.
-              StationDetails(station: _station),
+              StationDetails(station: _station, full: true),
 
               const Gap(16),
               _refreshControl(cs),
@@ -194,7 +228,8 @@ class _DialogState extends State<_StationPropertiesDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          // Close while there is nothing to lose, as when only reading.
+          child: Text(_changed ? 'Cancel' : 'Close'),
         ),
         FilledButton(
           onPressed: _changed && !_busy ? _save : null,
@@ -206,19 +241,15 @@ class _DialogState extends State<_StationPropertiesDialog> {
 
   /// The control for bringing the details up to date.
   ///
-  /// Offered only for a station that came from Search, since the lookup is by
-  /// the Radio-Browser id and one imported from a playlist file has none. A
-  /// button that could only ever fail is worse than no button, so it is
-  /// disabled and the reason given.
+  /// 20261014 gjw Offered for EVERY station. One from Search is looked up by
+  /// its Radio-Browser id; one added by hand or imported from a playlist file
+  /// has none, so it is looked up by its address instead, which often finds
+  /// it. It used to be disabled for those, which left a hand-added station
+  /// with a bare subtitle for good. 20261017 gjw Labelled Update details,
+  /// not Update from Radio-Browser: a podcast updates from its own feed.
 
   Widget _refreshControl(ColorScheme cs) {
-    final known = widget.station.stationUuid != null;
-    final note =
-        _refreshMessage ??
-        (known
-            ? null
-            : 'This station was not found through Search, so Radio-Browser '
-                  'has no record to update it from.');
+    final note = _refreshMessage;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,8 +262,8 @@ class _DialogState extends State<_StationPropertiesDialog> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.sync, size: 18),
-          label: const Text('Update from Radio-Browser'),
-          onPressed: known && !_refreshing ? _refresh : null,
+          label: const Text('Update details'),
+          onPressed: _refreshing ? null : _refresh,
         ),
         if (note != null) ...[
           const Gap(6),
@@ -253,7 +284,7 @@ class _DialogState extends State<_StationPropertiesDialog> {
     _station.copyWith(name: _trimmed, reconnectOnEnd: _reconnect, icon: _icon),
   );
 
-  /// Fetch this station's current record from Radio-Browser.
+  /// Fetch the details again, from Radio-Browser or the podcast's feed.
   ///
   /// Updates the ADDRESS as well as the details. That is the point of the
   /// exercise: a station that has stopped playing has often simply moved,
@@ -264,43 +295,29 @@ class _DialogState extends State<_StationPropertiesDialog> {
   /// without the user seeing it happen.
 
   Future<void> _refresh() async {
-    final uuid = widget.station.stationUuid;
-    if (uuid == null) return;
-
     setState(() {
       _refreshing = true;
       _refreshMessage = null;
     });
     try {
-      final fresh = await RadioBrowser.lookup(uuid);
+      final update = await updateStationDetails(
+        _station,
+        reconnectOnEnd: _reconnect,
+        icon: _icon,
+      );
       if (!mounted) return;
 
       setState(() {
-        if (fresh == null) {
-          _refreshMessage =
-              'Radio-Browser no longer lists this station. Entries are '
-              'removed when they stop working.';
-
-          return;
-        }
-
-        // Keep this station's own identity and the choices that belong to
-        // the listener rather than to the database.
-
-        _station = applyRefresh(
-          fresh,
-          widget.station,
-          reconnectOnEnd: _reconnect,
-          icon: _icon,
-        );
-        _name.text = fresh.name;
-        _refreshMessage = 'Updated from Radio-Browser. Save to keep it.';
+        _refreshMessage = update.message;
+        if (update.station != null) _station = update.station!;
+        if (update.name != null) _name.text = update.name!;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _refreshMessage = 'Could not reach Radio-Browser. $e';
-      });
+      final source = widget.station.isPodcast
+          ? 'the podcast\'s feed'
+          : 'Radio-Browser';
+      setState(() => _refreshMessage = 'Could not reach $source. $e');
     } finally {
       if (mounted) setState(() => _refreshing = false);
     }
@@ -316,7 +333,8 @@ class _DialogState extends State<_StationPropertiesDialog> {
       _busy = true;
       _message = null;
     });
-    final fetched = await fetchStationIcon(url);
+    final fetched =
+        StationLogoCache.iconFor(url) ?? await fetchStationIcon(url);
     if (!mounted) return;
 
     setState(() {
@@ -325,7 +343,7 @@ class _DialogState extends State<_StationPropertiesDialog> {
         // Not an error worth a dialog: Radio-Browser's favicon links rot,
         // and plenty were never images in the first place.
 
-        _message = 'No usable icon at the address this station advertises.';
+        _message = 'No usable icon at the address advertised.';
       } else {
         _icon = fetched;
         _message = 'Downloaded.';

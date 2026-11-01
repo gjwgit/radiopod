@@ -4,9 +4,24 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3 (the "License");
+/// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
 /// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -15,6 +30,7 @@ import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:rxdart/rxdart.dart';
 
+import 'package:radiopod/models/station.dart';
 import 'package:radiopod/services/player.dart';
 
 /// What the media session is doing, reduced to what a station row needs.
@@ -28,21 +44,44 @@ class NowPlaying {
 
   final String? track;
 
+  /// The guid of the cast on air, when the station is a podcast.
+
+  final String? castGuid;
+
   final bool playing;
+
+  /// Opening the connection to the stream.
+
   final bool connecting;
+
+  /// Connected, and filling the buffer before (or while) sound comes out.
+
+  final bool loading;
+
+  /// Loaded and ready but not playing: a pause that kept the connection.
+
+  final bool paused;
+
   final bool failed;
 
   const NowPlaying({
     this.stationId,
     this.track,
+    this.castGuid,
     this.playing = false,
     this.connecting = false,
+    this.loading = false,
+    this.paused = false,
     this.failed = false,
   });
 
   /// True when [id] is the station the session is currently on.
 
   bool isCurrent(String id) => stationId != null && stationId == id;
+
+  /// True when [guid] is the cast on air.
+
+  bool isCurrentCast(String guid) => castGuid != null && castGuid == guid;
 
   // 20260923 gjw Value equality exists so the stream below can be made
   // `distinct`. Without it the whole station list rebuilt on every playback
@@ -54,13 +93,42 @@ class NowPlaying {
       other is NowPlaying &&
       other.stationId == stationId &&
       other.track == track &&
+      other.castGuid == castGuid &&
       other.playing == playing &&
       other.connecting == connecting &&
+      other.loading == loading &&
+      other.paused == paused &&
       other.failed == failed;
 
   @override
-  int get hashCode =>
-      Object.hash(stationId, track, playing, connecting, failed);
+  int get hashCode => Object.hash(
+    stationId,
+    track,
+    castGuid,
+    playing,
+    connecting,
+    loading,
+    paused,
+    failed,
+  );
+}
+
+/// One line saying what is on: `ABC Jazz — Miles Davis, So What`, or the
+/// podcast and its cast, or just the station while it announces no song.
+/// Null when nothing is playing or paused, or the station is not in
+/// [stations] (a Search preview, say).
+
+String? nowPlayingLine(NowPlaying now, List<Station> stations) {
+  if (!now.playing && !now.paused) return null;
+  final name = stations
+      .where((s) => now.isCurrent(s.id))
+      .map((s) => s.name)
+      .firstOrNull;
+  if (name == null) return null;
+
+  final line = now.track == null ? name : '$name — ${now.track}';
+
+  return now.paused && !now.playing ? 'Paused: $line' : line;
 }
 
 /// Rebuilds [builder] whenever the media session changes.
@@ -76,6 +144,11 @@ class NowPlayingBuilder extends StatelessWidget {
 
   const NowPlayingBuilder({super.key, required this.builder});
 
+  /// The station whose current start has reached `ready`, if [_started].
+
+  static String? _startedId;
+  static bool _started = false;
+
   /// One stream of exactly what a row needs, and no more.
   ///
   /// Combining the two sources here rather than nesting two StreamBuilders
@@ -87,14 +160,36 @@ class NowPlayingBuilder extends StatelessWidget {
     Player.handler.playbackState,
     (MediaItem? item, PlaybackState state) {
       final processing = state.processingState;
+      final stationId = item?.extras?['stationId'] as String?;
+
+      // 20260929 tc BUFFERING IS NOT LOADING ONCE THE STATION HAS STARTED.
+      // The players report `buffering` whenever the buffer dips, and on a
+      // live stream that happens routinely while sound is still coming out,
+      // so the row said "Loading" over audible music. Loading now means only
+      // the stretch between connecting and the first `ready` of this start.
+      // After that a dip still counts as Playing. Opening the station again,
+      // stopping it, or switching station clears the latch.
+      //
+      // Static rather than per stream because the stream is rebuilt with its
+      // StreamBuilder, and a fresh latch would start by misreading the
+      // replayed state as Loading.
+
+      if (stationId != _startedId) _started = false;
+      _startedId = stationId;
+      if (processing == AudioProcessingState.ready) {
+        _started = true;
+      } else if (processing != AudioProcessingState.buffering) {
+        _started = false;
+      }
 
       return NowPlaying(
-        stationId: item?.extras?['stationId'] as String?,
+        stationId: stationId,
         track: item?.extras?['track'] as String?,
+        castGuid: item?.extras?['castGuid'] as String?,
         playing: state.playing,
-        connecting:
-            processing == AudioProcessingState.loading ||
-            processing == AudioProcessingState.buffering,
+        connecting: processing == AudioProcessingState.loading,
+        loading: processing == AudioProcessingState.buffering && !_started,
+        paused: processing == AudioProcessingState.ready && !state.playing,
         failed: processing == AudioProcessingState.error,
       );
     },

@@ -149,5 +149,9 @@ SpeechModel? speechModelForLanguage(String? language) {
   return null;
 }
 
+/// A podcast has none: its address is a feed, not a stream to listen in on.
+
 SpeechModel? speechModelFor(Station? station) =>
-    station == null ? null : speechModelForLanguage(station.language);
+    station == null || station.isPodcast
+    ? null
+    : speechModelForLanguage(station.language);

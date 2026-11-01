@@ -4,13 +4,22 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3 (the "License");
+/// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
 /// License: https://opensource.org/license/gpl-3-0
-///
-/// The LC_NUMERIC workaround below is lifted from geopod, which hit the same
-/// libmpv abort through video_player_media_kit. just_audio_media_kit uses the
-/// same libmpv, so the fix carries over unchanged.
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
 ///
 /// Authors: Graham Williams
 
@@ -77,6 +86,36 @@ bool get needsIcyPolling => Platform.isLinux || Platform.isWindows;
 /// a stopped station should not keep its connection open.
 
 bool get stopByPause => Platform.isLinux || Platform.isWindows;
+
+/// Whether this platform has a media session that actually DISPLAYS artwork.
+///
+/// 20261005 gjw False on GNU/Linux and Windows, where audio_service falls
+/// back to NoOpAudioService (CLAUDE.md §2): there is no notification and no
+/// lock screen, so nothing can ever show the art. The Dart side downloads it
+/// regardless — setMediaItem fetches every non-file artUri through
+/// flutter_cache_manager before it reaches the platform — so each station
+/// change pulled an image that could not be shown, and printed a stack trace
+/// whenever the station's logo host was dead:
+///
+///   Error loading artUri: HttpException: Invalid statusCode: 402
+///
+/// That print is audio_service's own and cannot be silenced
+/// (audio_service.dart:1260), so the fix is to stop handing it a URL.
+///
+/// The app's own station list is unaffected: it loads logos itself through
+/// Image.network and still shows them.
+
+bool get showsMediaArt => !(Platform.isLinux || Platform.isWindows);
+
+/// Whether a chosen station icon is published as a `content://` URI rather
+/// than as `file://`.
+///
+/// 20261006 gjw Android only, because content:// is an Android scheme and
+/// StationIconProvider is what serves it. Everywhere else a file:// URI is
+/// read by the OS media layer in our own process and works as it stands —
+/// macOS and iOS both draw the chosen icon from one.
+
+bool get usesContentIcons => Platform.isAndroid;
 
 /// Force the C locale for numeric formatting on Linux.
 ///

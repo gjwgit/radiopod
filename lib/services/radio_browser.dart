@@ -4,9 +4,24 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3 (the "License");
+/// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
 /// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -17,33 +32,55 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
+import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/models/station.dart';
+import 'package:radiopod/utils/search_query.dart';
 
 const _uuid = Uuid();
 
 /// How a search query is matched against the Radio-Browser database.
 
 enum SearchField {
-  name('name', 'Name'),
-  tag('tag', 'Genre');
+  name('name', 'Name', 'Station name, e.g. ABC Classic, or @sydney news'),
+  tag('tag', 'Genre', 'Genre, e.g. jazz, or @berlin techno'),
 
-  const SearchField(this.parameter, this.label);
+  // 20261015 gjw Radio-Browser has no single location field: a station has a
+  // country and, within it, a free-text state that often holds a city. Asking
+  // both lets "Australia" and "Victoria" each find something.
+  location(
+    null,
+    'Location',
+    'Country or region, e.g. Victoria, or @sydney jazz',
+  );
 
-  /// The `/json/stations/search` query parameter this field maps to.
+  const SearchField(this.parameter, this.label, this.hint);
 
-  final String parameter;
+  /// The `/json/stations/search` query parameter the keywords go to, or null
+  /// for [location], whose text is the place itself.
+
+  final String? parameter;
 
   /// The label shown on the segmented control in the Search screen.
 
   final String label;
+
+  /// The hint shown in the empty search box.
+
+  final String hint;
 }
+
+/// The API parameters a place is asked on. Each is a separate request whose
+/// answers are merged, since the API combines parameters with AND.
+
+const _placeParameters = ['country', 'state'];
 
 /// Read-only client for the Radio-Browser API.
 ///
 /// PRIVACY. This is the one service in RadioPod that talks to a third party,
-/// and it is only reached when the user actively searches. Exactly two things
-/// leave the device: the search text and the User-Agent naming the app, which
-/// the Radio-Browser terms of use require. No WebID, no Pod address, no
+/// and it is only reached when the user actively searches, adds a station by
+/// hand, or refreshes one. Exactly two things leave the device: the search
+/// text (or the typed address, or the station's Radio-Browser id) and the
+/// User-Agent naming the app, which the Radio-Browser terms of use require. No WebID, no Pod address, no
 /// station library, and no listening history is ever sent. The `/json/url/`
 /// click-reporting endpoint, which tells Radio-Browser what is being played,
 /// is deliberately NOT called — RadioPod contributes no telemetry.
@@ -53,8 +90,7 @@ class RadioBrowser {
 
   /// Identifies the app to Radio-Browser, as their terms of use require.
 
-  static const _userAgent =
-      'RadioPod/1.1.17 (+https://github.com/gjwgit/radiopod)';
+  static const _userAgent = userAgent;
 
   /// Endpoint listing the currently available API mirrors.
 
@@ -105,6 +141,9 @@ class RadioBrowser {
 
   /// Search for stations matching [query] on [field].
   ///
+  /// An `@place` in [query] confines the search to a country or region, the
+  /// rest being searched on [field] as usual; see [parseSearchQuery].
+  ///
   /// Broken stations are filtered out server-side and results come back most
   /// listened-to first, which is the ordering that makes a short list useful.
   /// Throws on a network or server failure so the caller can report it.
@@ -114,12 +153,69 @@ class RadioBrowser {
     SearchField field = SearchField.name,
     int limit = 50,
   }) async {
-    final trimmed = query.trim();
-    if (trimmed.isEmpty) return [];
+    final q = parseSearchQuery(query);
+
+    // On Location a plain search is all place. Keywords there have no API
+    // field of their own, so they filter the place's stations by name or
+    // genre once they arrive, which needs a wider net than [limit].
+
+    final byPlace = field == SearchField.location;
+    final place = byPlace ? (q.place ?? q.keywords) : q.place;
+    final filter = byPlace && q.place != null ? q.keywords : '';
+    final keywords = field.parameter == null || q.keywords.isEmpty
+        ? <String, String>{}
+        : {field.parameter!: q.keywords};
+    if ((place ?? '').isEmpty && keywords.isEmpty) return [];
+
+    final requests = place == null || place.isEmpty
+        ? [keywords]
+        : [
+            for (final p in _placeParameters) {...keywords, p: place},
+          ];
 
     final host = await _resolveHost();
+    final fetch = filter.isEmpty ? limit : _filterPool;
+    final answers = await Future.wait([
+      for (final r in requests) _searchOne(host, r, fetch),
+    ]);
+
+    final stations = byClickCount(answers.expand((a) => a))
+        .map(_toStation)
+        .whereType<Station>()
+        .where((s) => matchesKeywords(filter, s.name, s.tags))
+        .take(limit)
+        .toList();
+
+    // 20260922 gjw Put continuous streams above HLS ones, keeping
+    // Radio-Browser's popularity order within each group. Broadcasters often
+    // publish a station both ways and the HLS entry can easily be the more
+    // popular — ABC News Radio's is — yet it is the one that dies after a
+    // minute on the desktop. Offering the workable entry first saves the
+    // user diagnosing a station that was never going to play properly.
+
+    return uniqueByUrl([
+      for (final s in stations)
+        if (!s.isHls) s,
+      for (final s in stations)
+        if (s.isHls) s,
+    ]);
+  }
+
+  /// How many records a Location search with keywords fetches to filter.
+  /// Enough for a large city's stations; the filtered list is cut to the
+  /// usual limit afterwards.
+
+  static const _filterPool = 500;
+
+  /// Ask `/json/stations/search` once, with the search [terms] given.
+
+  static Future<List<Map<String, dynamic>>> _searchOne(
+    String host,
+    Map<String, String> terms,
+    int limit,
+  ) async {
     final uri = Uri.https(host, '/json/stations/search', {
-      field.parameter: trimmed,
+      ...terms,
       'limit': '$limit',
       'hidebroken': 'true',
       'order': 'clickcount',
@@ -137,25 +233,8 @@ class RadioBrowser {
       );
     }
 
-    final stations = (jsonDecode(utf8.decode(res.bodyBytes)) as List)
-        .cast<Map<String, dynamic>>()
-        .map(_toStation)
-        .whereType<Station>()
-        .toList();
-
-    // 20260922 gjw Put continuous streams above HLS ones, keeping
-    // Radio-Browser's popularity order within each group. Broadcasters often
-    // publish a station both ways and the HLS entry can easily be the more
-    // popular — ABC News Radio's is — yet it is the one that dies after a
-    // minute on the desktop. Offering the workable entry first saves the
-    // user diagnosing a station that was never going to play properly.
-
-    return uniqueByUrl([
-      for (final s in stations)
-        if (!s.isHls) s,
-      for (final s in stations)
-        if (s.isHls) s,
-    ]);
+    return (jsonDecode(utf8.decode(res.bodyBytes)) as List)
+        .cast<Map<String, dynamic>>();
   }
 
   /// Fetch the current record for [stationUuid], or null if it has gone.
@@ -195,6 +274,40 @@ class RadioBrowser {
         .cast<Map<String, dynamic>>();
 
     return records.isEmpty ? null : _toStation(records.first);
+  }
+
+  /// Find the record for the stream at [url], or null when none lists it.
+  ///
+  /// 20261014 gjw For a station added by hand. Its typed address is often in
+  /// the database, and the record supplies the country, language, codec and
+  /// bitrate the listener had no way to enter, and a [Station.stationUuid] so
+  /// Refresh in Properties works for it from then on.
+  ///
+  /// PRIVACY. Sends the address the listener typed, the same kind of thing a
+  /// search sends. Nothing about playback is reported.
+  ///
+  /// Throws on a network or server failure, as [lookup] does.
+
+  static Future<Station?> byUrl(String url) async {
+    final host = await _resolveHost();
+    final uri = Uri.https(host, '/json/stations/byurl');
+
+    final res = await http
+        .post(uri, headers: {'User-Agent': _userAgent}, body: {'url': url})
+        .timeout(const Duration(seconds: 20));
+
+    if (res.statusCode != 200) {
+      throw http.ClientException(
+        'Radio-Browser returned ${res.statusCode}.',
+        uri,
+      );
+    }
+
+    return (jsonDecode(utf8.decode(res.bodyBytes)) as List)
+        .cast<Map<String, dynamic>>()
+        .map(_toStation)
+        .nonNulls
+        .firstOrNull;
   }
 
   /// Convert one Radio-Browser record to a [Station], or null if unusable.
@@ -244,6 +357,28 @@ class RadioBrowser {
 
     return s.isEmpty ? null : s;
   }
+}
+
+/// Order raw Radio-Browser records most listened-to first.
+///
+/// Each answer already arrives in this order; this restores it when a
+/// search for a place merges the country and state answers. The sort is stable,
+/// so equal counts keep the order they came in, and a record found by both
+/// is left twice for [uniqueByUrl] to collapse.
+
+List<Map<String, dynamic>> byClickCount(
+  Iterable<Map<String, dynamic>> records,
+) {
+  int clicks(Map<String, dynamic> r) => (r['clickcount'] as num?)?.toInt() ?? 0;
+
+  final indexed = records.indexed.toList()
+    ..sort((a, b) {
+      final byClicks = clicks(b.$2).compareTo(clicks(a.$2));
+
+      return byClicks != 0 ? byClicks : a.$1.compareTo(b.$1);
+    });
+
+  return [for (final (_, r) in indexed) r];
 }
 
 /// Collapse records that point at the same stream.

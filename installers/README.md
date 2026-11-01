@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD013 -->
 
-# Radio Pod Installers
+# RadioPod Installers
 
 Flutter supports multiple platform targets. Flutter based apps can run
 native on Android, iOS, Linux, MacOS, and Windows, as well as directly
@@ -17,12 +17,12 @@ Run the app online: [**web**](https://radiopod.solidcommunity.au).
 Download the latest version:
 
 + **Android**
-  [apk](https://solidcommunity.au/installers/radiopod.apk) or
-  [aab](https://solidcommunity.au/installers/radiopod.aab);
+  [apk](https://solidcommunity.au/installers/radiopod.apk);
 
 + **GNU/Linux**
   [deb](https://solidcommunity.au/installers/radiopod_amd64.deb) or
   [snap](https://solidcommunity.au/installers/radiopod_amd64.snap) or
+  [flatpak](https://solidcommunity.au/installers/radiopod_amd64.flatpak) or
   [zip](https://solidcommunity.au/installers/radiopod-linux.zip);
 + **macOS**
   [dmg](https://solidcommunity.au/installers/radiopod-macos.dmg) or
@@ -68,6 +68,19 @@ and install:
 ```bash
 wget https://solidcommunity.au/installers/radiopod_amd64.snap -O radiopod_amd64.snap
 sudo snap install --dangerous radiopod_amd64.snap
+```
+
+### Linux Flatpak Install
+
+Download
+[radiopod_amd64.flatpak](https://solidcommunity.au/installers/radiopod_amd64.flatpak)
+and install for yourself. The GNOME runtime it needs is fetched from
+Flathub if it is not already installed:
+
+```bash
+wget https://solidcommunity.au/installers/radiopod_amd64.flatpak -O radiopod_amd64.flatpak
+flatpak install --user radiopod_amd64.flatpak
+flatpak run com.togaware.radiopod
 ```
 
 ### Linux Zip Install

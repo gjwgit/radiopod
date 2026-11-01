@@ -1,0 +1,263 @@
+/// SleepTimer — stop playback after a set time.
+///
+// Time-stamp: <Tuesday 2026-10-06 19:00:00 +1100 Graham Williams>
+///
+/// Copyright (C) 2026, Togaware Pty Ltd
+///
+/// Licensed under the GNU General Public License, Version 3 (the "License").
+///
+/// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
+
+library;
+
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+
+import 'package:radiopod/constants/app.dart';
+
+/// Stops playback once, at a time the listener chose.
+///
+/// 20261006 gjw Lives beside the PLAYER, not inside a screen. Someone who
+/// sets a sleep timer puts the phone down, and the screen it was set from is
+/// disposed long before the timer fires. The media service keeps the process
+/// alive while a station plays, so a plain Timer is enough — no alarm, no
+/// wake lock of its own, nothing to ask the user's permission for.
+///
+/// It does ONE thing when it fires: calls the callback it was given, which
+/// is the handler's stop(). It does not pause or close the app.
+///
+/// 20261013 gjw The last [sleepFadeDuration] of the countdown fades the
+/// volume down, so the station drifts off rather than cutting out — a
+/// sudden silence can wake someone just dropping off. Turning the timer off
+/// or setting it again during the fade restores the volume at once. After
+/// the stop the volume goes back to full, AFTER rather than before so the
+/// last moment is not a burst of sound, and the next play starts normally.
+///
+/// SWITCHING STATION IS NOT STOPPING. Starting another station while one
+/// plays does not cancel the timer, because "stop playing at bedtime" is
+/// about the clock and not about which station is on.
+///
+/// 20261022 gjw A real Stop DOES cancel it ([onPlaybackStopped]). The
+/// listening it was timing is over, so the next start from silence begins a
+/// fresh countdown when Settings asks for one, rather than inheriting
+/// whatever was left from an earlier session.
+
+class SleepTimer {
+  SleepTimer(this._onExpire, {required this.setVolume});
+
+  /// What to do when the time is up. Called once, after which the timer is
+  /// no longer running.
+
+  final Future<void> Function() _onExpire;
+
+  /// Set the player's volume, from 0 to 1, for the fade.
+
+  final void Function(double) setVolume;
+
+  Timer? _ticker;
+  DateTime? _endsAt;
+
+  /// How long the timer last ran for, and whether it then fired: what a
+  /// headset tap after it has stopped playback starts again.
+
+  Duration? _lastDuration;
+  bool _fired = false;
+
+  /// Whether the fade has lowered the volume, so it is restored only once.
+
+  bool _faded = false;
+
+  /// How long [toggle] runs for, as chosen in Settings.
+  ///
+  /// Held here rather than read from storage at the moment of use, so that
+  /// turning the timer on is instant and cannot fail. Player.init loads the
+  /// stored value into this, and the Settings section writes both.
+
+  Duration defaultDuration = sleepTimerDefault;
+
+  /// Whether starting playback from silence switches the timer on, as
+  /// chosen in Settings. Loaded and saved like [defaultDuration].
+
+  bool startOnPlay = false;
+
+  /// Playback has just begun with nothing else playing.
+  ///
+  /// 20261013 gjw For listening that is always about falling asleep, the
+  /// timer then needs no tap at all. Switching stations is NOT a start from
+  /// silence, so a timer the listener turned off stays off while they hunt
+  /// for something to hear. A timer already running is left alone rather
+  /// than restarted, so a pause and resume does not add time.
+
+  ///
+  /// 20261026 gjw A HEADSET TAP after the timer stopped playback starts it
+  /// again, for as long as it ran last time: half asleep, the listener taps
+  /// an earbud to hear a little more and still wants it to stop. Only a tap
+  /// does this; the next start from the app in the morning does not.
+
+  void onPlaybackStarted({bool headset = false}) {
+    final again = _fired && headset ? _lastDuration : null;
+    _fired = false;
+    if (again != null) {
+      start(again);
+    } else if (startOnPlay && !isRunning) {
+      start(defaultDuration);
+    }
+  }
+
+  /// Playback has been stopped, by the listener, the car, the end of the
+  /// queue or this timer's own firing. Not called for a Pause, nor for the
+  /// silence between one station and the next.
+
+  void onPlaybackStopped() => cancel();
+
+  /// Turn the timer on for [defaultDuration], or off if it is already on.
+  ///
+  /// 20261006 gjw The app bar icon is a plain ON/OFF switch — one tap, no
+  /// sheet, no picker. Choosing HOW LONG is a setting made once and left
+  /// alone; deciding to sleep is the thing done nightly, and it should cost
+  /// a single tap. Returns true when a timer was started.
+
+  bool toggle() {
+    if (isRunning) {
+      cancel();
+
+      return false;
+    }
+
+    start(defaultDuration);
+
+    return isRunning;
+  }
+
+  /// Whole minutes left, rounded UP, or null when no timer is set.
+  ///
+  /// ROUNDED UP AND IN MINUTES ON PURPOSE. A countdown that reads "0 minutes"
+  /// for the last fifty-nine seconds looks stopped when it is not, and this
+  /// notifies only when the displayed number changes, so the app bar rebuilds
+  /// once a minute rather than once a second.
+
+  final ValueNotifier<int?> minutesLeft = ValueNotifier<int?>(null);
+
+  /// Whether a timer is counting down.
+
+  bool get isRunning => _endsAt != null;
+
+  /// Exactly how long is left, for a caller that wants more than minutes.
+
+  Duration? get remaining {
+    final endsAt = _endsAt;
+    if (endsAt == null) return null;
+    final left = endsAt.difference(_now());
+
+    return left.isNegative ? Duration.zero : left;
+  }
+
+  /// Start counting down [duration], replacing any timer already set.
+  ///
+  /// A duration of zero or less cancels instead of firing immediately, so a
+  /// stray value can never silence a station the moment it is chosen.
+
+  void start(Duration duration) {
+    cancel();
+    if (duration <= Duration.zero) return;
+
+    _endsAt = _now().add(duration);
+    _lastDuration = duration;
+    _fired = false;
+    _publish();
+
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      final left = remaining!;
+      if (left == Duration.zero) {
+        _fire();
+      } else {
+        _fade(left);
+        _publish();
+      }
+    });
+  }
+
+  /// Lower the volume once [left] is inside the fade.
+  ///
+  /// Squared rather than linear: hearing is roughly logarithmic, so a
+  /// linear fade sounds nearly unchanged until it drops away at the end.
+
+  void _fade(Duration left) {
+    if (left >= sleepFadeDuration) return;
+
+    final t = left.inMilliseconds / sleepFadeDuration.inMilliseconds;
+    setVolume(t * t);
+    _faded = true;
+  }
+
+  void _restoreVolume() {
+    if (!_faded) return;
+    _faded = false;
+    setVolume(1);
+  }
+
+  /// Stop counting down, and undo any fade. Playback is untouched.
+
+  void cancel() {
+    _stopTicking();
+    _restoreVolume();
+  }
+
+  void _stopTicking() {
+    _ticker?.cancel();
+    _ticker = null;
+    _endsAt = null;
+    _publish();
+  }
+
+  /// Time is up: stop the timer FIRST, then stop playback, then put the
+  /// volume back.
+  ///
+  /// Timer first so a stop that throws still leaves the timer finished.
+  /// Otherwise a failing stop would be retried every second for ever.
+
+  void _fire() {
+    _stopTicking();
+    _fired = true;
+    unawaited(
+      _onExpire()
+          .catchError((Object e) {
+            debugPrint('[SleepTimer] could not stop playback: $e');
+          })
+          .whenComplete(_restoreVolume),
+    );
+  }
+
+  void _publish() {
+    final left = remaining;
+    minutesLeft.value = left == null ? null : (left.inSeconds / 60).ceil();
+  }
+
+  /// The clock, as a seam for tests. Production always uses the real one.
+
+  @visibleForTesting
+  static DateTime Function() nowForTest = DateTime.now;
+
+  static DateTime _now() => nowForTest();
+
+  void dispose() {
+    cancel();
+    minutesLeft.dispose();
+  }
+}

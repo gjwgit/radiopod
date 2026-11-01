@@ -4,9 +4,24 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3 (the "License");
+/// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
 /// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -15,17 +30,29 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:rxdart/rxdart.dart';
 
 import 'package:radiopod/constants/app.dart';
+import 'package:radiopod/models/cast.dart';
 import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/services/browse_tree.dart';
+import 'package:radiopod/services/carplay_bridge.dart';
+import 'package:radiopod/services/cast_playback.dart';
+import 'package:radiopod/services/cast_store.dart';
+import 'package:radiopod/services/focus_policy.dart';
+import 'package:radiopod/services/geo_block.dart';
 import 'package:radiopod/services/icy_reader.dart';
 import 'package:radiopod/services/stream_end_policy.dart';
+import 'package:radiopod/utils/cast_merge.dart';
 import 'package:radiopod/utils/platform_io.dart'
     if (dart.library.js_interop) 'package:radiopod/utils/platform_web.dart';
+
+part 'radio_audio_handler_casts.dart';
+part 'radio_audio_handler_focus.dart';
+part 'radio_audio_handler_stream_end.dart';
 
 /// The single audio handler, shared by the Flutter UI, the system
 /// notification, the lock screen, headset buttons and Android Auto.
@@ -38,6 +65,12 @@ import 'package:radiopod/utils/platform_io.dart'
 /// deliberately does NOT mix in SeekHandler and does not offer fast-forward
 /// or rewind. Stations are switched with Next and Previous instead, moving
 /// through whichever playlist the station was started from.
+///
+/// 20261016 gjw A PODCAST'S CAST DOES HAVE A TIMELINE, so while one plays —
+/// and only then — the session offers pause, seek, back 15 s and forward
+/// 30 s, publishes the position, and Next and Previous move to the older or
+/// newer cast. Radio is unchanged. The cast logic lives in
+/// radio_audio_handler_casts.dart.
 
 class RadioAudioHandler extends BaseAudioHandler {
   final _player = AudioPlayer();
@@ -85,6 +118,16 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   bool _stopped = false;
 
+  /// Counts the opens [playStation] starts, and the stops that end them.
+  ///
+  /// 20261022 gjw Tapping another station while one is still Connecting…
+  /// interrupts the first load, which throws. That is not a station failing
+  /// to connect, and reporting it put up a "could not connect" popup for a
+  /// station the listener had already moved on from. An open whose number is
+  /// no longer the latest returns quietly instead.
+
+  int _openCount = 0;
+
   /// How long to wait for a station to open before calling it a failure.
   ///
   /// Generous, because a distant station on a slow connection is not an
@@ -92,6 +135,39 @@ class RadioAudioHandler extends BaseAudioHandler {
   /// row spinning for ever — see the use in [playStation].
 
   static const _openTimeout = Duration(seconds: 30);
+
+  /// Called when playback begins while nothing was playing — a first start,
+  /// or a resume after Stop or Pause, but not a switch between stations or
+  /// an automatic reconnect. Player.init points it at the sleep timer.
+  /// [headset] is true when a headset button started it (see [click]).
+
+  void Function({bool headset})? onPlayFromSilence;
+
+  /// True while a headset button's [click] is being carried out.
+
+  bool _byHeadset = false;
+
+  /// What plays when a cast finishes, from Settings. Player.init loads it
+  /// from [AfterCastPreference], so the car follows it with no screen open.
+
+  AfterCast afterCast = AfterCast.older;
+
+  /// Called when [stop] has silenced the player. Not called by a Pause, nor
+  /// by the silence [playStation] makes between stations. Player.init points
+  /// it at the sleep timer, which a stop resets.
+
+  void Function()? onStopped;
+
+  final _geoBlocks = StreamController<GeoBlock>.broadcast();
+
+  /// A station that ended early because its server refuses our country.
+  /// The app shows each one in a dialog — see [_reportGeoBlock].
+
+  Stream<GeoBlock> get geoBlocks => _geoBlocks.stream;
+
+  /// Stations whose headers have been checked this session.
+
+  final _geoChecked = <String>{};
 
   Station? _currentStation;
   String? _currentTrack;
@@ -108,6 +184,40 @@ class RadioAudioHandler extends BaseAudioHandler {
   /// own. Null until a station is started.
 
   final currentStation = BehaviorSubject<Station?>.seeded(null);
+
+  /// The cast on air when [_currentStation] is a podcast, else null. Its
+  /// listener state is the store's; this copy supplies title and length.
+
+  Cast? _currentCast;
+
+  /// Saves the cast's place every [castSaveEvery] while it plays.
+
+  Timer? _castSaveTimer;
+
+  /// True while a finished cast is handing over to the next, so a second
+  /// `completed` report does not start a second hand-over.
+
+  bool _castEnding = false;
+
+  /// True while a cast is paused because another app's sound asked us to
+  /// duck. See [FocusHandling].
+
+  bool _pausedForOther = false;
+
+  /// Whether the audio session is set up for speech (a cast) rather than
+  /// music (a station); null until the first play sets it.
+
+  bool? _speechSession;
+
+  /// Looks every [focusPollEvery] for the end of another app's sound after
+  /// it took the sound outright. See [FocusHandling].
+
+  Timer? _focusPoll;
+
+  /// The counts the car's rows last showed, to tell a change that matters
+  /// to them from one that does not.
+
+  String _lastCastCounts = '';
 
   /// The desktop track reader for the current station, cancelled whenever
   /// playback moves on so only one stream is ever being polled.
@@ -144,6 +254,9 @@ class RadioAudioHandler extends BaseAudioHandler {
 
     _player.icyMetadataStream.listen(_broadcastTrack);
 
+    _watchCasts();
+    unawaited(_watchFocus());
+
     // 20260922 gjw Most internet radio is an endless stream, but not all of
     // it: NPR and other bulletin feeds genuinely END when the bulletin is
     // over, and a dropped connection arrives here the same way, because
@@ -160,7 +273,10 @@ class RadioAudioHandler extends BaseAudioHandler {
 
     _player.playerStateStream.listen((s) {
       if (s.processingState == ProcessingState.completed && s.playing) {
-        _onStreamEnded();
+        // A cast that reaches its end has been heard; a stream that does has
+        // dropped or finished, which is a different question entirely.
+
+        _currentCast != null ? unawaited(_onCastEnded()) : _onStreamEnded();
       } else if (_resumed) {
         // The stream picked itself back up. Call off any pending advance.
 
@@ -180,137 +296,6 @@ class RadioAudioHandler extends BaseAudioHandler {
       _player.processingState != ProcessingState.completed &&
       _player.processingState != ProcessingState.idle;
 
-  void _cancelPendingAdvance() {
-    _endTimer?.cancel();
-    _endTimer = null;
-  }
-
-  /// A stream has run out. Reconnect, move on, or stop.
-  ///
-  /// A STATION THAT WAS PLAYING PROPERLY IS RECONNECTED, NOT ABANDONED. ABC
-  /// News Radio closes the connection at the end of each bulletin and is
-  /// still on air immediately afterwards; the player does NOT pick it up by
-  /// itself, so RadioPod has to open it again. Waiting instead of
-  /// reconnecting, as an earlier version did, just produced a long silence
-  /// and then the wrong station.
-  ///
-  /// [decideStreamEnd] holds the rule that separates that case from a
-  /// station that has genuinely finished.
-
-  void _onStreamEnded() {
-    if (_currentStation == null) return;
-
-    // A station the user stopped has not "ended", so it must not reconnect,
-    // advance to the next station, or count towards the failure tally.
-
-    if (_stopped) return;
-
-    // A stream can report completed more than once. The first report starts
-    // the clock; later ones must not restart it.
-
-    if (_endTimer != null) return;
-
-    final played = _startedAt == null
-        ? Duration.zero
-        : DateTime.now().difference(_startedAt!);
-
-    // Read the flag from the library rather than from _currentStation, which
-    // is a snapshot taken when playback started. Otherwise turning the
-    // setting on for the station playing right now would not take effect
-    // until it was started again.
-
-    final station = _stations
-        .where((s) => s.id == _currentStation!.id)
-        .firstOrNull;
-    final reconnectOnEnd =
-        station?.reconnectOnEnd ?? _currentStation!.reconnectOnEnd;
-
-    final decision = decideStreamEnd(
-      queueLength: _queueStations.length,
-      failedAdvances: _failedAdvances,
-      played: played,
-      reconnectOnEnd: reconnectOnEnd,
-    );
-    _failedAdvances = decision.failedAdvances;
-
-    debugPrint(
-      '[RadioAudioHandler] ${_currentStation?.name} ended after '
-      '${played.inSeconds}s (reconnectOnEnd: $reconnectOnEnd) '
-      '-> ${decision.action.name}',
-    );
-
-    // A reconnect happens AT ONCE. This is a station that was playing
-    // happily a moment ago, so every extra second is an audible hole where
-    // there used to be well under one.
-
-    if (decision.action == StreamEndAction.reconnect) {
-      unawaited(_reconnectCurrent());
-
-      return;
-    }
-
-    // The other two paths do pause first, in case the player picks the
-    // stream back up by itself and saves us the trouble. The decision is
-    // carried through rather than recomputed, so time spent waiting can
-    // never be mistaken for time spent playing.
-
-    _endTimer = Timer(resumeGrace, () => _carryOut(decision.action));
-  }
-
-  /// Open the current station again after a break in transmission.
-  ///
-  /// [_startedAt] is reset BEFORE the attempt, so that a connection which
-  /// also ends immediately scores as a failure and the queue moves on,
-  /// rather than inheriting the long healthy run that earned the reconnect.
-  /// That is what stops a station which ends over and over from being
-  /// reconnected for ever.
-
-  Future<void> _reconnectCurrent() async {
-    final station = _currentStation;
-    if (station == null) return;
-
-    _startedAt = DateTime.now();
-    try {
-      await _player.setUrl(station.url);
-      await _player.play();
-    } catch (e) {
-      debugPrint('[RadioAudioHandler] reconnect to ${station.name} failed: $e');
-
-      // The station really has gone. Decide again, now scoring as a failure.
-
-      _onStreamEnded();
-    }
-  }
-
-  /// Carry out an advance or a stop, unless the stream came back meanwhile.
-
-  void _carryOut(StreamEndAction action) {
-    _cancelPendingAdvance();
-    if (_currentStation == null || _resumed) return;
-
-    if (action == StreamEndAction.stop) {
-      stop();
-
-      return;
-    }
-
-    // Nothing awaits this, and playStation rethrows when a stream will not
-    // open at all. Such a station never reaches `completed`, so without
-    // catching it here the chain would stop dead on the first bad URL — and
-    // the throw would surface as an unhandled async error.
-    //
-    // Straight back to _carryOut rather than through _onStreamEnded: a
-    // stream that refused to open has nothing to come back from, so waiting
-    // out another grace period would only add silence between dead stations.
-
-    unawaited(
-      skipToNext().catchError((Object e) {
-        debugPrint('[RadioAudioHandler] auto-advance could not start: $e');
-        _carryOut(StreamEndAction.advance);
-      }),
-    );
-  }
-
   // ── Library ───────────────────────────────────────────────────────────────
 
   /// Replace the library the browse tree is built from.
@@ -328,6 +313,16 @@ class RadioAudioHandler extends BaseAudioHandler {
     for (final entry in _childSubjects.entries) {
       entry.value.add(<String, dynamic>{});
     }
+
+    // 20260929 tc CarPlay does not browse through audio_service, so its
+    // native lists are handed the same library here.
+
+    CarPlayBridge.publishLibrary(
+      stations,
+      playlists,
+      detailsOf: _podcastDetails,
+    );
+    _lastCastCounts = _castCounts();
   }
 
   // ── Playback ──────────────────────────────────────────────────────────────
@@ -338,11 +333,30 @@ class RadioAudioHandler extends BaseAudioHandler {
   /// view, or just the one station. Passing it explicitly keeps the skip
   /// behaviour the same whether playback started in the app or in the car.
 
+  ///
+  /// For a podcast, [castGuid] names the cast to play; otherwise the newest
+  /// still to hear. Throws [NothingToPlay] when the podcast has none left.
+
   Future<void> playStation(
     Station station, {
     List<Station>? queue,
     String parentId = browseAllStationsId,
+    String? castGuid,
   }) async {
+    // Read BEFORE _silence() below, which leaves the player not playing
+    // even when this is a switch from one station to another.
+
+    final fromSilence = !_player.playing;
+    final open = ++_openCount;
+
+    // Resolve the cast first, so a podcast with nothing left to play fails
+    // before the station on air is disturbed. Then save the place in
+    // whatever cast is being left.
+
+    final cast = station.isPodcast ? _castToPlay(station, castGuid) : null;
+    await _saveCastPlace();
+    _castSaveTimer?.cancel();
+
     _queueStations = (queue == null || queue.isEmpty) ? [station] : queue;
     _queueParentId = parentId;
     _queueIndex = _queueStations.indexWhere((s) => s.id == station.id);
@@ -359,6 +373,10 @@ class RadioAudioHandler extends BaseAudioHandler {
     _currentTrack = null;
     _currentCaption = null;
     currentStation.add(station);
+    _currentCast = cast;
+    _castEnding = false;
+    _pausedForOther = false;
+    _focusPoll?.cancel();
     _startedAt = DateTime.now();
     _stopped = false;
 
@@ -368,10 +386,8 @@ class RadioAudioHandler extends BaseAudioHandler {
     _cancelPendingAdvance();
     _watchTrack(station);
 
-    this.queue.add([
-      for (final s in _queueStations) stationMediaItem(s, parentId),
-    ]);
-    mediaItem.add(stationMediaItem(station, parentId));
+    _publishQueue();
+    mediaItem.add(_nowItem());
 
     try {
       // Silence whatever is on BEFORE opening the next station.
@@ -392,9 +408,55 @@ class RadioAudioHandler extends BaseAudioHandler {
       // with no way back. Failing is better than hanging: the row can then
       // show the error and be tapped again.
 
-      await _player.setUrl(station.url).timeout(_openTimeout);
+      // A cast resumes where the listener left it, unless it was heard to
+      // the end and is being played again on purpose.
+
+      await _player
+          .setUrl(
+            cast?.audioUrl ?? station.url,
+            initialPosition: cast == null || cast.played
+                ? null
+                : resumeFrom(cast.position),
+          )
+          .timeout(_openTimeout);
+
+      // 20261031 gjw EARBUDS PUT AWAY WHILE THE STATION OPENS. After the
+      // sleep timer's stop, an earbud going into its case sends a button
+      // press while still connected, so [click] lets it start playback.
+      // Opening the station again takes seconds, the earbuds disconnect
+      // meanwhile, and just_audio's pause on the disconnect finds nothing
+      // yet playing to pause: the station then came out of the phone's
+      // speaker in the middle of the night. So a start from a headset
+      // looks again, once the station has opened, before it plays.
+
+      final headphonesGone = _byHeadset && !await _headphonesConnected();
+
+      // Another station, or a Stop, came along while this one loaded.
+
+      if (open != _openCount) return;
+
+      if (headphonesGone) {
+        debugPrint('[RadioAudioHandler] headphones gone: not playing');
+        await stop();
+
+        return;
+      }
+
+      // 20261013 gjw BEFORE play(), not after: just_audio's play() future
+      // completes only when playback later pauses or stops.
+
+      if (cast != null) _startCastSaving();
+      if (fromSilence) onPlayFromSilence?.call(headset: _byHeadset);
+      await _useSessionFor(speech: cast != null);
       await _player.play();
     } catch (e) {
+      // Superseded, not failed: the newer open owns the playback state.
+
+      if (open != _openCount) {
+        debugPrint('[RadioAudioHandler] ${station.name} superseded: $e');
+
+        return;
+      }
       debugPrint('[RadioAudioHandler] cannot play ${station.url}: $e');
       playbackState.add(
         playbackState.value.copyWith(
@@ -429,16 +491,70 @@ class RadioAudioHandler extends BaseAudioHandler {
         station,
         queue: _queueStations,
         parentId: _queueParentId,
+        castGuid: _currentCast?.guid,
       );
 
       return;
     }
 
+    if (!_player.playing) onPlayFromSilence?.call(headset: _byHeadset);
+
+    // A paused cast picks up a few seconds back, so the listener does not
+    // come in mid-word. See [castResumeBack].
+
+    if (_currentCast != null && !_player.playing) {
+      await _player.seek(resumeFrom(_player.position));
+    }
     await _player.play();
   }
 
+  /// A headset or earbud button: Play, Pause, Next or Previous.
+  ///
+  /// 20261026 gjw EARBUDS PUT AWAY MUST NOT START THE SPEAKER. After the
+  /// sleep timer stopped a cast, earbuds placed in their charging case sent
+  /// a button press, and the default click() started playback out loud from
+  /// the phone in the middle of the night. A tap on a worn earbud must still
+  /// work. The difference is where the sound would go, so a button that
+  /// would START playback is obeyed only while headphones are connected.
+  /// Stopping is always obeyed.
+
   @override
-  Future<void> pause() => _player.pause();
+  Future<void> click([MediaButton button = MediaButton.media]) async {
+    if (!playbackState.value.playing && !await _headphonesConnected()) {
+      debugPrint('[RadioAudioHandler] $button ignored: no headphones');
+
+      return;
+    }
+
+    debugPrint('[RadioAudioHandler] $button from a headset');
+    _byHeadset = true;
+    try {
+      await super.click(button);
+    } finally {
+      _byHeadset = false;
+    }
+  }
+
+  @override
+  Future<void> pause() async {
+    await _player.pause();
+    await _saveCastPlace();
+  }
+
+  @override
+  Future<void> seek(Duration position) => _seekCast(position);
+
+  @override
+  Future<void> fastForward() => _seekCast(_player.position + castSkipForward);
+
+  @override
+  Future<void> rewind() => _seekCast(_player.position - castSkipBack);
+
+  /// Set the volume from 0 to 1, for the sleep timer's fade. It carries
+  /// over a change of station, which is what lets a fade continue across
+  /// one.
+
+  Future<void> setVolume(double volume) => _player.setVolume(volume);
 
   /// Silence the player the way this platform needs.
   ///
@@ -480,8 +596,24 @@ class RadioAudioHandler extends BaseAudioHandler {
     // A real stop also drops the connection, which is what a listener means
     // by Stop. Pausing keeps it open until the next play.
 
-    await _silence();
+    // _stopped is set BEFORE silencing, not after. _silence() makes the
+    // player go idle, the event listener reads _stopped to tell a real stop
+    // from a station switch, and setting it afterwards left that listener
+    // reporting a switch for the one case that genuinely is a stop.
+
+    // Keep the place in a cast before the player lets go of it.
+
+    await _saveCastPlace();
+    _castSaveTimer?.cancel();
+
     _stopped = true;
+    _openCount++;
+    await _silence();
+
+    // After the silence, so a timer cancelled mid-fade restores the volume
+    // only once nothing is left to hear.
+
+    onStopped?.call();
     playbackState.add(
       playbackState.value.copyWith(
         processingState: AudioProcessingState.idle,
@@ -526,13 +658,18 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   void _setTrack(String? title) {
     final station = _currentStation;
-    if (station == null) return;
+
+    // A cast's title is its track; anything a podcast host embeds as ICY
+    // metadata is not wanted over it.
+
+    if (station == null || _currentCast != null) return;
 
     final track = _cleanTrack(title);
     if (track == _currentTrack) return;
 
     _currentTrack = track;
-    _publish(station);
+    mediaItem.add(_nowItem());
+    _publishQueue();
   }
 
   /// Show [caption] in place of the station name, or restore the station
@@ -542,25 +679,73 @@ class RadioAudioHandler extends BaseAudioHandler {
   /// ignored for the same reason as in [_setTrack].
 
   void setCaption(String? caption) {
-    final station = _currentStation;
-    if (station == null) return;
+    // Captions follow a station's stream; a cast never has one to follow.
+
+    if (_currentStation == null || _currentCast != null) return;
 
     final c = caption?.trim();
     final next = (c == null || c.isEmpty) ? null : c;
     if (next == _currentCaption) return;
 
     _currentCaption = next;
-    _publish(station);
+
+    // The session only, not the queue: a caption changes with every word,
+    // and republishing the queue that often would churn the car's list.
+    // Captions are not offered on Android, the one place the two must agree.
+
+    mediaItem.add(_nowItem());
   }
 
-  void _publish(Station station) => mediaItem.add(
-    stationMediaItem(
-      station,
-      _queueParentId,
-      track: _currentTrack,
-      caption: _currentCaption,
-    ),
-  );
+  /// Publish the queue, with the station now playing carrying EXACTLY what
+  /// [mediaItem] carries.
+  ///
+  /// 20261006 gjw Android's Bluetooth stack will not hand the car anything
+  /// until the session's metadata agrees with the queue row named by the
+  /// active queue id. When they disagree it waits, and then gives up:
+  ///
+  ///     E MediaPlayerWrapper: Timeout while waiting for metadata to sync
+  ///       Current Metadata: title="Celine Dion" artist="Celine Dion - ..."
+  ///       QueueItem(7):     title="Celine Dion" artist="The United Arab ..."
+  ///
+  /// They could never agree. The now-playing item puts the song on air in
+  /// the artist slot (CLAUDE.md §11) and prefers the user's chosen icon for
+  /// artwork, while the queue was built from plain [stationMediaItem] calls
+  /// carrying the station's codec-and-bitrate subtitle and its own logo. So
+  /// the SAME station appeared twice, described two different ways, and
+  /// every station change and every song change cost a ten second stall.
+  ///
+  /// The row that is playing is therefore the same item the session
+  /// publishes. The rest stay as the browse tree builds them — only the
+  /// active one is reconciled, and only it has a track to carry.
+
+  void _publishQueue() {
+    final items = [
+      for (final s in _queueStations)
+        stationMediaItem(s, _queueParentId, details: _podcastDetails(s)),
+    ];
+
+    if (_currentStation != null &&
+        _queueIndex >= 0 &&
+        _queueIndex < items.length) {
+      items[_queueIndex] = _nowItem();
+    }
+
+    // An unchanged queue is not republished. Skipping within a playlist
+    // changes which row is active and nothing else, and handing the car a
+    // fresh list makes it tear down and rebuild the whole now-playing list.
+    //
+    // Compared field by field, NOT with listEquals: MediaItem's == is id
+    // only (audio_service.dart:667), so a changed artist or artwork — the
+    // very thing this republishes for — would compare equal.
+
+    if (_queueSignature(items) == _queueSignature(queue.value)) return;
+
+    queue.add(items);
+  }
+
+  static String _queueSignature(List<MediaItem> items) => items
+      .map((i) => '${i.id}\u0000${i.artist}\u0000${i.artUri}')
+      .join('\u0001');
 
   /// Start (or restart) reading the song on air for [station].
   ///
@@ -572,7 +757,7 @@ class RadioAudioHandler extends BaseAudioHandler {
   void _watchTrack(Station station) {
     _trackSubscription?.cancel();
     _trackSubscription = null;
-    if (!needsIcyPolling || !icyPollingEnabled) return;
+    if (!needsIcyPolling || !icyPollingEnabled || station.isPodcast) return;
 
     _trackSubscription = IcyReader.watch(station.url).listen(
       (title) {
@@ -603,6 +788,13 @@ class RadioAudioHandler extends BaseAudioHandler {
     return t;
   }
 
+  /// Next and Previous: through the station queue, a podcast included.
+  ///
+  /// 20261023 gjw While a cast played they used to walk its episodes, and
+  /// were offered only when there was another to hear, so Next in the car
+  /// seemed to stop at a podcast. A driver pressing Next wants the next
+  /// station; episodes are chosen from the podcast's Episodes page.
+
   @override
   Future<void> skipToNext() => _skipBy(1);
 
@@ -614,16 +806,33 @@ class RadioAudioHandler extends BaseAudioHandler {
   /// Wrapping matters in the car: a driver pressing Next on the last station
   /// should land back at the first rather than have nothing happen.
 
+  ///
+  /// 20261023 gjw A podcast with no episode left to hear is PASSED OVER, as
+  /// [_advanceFromPodcast] passes it. Next used to stop at it with nothing
+  /// to say, and in the car that looked like the button had broken. Only
+  /// that is passed over: a station that will not connect still reports
+  /// its error, since the driver should hear that it is gone.
+
   Future<void> _skipBy(int delta) async {
     if (_queueStations.length < 2 || _queueIndex < 0) return;
 
-    final n = _queueStations.length;
-    final next = (_queueIndex + delta + n) % n;
-    await playStation(
-      _queueStations[next],
-      queue: _queueStations,
-      parentId: _queueParentId,
-    );
+    final queue = _queueStations;
+    final from = _queueIndex;
+    final n = queue.length;
+
+    for (var step = 1; step < n; step++) {
+      try {
+        await playStation(
+          queue[(from + delta * step + n * step) % n],
+          queue: queue,
+          parentId: _queueParentId,
+        );
+
+        return;
+      } on NothingToPlay catch (e) {
+        debugPrint('[RadioAudioHandler] passing over ${e.podcast}');
+      }
+    }
   }
 
   @override
@@ -656,7 +865,12 @@ class RadioAudioHandler extends BaseAudioHandler {
   Future<List<MediaItem>> getChildren(
     String parentMediaId, [
     Map<String, dynamic>? options,
-  ]) async => browseChildren(parentMediaId, _stations, _playlists);
+  ]) async => browseChildren(
+    parentMediaId,
+    _stations,
+    _playlists,
+    detailsOf: _podcastDetails,
+  );
 
   @override
   ValueStream<Map<String, dynamic>> subscribeToChildren(String parentMediaId) =>
@@ -675,7 +889,13 @@ class RadioAudioHandler extends BaseAudioHandler {
     if (parts == null) return null;
     final station = _stations.where((s) => s.id == parts.stationId).firstOrNull;
 
-    return station == null ? null : stationMediaItem(station, parts.parentId);
+    return station == null
+        ? null
+        : stationMediaItem(
+            station,
+            parts.parentId,
+            details: _podcastDetails(station),
+          );
   }
 
   // ── State broadcast ───────────────────────────────────────────────────────
@@ -692,6 +912,8 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   void _broadcastState(PlaybackEvent? event) {
     final playing = _player.playing;
+    if (_currentCast != null) return _broadcastCastState(playing);
+
     final hasQueue = _queueStations.length > 1;
 
     playbackState.add(
@@ -703,12 +925,25 @@ class RadioAudioHandler extends BaseAudioHandler {
         ],
         systemActions: const {MediaAction.play, MediaAction.stop},
         androidCompactActionIndices: hasQueue ? const [0, 1, 2] : const [0],
-        processingState: _processingState[_player.processingState]!,
+        processingState: _reportedState,
         playing: playing,
         queueIndex: _queueIndex < 0 ? null : _queueIndex,
+
+        // Back to no timeline, should a cast have published one.
+        updatePosition: Duration.zero,
+        bufferedPosition: Duration.zero,
       ),
     );
   }
+
+  /// The player's state as the media session should hear it. The rule is
+  /// [reportedProcessingState] at the foot of this file, and it matters.
+
+  AudioProcessingState get _reportedState => reportedProcessingState(
+    _processingState[_player.processingState]!,
+    stopped: _stopped,
+    hasStation: _currentStation != null,
+  );
 
   static const _processingState = {
     ProcessingState.idle: AudioProcessingState.idle,
@@ -717,4 +952,95 @@ class RadioAudioHandler extends BaseAudioHandler {
     ProcessingState.ready: AudioProcessingState.ready,
     ProcessingState.completed: AudioProcessingState.completed,
   };
+}
+
+/// The media item for the session, with artwork only where it can be seen.
+///
+/// 20261005 gjw On GNU/Linux and Windows audio_service is NoOpAudioService
+/// (CLAUDE.md §2) and on the web the artwork fetch hits the CORS wall, so in
+/// all three cases nothing displays the image. audio_service downloads every
+/// non-file artUri through flutter_cache_manager BEFORE reaching the
+/// platform, so each station change pulled an image that could not be shown,
+/// and printed an unsilenceable stack trace whenever a station's logo host
+/// was dead — a 402 from a lapsed Firebase bucket, for one.
+///
+/// The decision lives HERE rather than in stationMediaItem because that is a
+/// pure function with its own tests: gating it there made the browse tree
+/// platform-dependent and the tests failed on the host that ran them.
+///
+/// The app's own station list is unaffected; it loads logos through
+/// Image.network and still shows them.
+
+MediaItem _sessionItem(
+  Station station,
+  String parentId, {
+  String? track,
+  String? caption,
+}) {
+  final item = stationMediaItem(
+    station,
+    parentId,
+    track: track,
+    caption: caption,
+  );
+
+  // 20261006 gjw Nothing more to do about WHICH image: stationMediaItem now
+  // picks a chosen icon over the station logo for every surface, so this is
+  // only the platform gate above.
+
+  return showsMediaArt ? item : item.copyWith(artUri: null);
+}
+
+/// What the media session should be told, given the player's [state].
+///
+/// Pure, and public, so the rule below can be tested without a media
+/// session — the same reason [decideStreamEnd] lives apart from the handler.
+/// Getting it wrong costs nothing a desktop or a phone would show and breaks
+/// the car, which is the hardest place to notice anything.
+///
+/// IDLE IS NOT A STATE WE MAY PASS THROUGH. audio_service reads any
+/// transition into it as the session being finished:
+///
+///     if (oldProcessingState != idle && processingState == idle) {
+///         stop();                  // AudioService.java:565
+///     }
+///
+/// and that `stop()` is `deactivateMediaSession(); stopSelf();`
+/// (AudioService.java:355) — the whole media service goes down.
+///
+/// Changing station goes through idle on the way. playStation calls
+/// _silence(), which on everything but libmpv is a real `_player.stop()`,
+/// and just_audio reports idle until the next URL is open. So EVERY skip
+/// tore the service down and built it back up. On the phone that is a
+/// notification that blinks; in the car the now-playing screen loses its
+/// session and Android Auto drops the driver back to the station list —
+/// exactly the "momentarily shows the next station, then crashes back to
+/// the list" that pressing Next produced. It is also why logcat showed
+/// `No process com.togaware.radiopod ... for service AudioService` with no
+/// fatal exception anywhere: nothing crashed, the service was asked to stop.
+///
+/// So idle is reported only when playback really is finished — [stopped]
+/// after the user presses Stop, and no station at all before the first one
+/// plays. A switch reports `loading`, which is the truth and reaches the car
+/// as STATE_CONNECTING (AudioService.java:604).
+///
+/// 20261013 gjw The other way round too: a STOP that is really a pause
+/// (libmpv, see stopByPause) leaves the player `ready`, which read as
+/// Paused, so the Stop button stayed Stop rather than offering Play. It
+/// also raced the idle that stop() pushes, so a second tap sometimes
+/// showed Play and sometimes did not. After a stop, ready is reported as
+/// idle. Elsewhere a stop is real and the player is idle anyway.
+
+AudioProcessingState reportedProcessingState(
+  AudioProcessingState state, {
+  required bool stopped,
+  required bool hasStation,
+}) {
+  if (stopped && state == AudioProcessingState.ready) {
+    return AudioProcessingState.idle;
+  }
+  if (state != AudioProcessingState.idle) return state;
+  if (stopped || !hasStation) return state;
+
+  return AudioProcessingState.loading;
 }

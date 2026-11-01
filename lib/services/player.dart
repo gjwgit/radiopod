@@ -4,11 +4,28 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3 (the "License");
+/// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
 /// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
+
+import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
@@ -16,8 +33,15 @@ import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 
 import 'package:radiopod/constants/app.dart';
+import 'package:radiopod/services/after_cast_preference.dart';
+import 'package:radiopod/services/carplay_bridge.dart';
+import 'package:radiopod/services/cast_playback.dart';
+import 'package:radiopod/services/cast_store.dart';
 import 'package:radiopod/services/local_store.dart';
 import 'package:radiopod/services/radio_audio_handler.dart';
+import 'package:radiopod/services/sleep_preference.dart';
+import 'package:radiopod/services/sleep_timer.dart';
+import 'package:radiopod/services/station_icon_cache.dart';
 import 'package:radiopod/utils/platform_io.dart'
     if (dart.library.js_interop) 'package:radiopod/utils/platform_web.dart';
 
@@ -32,6 +56,19 @@ class Player {
   Player._();
 
   static RadioAudioHandler? _handler;
+
+  static SleepTimer? _sleepTimer;
+
+  /// The sleep timer, which stops playback at a time the listener chose.
+  ///
+  /// Owned here rather than by a screen: the phone is put down and the
+  /// screen disposed long before it fires. Only valid after [init].
+
+  static SleepTimer get sleepTimer {
+    assert(_sleepTimer != null, 'Player.init() must be awaited in main().');
+
+    return _sleepTimer!;
+  }
 
   /// The audio handler. Only valid after [init] has completed.
 
@@ -68,6 +105,11 @@ class Player {
         // that the two are not both set.
         androidStopForegroundOnPause: false,
 
+        // 20261016 gjw What a cast's back and forward buttons jump by, on the
+        // notification, the lock screen and the car alike.
+        fastForwardInterval: castSkipForward,
+        rewindInterval: castSkipBack,
+
         // 20260923 gjw Ask Android Auto for SCROLLABLE LISTS rather than
         // grids of tiles. A list shows each station's full name, fits more
         // rows on a head unit, and scrolls; a grid is only worth it when
@@ -93,7 +135,51 @@ class Player {
       debugPrint('[Player] audio session configuration failed: $e');
     }
 
+    // 20260929 tc Attach the CarPlay bridge BEFORE the cached library is
+    // pushed in, so a car that launched the app has a station to play the
+    // moment the list appears.
+
+    CarPlayBridge.attach(_handler!);
+
+    // The timer fades and stops playback and nothing else — see SleepTimer.
+    // Built here because the handler is what it acts on, and both outlive
+    // every screen.
+
+    _sleepTimer = SleepTimer(
+      () => _handler!.stop(),
+      setVolume: (v) => unawaited(_handler!.setVolume(v)),
+    );
+    _sleepTimer!.defaultDuration = await SleepPreference.load();
+    _sleepTimer!.startOnPlay = await SleepPreference.loadStartOnPlay();
+    _handler!.afterCast = await AfterCastPreference.load();
+
+    // 20261013 gjw Hooked in the HANDLER rather than the station list, so a
+    // start from the car, the lock screen or the notification counts too.
+
+    _handler!.onPlayFromSilence = _sleepTimer!.onPlaybackStarted;
+    _handler!.onStopped = _sleepTimer!.onPlaybackStopped;
+
     final (stations, playlists) = await LocalStore.load();
+
+    // The car can ask for a podcast before any screen exists, so its casts
+    // must be in memory from the start, just as the stations are.
+
+    await CastStore.load();
+
+    // 20261006 gjw Write the chosen station icons out HERE as well as in
+    // AppProvider._pushToPlayer().
+    //
+    // THIS IS THE CAR'S PATH. Android Auto starts the media service on its
+    // own, before any login and before AppProvider exists (CLAUDE.md §2), so
+    // the library arrives straight from LocalStore and never passes through
+    // _pushToPlayer. Syncing in only that one place left the cache empty
+    // whenever the car started the app: StationIconCache.pathFor() returned
+    // null, and a station with a chosen icon showed no artwork at all while
+    // one with an https logo was fine. It looked intermittent because
+    // opening the app on the phone populated the cache and hid it.
+
+    await StationIconCache.sync(stations);
+
     _handler!.setLibrary(stations, playlists);
   }
 }

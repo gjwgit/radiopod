@@ -4,9 +4,24 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3 (the "License");
+/// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
 /// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -14,6 +29,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
 import 'package:gap/gap.dart';
+import 'package:markdown_tooltip/markdown_tooltip.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:radiopod/models/station.dart';
@@ -35,7 +51,13 @@ import 'package:radiopod/models/station.dart';
 class StationDetails extends StatelessWidget {
   final Station station;
 
-  const StationDetails({super.key, required this.station});
+  /// Also show the logo's address and the Radio-Browser id, which only
+  /// Properties has a use for: they are what a saved station's Download and
+  /// Update details work from.
+
+  final bool full;
+
+  const StationDetails({super.key, required this.station, this.full = false});
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +68,8 @@ class StationDetails extends StatelessWidget {
         _row('Language', s.language),
         _row('Genre', s.tags.isEmpty ? null : s.tags.join(', ')),
         _row('Homepage', s.homepage, copy: true, link: true),
+        if (full) _row('Logo', s.favicon, copy: true, link: true),
+        if (full) _row('Radio-Browser id', s.stationUuid, copy: true),
       ]),
       _section(context, 'Location', [
         _row('Country', s.country),
@@ -62,7 +86,8 @@ class StationDetails extends StatelessWidget {
         // the one that dies after a minute on the desktop, and knowing that
         // is what points the listener at the station's other entry.
         _row('Format', s.isHls ? 'HLS — a playlist of segments' : null),
-        _row('Stream', s.url, copy: true, link: true),
+        // A podcast's url is its RSS feed, not audio.
+        _row(s.isPodcast ? 'Feed' : 'Stream', s.url, copy: true, link: true),
       ]),
     ].whereType<Widget>().toList();
 
@@ -159,18 +184,27 @@ class StationDetails extends StatelessWidget {
             ),
           ),
           if (row.copy)
-            IconButton(
-              icon: const Icon(Icons.copy, size: 16),
-              visualDensity: VisualDensity.compact,
-              tooltip: 'Copy the ${row.label.toLowerCase()}',
-              onPressed: () async {
-                await Clipboard.setData(ClipboardData(text: row.value));
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${row.label} copied.')),
-                  );
-                }
-              },
+            MarkdownTooltip(
+              message:
+                  '''
+
+              **Copy**
+
+              Copy the ${row.label.toLowerCase()} to the clipboard.
+
+              ''',
+              child: IconButton(
+                icon: const Icon(Icons.copy, size: 16),
+                visualDensity: VisualDensity.compact,
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: row.value));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('${row.label} copied.')),
+                    );
+                  }
+                },
+              ),
             ),
         ],
       ),

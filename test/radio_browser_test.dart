@@ -4,7 +4,24 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3
+/// Licensed under the GNU General Public License, Version 3 (the "License").
+///
+/// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -24,7 +41,52 @@ const _hls = 'https://mediaserviceslive.akamaized.net/hls/live/newsradio.m3u8';
 Station _station(String name, String url, {String? favicon}) =>
     Station(id: name, name: name, url: url, favicon: favicon);
 
+Map<String, dynamic> _record(String name, int? clicks) => {
+  'name': name,
+  'clickcount': clicks,
+};
+
 void main() {
+  group('byClickCount', () {
+    test('interleaves a Location search\'s country and state answers', () {
+      // Each answer arrives most-clicked first; appended one after the
+      // other, a popular state match would sit below every country match.
+
+      final country = [_record('AU 1', 900), _record('AU 2', 100)];
+      final state = [_record('VIC 1', 500), _record('VIC 2', 50)];
+
+      expect(byClickCount([...country, ...state]).map((r) => r['name']), [
+        'AU 1',
+        'VIC 1',
+        'AU 2',
+        'VIC 2',
+      ]);
+    });
+
+    test('keeps arrival order among equal counts', () {
+      final records = [
+        _record('a', 10),
+        _record('b', 10),
+        _record('c', 10),
+        _record('d', 10),
+      ];
+
+      expect(byClickCount(records).map((r) => r['name']), ['a', 'b', 'c', 'd']);
+    });
+
+    test('a missing count sorts as zero rather than failing', () {
+      final records = [_record('none', null), _record('some', 3)];
+
+      expect(byClickCount(records).map((r) => r['name']), ['some', 'none']);
+    });
+  });
+
+  test('Location keeps its keywords off the API, the others name a field', () {
+    expect(SearchField.location.parameter, isNull);
+    expect(SearchField.name.parameter, 'name');
+    expect(SearchField.tag.parameter, 'tag');
+  });
+
   group('uniqueByUrl', () {
     test('collapses records that share a stream address', () {
       // The bug this fixes: four rows, one tap, four ticks. They were the

@@ -1,4 +1,6 @@
-# RadioPod - Internet Radio for your Secure and Private Solid Pod
+# RadioPod
+
+> Privacy-First Internet Radio and Podcast Player
 
 [![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
@@ -10,26 +12,50 @@
 [![Github Last Updated](https://img.shields.io/github/last-commit/gjwgit/radiopod?label=last%20updated)](https://github.com/gjwgit/radiopod/commits/dev/)
 [![GitHub Issues](https://img.shields.io/github/issues/gjwgit/radiopod)](https://github.com/gjwgit/radiopod/issues)
 
-[RadioPod](https://gjwgit.github.io/radiopod/) plays internet radio.
-It is a simple, private alternative to apps like Transistor: find
-stations in the community-run
-[Radio-Browser](https://www.radio-browser.info) database, group them
-into playlists, and listen — on your phone, in the car through Android
-Auto, or at your desk. Your station library and your playlists are
-stored encrypted in your own personal online data store
-([Pod](https://solidproject.org/about)), so nobody — not even the
-server administrator — can see what you listen to. The app is
-supported by [Togaware](https://togaware.com) and implemented by
-[Graham Williams](https://togaware.com/Graham.Williams.html) using
-[Flutter](https://flutter.dev)'s
-[SolidUI](https://github.com/anusii/solidui) package for cross
-platform development.
+Privacy-first: if you decide to move your app data to the cloud to
+share it across all your devices then your data is encrypted for
+secure and private storage in your Pod on a Solid server of your
+choice. You choose, not us.
+
+[RadioPod](https://gjwgit.github.io/radiopod/) plays internet radio
+and podcasts.  It is a simple privacy-first alternative to the many
+internet radio and podcast apps available. Find stations in the
+community-run [Radio-Browser](https://www.radio-browser.info)
+database, follow podcasts from the open [Podcast
+Index](https://podcastindex.org), group them into playlists, and
+listen on your computer, on your phone, or in the car through Apple
+CarPlay or Android Auto, sharing the same playlists.
+
+Your station library and your playlists are stored locally by
+default. Once you are ready they can be
+encrypted and privately stored in your own personal online data store
+([Pod](https://solidproject.org/about)) within a Data Vault hosted by
+a Solid Server of your choice.  Pod-stored data is available on any of
+your devices to share your station library and playlists while being
+protected against server administrator access and server breaches.
+
+Playlists can be imported and exported using the M3U or PLS open
+formats that every other radio player reads and writes, and podcasts
+using OPML, which every podcast app reads and writes.
 
 Solid Pods are a new approach to handling your personal data on the
 World Wide Web and is the latest innovation from the inventor of the
 WWW, Sir Tim Berners-Lee. Obtain a Pod for yourself on any Solid
 server and link it to your app. **You do not need a Solid Pod to use
-this app in local only mode.**
+this app in local-only mode.** If you would like to register for a new
+Pod on a Solid server, choose a server and tap the **Register** button
+on the **Login** screen (tap Not Logged In in the footer or in the top
+left menu drawer). You will be prompted for an email address
+(username), a password, and a pod name. On logging in to your Pod for
+the first time you will be asked for a security key to protect your
+data on the server.
+
+The app is supported by [Togaware](https://togaware.com) and
+implemented by [Graham
+Williams](https://togaware.com/Graham.Williams.html) using
+[Flutter](https://flutter.dev)'s
+[SolidUI](https://github.com/anusii/solidui) package for cross
+platform development.
 
 We make this project available for free so if you appreciate the app
 then please show some ❤️ and tap on the star at
@@ -37,103 +63,108 @@ then please show some ❤️ and tap on the star at
 the [AU Solid Community](https://solidcommunity.au) **showcase** for
 many more apps using the Solid ecosystem.
 
+## Installation
+
+You can install the released version of the app from different
+repositories including:
+
++ Linux [Snap Store](https://snapcraft.io/radiopod).
+
+See the [Install
+Guide](https://gjwgit.github.io/radiopod/INSTALL.html) for
+installation instructions for any platform.
+
 ## Features
 
-+ **Search** the community-run Radio-Browser database of internet
-  radio stations, by station name or by genre.
-+ **Save** the stations you like into a library that is stored encrypted
-  on your Pod.
++ **Search** the community-run
+  [Radio-Browser](https://www.radio-browser.info) database of internet
+  radio stations, by station name, by genre, or by location.
++ **Podcasts** sit in your Stations list beside the radio. A tap carries
+  on with the episode you were part-way through, or else plays the
+  latest you have not heard, then each older one in turn. A podcast's
+  Episodes page lists its episodes with their show notes; heard ones
+  stay listed, greyed, as do any you skip. Double tap an episode's play
+  button to mark it played or not, and its information button to skip
+  it or bring it back. Search them
+  in the open [Podcast Index](https://podcastindex.org).
++ **Save** the stations you like into a library that is stored locally
+  or encrypted on your Pod.
 + **Playlists** group your stations. They are also the folders you
   browse in the car.
-+ **Import and export M3U and PLS** playlist files, the open formats
-  every other radio player reads, so your collection is never locked
-  in.
-+ **Android Auto**: browse your playlists and stations on the head
-  unit and play them without touching the phone.
-+ **Background playback** with lock screen, notification and headset
++ **Import and export M3U and PLS** playlist files. These are open
+  formats every other radio player reads and writes, so your
+  collection is never locked in and you can share your playlists with
+  others.
++ **Import and export podcasts as OPML**, to bring the podcasts you
+  follow from another podcast app, or take them with you.
++ **Android Auto**: browse your playlists and stations on the car's
+  infotainment system without touching the phone.
++ **Apple Car Play**: browse your playlists and stations on the car's
+  infotainment system without touching the phone.
++ **Playback** with lock screen, notification and headset
   controls.
++ **Sleep timer**: tap the timer in the toolbar to keep playing for a
+  while and then stop. Half an hour by default, and you can choose
+  anything from fifteen minutes to two hours in Settings. Only
+  playback stops, so a station is one tap away again. Switching
+  station keeps the countdown going; Stop resets it.
++ **Dark/Light** modes are supported.
 + Runs on **Android, iOS, GNU/Linux, macOS, Windows and the web**.
 
 ## Privacy
 
-RadioPod is built so that there is very little to say here, and what
-there is can be checked in the source.
+Visit our [privacy statement](https://gjwgit.github.io/radiopod/privacy.html).
+
+RadioPod is built to protect your privacy. The app maintains a list of
+radio stations you listen to and how they may be optionally organised
+into playlists of your choosing. In **local-only** mode (default) all
+data remains on your device. When you **Login** to your Solid server
+hosting your Pod, your data is stored in your Pod and is accessible to
+your app running on any device through your security key. The security
+key is used to decrypt the data on your device so it is not accessible
+by anyone on the server. Your Solid server of choice may collect your
+login timestamp and other standard server logging of meta data.
 
 + Your stations and playlists are **encrypted before they leave your
   device** and written to your own Solid Pod. The server holding them,
-  and its administrators, cannot read them.
-+ The **only third party contacted is Radio-Browser**, and only when
-  you use Search. It is sent your search text and an app name. It is
-  not sent your WebID, your Pod address, or your library. The relevant
-  code is in `lib/services/radio_browser.dart`.
+  and its administrators, cannot read your stations and playlists.
++ The **only third parties contacted are Radio-Browser and Podcast
+  Index**, and only when you search in **Subscribe**, add a
+  station by hand, or refresh a station's details. Podcast Index is
+  asked only when you search for a podcast; it is sent your search
+  text and the app name, and the code is in
+  `lib/services/podcast_index.dart`. For Radio-Browser: It is sent
+  your search text, the stream address you typed, or the station's
+  Radio-Browser id, and the app name and versions (e.g., RadioPod
+  1.1.21). It is not sent your WebID, your Pod address, nor your
+  library. The relevant code can be found in
+  `lib/services/radio_browser.dart`.
 + Radio-Browser offers a click-reporting endpoint that apps call to
   feed its popularity ranking. **RadioPod does not call it.** Nothing
   about what you listen to leaves the device.
++ A podcast's episode list and its episodes come straight from its
+  publisher, as any podcast app fetches them. Which episodes you have
+  heard, and how far into each, is kept with your library — encrypted
+  on your Pod, and on the device for the car — and is never reported.
++ A station's or podcast's logo lives on its own server. RadioPod
+  fetches it **once**, when the station is in your library, and keeps
+  a small copy on the device, so drawing your list or playing a
+  station never asks for it again, and the car is given that copy,
+  never the logo's address. Search results still load their logos as
+  you browse them.
 + Playing a station connects directly to that station's stream, so the
-  broadcaster sees a connection from your network — as it would from
+  broadcaster sees a connection from your network, as it would from
   any radio player or web browser. RadioPod adds nothing to that
   request.
 + There is **no analytics, no crash reporting and no account** beyond
   your Solid Pod.
 
-One honest caveat. Android Auto starts the app on its own, before any
-Pod login can happen, and will not wait for one. So an **unencrypted
-copy of your station names and stream addresses** is kept in the app's
-private storage on the device for the car to browse. It holds no more
-than a playlist file would, never your security key or WebID, and
-never leaves the device. Settings has a button to clear it.
-
-## Android Auto
-
-Android Auto sees RadioPod as a media app through a
-`MediaBrowserService`, provided by the
-[audio_service](https://pub.dev/packages/audio_service) package. The
-browse tree the head unit shows is two levels deep, which is what
-Android's media app guidelines ask for:
-
-```text
-RadioPod
-├── <each of your playlists>
-│   └── the stations in it, in playlist order
-└── All Stations
-    └── every saved station, alphabetically
-```
-
-Choosing a station sets the surrounding folder as the queue, so Next
-and Previous on the steering wheel move through the list that was
-actually being browsed. Live radio has no timeline, so RadioPod offers
-Stop rather than Pause and no seek controls.
-
-To test on a phone without a car, install *Android Auto for Phone
-Screens* (or use the Desktop Head Unit from the Android SDK), and turn
-on *Unknown sources* in Android Auto's developer settings so a debug
-build is listed.
-
-## Installation
-
-The latest version of the app can be run online at
-[radiopod.solidcommunity.au](https://radiopod.solidcommunity.au) with
-no installation required. Or else download and install for your
-platform from the [Solid Community AU](https://solidcommunity.au)
-repository or your platform store:
-
-<!-- markdownlint-disable MD036 -->
-+ **Web**
-  [solidcommunity](https://radiopod.solidcommunity.au/);
-+ **Android**
-  [apk](https://solidcommunity.au/installers/radiopod.apk) or
-  [aab](https://solidcommunity.au/installers/radiopod.aab);
-+ **GNU/Linux**
-  [deb](https://solidcommunity.au/installers/radiopod_amd64.deb) or
-  [snap store](https://snapcraft.io/radiopod) or
-  [snap](https://solidcommunity.au/installers/radiopod_amd64.snap) or
-  [zip](https://solidcommunity.au/installers/radiopod-linux.zip);
-+ **macOS**
-  [dmg](https://solidcommunity.au/installers/radiopod-macos.dmg) or
-  [zip](https://solidcommunity.au/installers/radiopod-macos.zip);
-+ **Windows**
-  [exe](https://solidcommunity.au/installers/radiopod-windows-inno.exe) or
-  [zip](https://solidcommunity.au/installers/radiopod-windows.zip).
+**Android Auto** starts the app on its own, before any Pod login can
+happen, and will not wait for one. So an **unencrypted copy of your
+station names and stream addresses** is kept in the app's private
+storage on the device for the car to browse. It holds no more than a
+playlist file would, never your security key or WebID, and never
+leaves the device. **Settings** has a button to clear it.
 
 ### GNU/Linux prerequisite
 
@@ -220,19 +251,23 @@ without a Solid server and so simply save your station lists
 locally. The **Continue** option is very much a supported way to run
 the app — your stations and playlists are then kept on the device and
 nothing is sent anywhere. **You do not need a Solid Pod to use this
-app in local only mode.** You can log in later to a Solid server and
+app in local-only mode.** You can log in later to a Solid server and
 copy what you have collected up to your Pod.
 
 ### Finding a station
 
-![The Search screen before a
+![The Subscribe screen before a
 search](assets/screenshots/radiopod_search.png)
 
 You can search the community-run Radio-Browser database by station
-name or by genre. The screen explains what leaves the device, because
-this is the one place in RadioPod where any data does leave the app to
-another service. What is shared is your search text and the name of
-the app, and nothing else.
+name, by genre, or by location, which matches the country or the
+region a station is listed under. Put `@` before a place to combine it
+with other words: `@sydney news` finds news stations in Sydney, and a
+place of several words goes in quotes, as in `@"new york" jazz`. The
+screen explains what leaves the device, because this is the one place
+in RadioPod where any data does leave the app to another service. What
+is shared is your search text and the name of the app, and nothing
+else.
 
 ![Search results for
 ABC](assets/screenshots/radiopod_search_abc.png)
@@ -242,7 +277,10 @@ Radio-Browser holds a record per submission, so one station can be
 listed many times over; RadioPod collapses those to one row per stream
 address. A tick marks a station already in your library, and the plus
 adds a new one. Tapping any row plays that station straight away, so
-you can listen before deciding to keep it.
+you can listen before deciding to keep it. The **ⓘ** button shows what
+is known about a result, such as its homepage, genre and audio format,
+and for a podcast what it is about and how many episodes it has, with
+Save to hand.
 
 ### Your stations
 
@@ -273,36 +311,36 @@ details remain on display when it is playing.
 
 ### Station options
 
-Every station row has a **⋮** menu for operations on the station
-entry.
+Every station row has an **ⓘ** button for operations on the station
+entry. On a podcast it opens the Episodes page, which has the
+podcast's Properties. The **ⓘ** on the Playlists page does the same.
+Swipe a row to the left to delete it, or on a wider screen use the
+delete button beside the **ⓘ**.
 
 ![The station properties
 dialog](assets/screenshots/radiopod_stations_properties.png)
 
-**Properties** allows you to rename a station, give it a logo, and say
-what should happen when its stream ends.
+**Information** shows everything known about a station, and while it is
+on air the whole title of what is playing. It also allows you to rename
+the station, give it a logo, and say what should happen when its stream
+ends.
 
 Radio-Browser names sometimes contain transmitter details and other
 information so you can rename the stations to suit yourself. The
 default station logo can be downloaded from the address the station
-advertises, or you can choose a logo for yourself. Here we have chosen
-our own logo. When there is no default logo the button is greyed
-out. Either way, the logo is stored with the station information
-locally or in your Pod.
+advertises, or you can choose a logo for yourself. In the screenshot
+here we have chosen our own logo. When there is no default logo the
+button is greyed out. Either way, the logo is stored with the station
+information locally or in your Pod.
 
 The option to **reconnect when the stream ends** applies when, for
 example, a continuously streaming station's connection drops, rather
 than a news bulletin ends. For the former case you may like to
-reconnect so the station remains on air. The default is to move to the
-next station, so that once the NPR news bulletin finishes we move on
-to the next listed station.
-
-![Adding a station to
-playlists](assets/screenshots/radiopod_stations_playlists.png)
-
-**Add to playlist**, when selected, will list your playlists and
-provide an opportunity to select the playlists this station belongs. A
-station can sit in multiple playlists.
+reconnect so the station remains on air. The Australian ABC requires
+this setting due to how they have configured their audio
+streaming. The default is to move to the next station when a stream
+ends. For example, NPR station streams a news bulletin so that when it
+finishes we move on to the next listed station.
 
 ### Playlists
 
@@ -311,7 +349,16 @@ station can sit in multiple playlists.
 You can group stations into playlists however you like. A playlist
 holds references, not copies, so a station renamed once is renamed
 everywhere, and the same station can sit in as many playlists as you
-please. These are also the folders you browse on a car's head unit.
+please. These are also the folders you browse on a car's infotainment
+system.
+
+**Manage playlists**, beside the filter at the top of the page, opens
+a grid with a row for every station and podcast in your library and a
+column for every playlist. Tick a box to put a station in that
+playlist, untick it to take it out. The grid starts with the page's
+filter, so typing a name first narrows it to the stations you are
+sorting. The filter itself keeps the playlists whose name matches, or
+that hold a matching station.
 
 ### Import and export
 
@@ -319,21 +366,98 @@ please. These are also the folders you browse on a car's head unit.
 screen](assets/screenshots/radiopod_export_import.png)
 
 RadioPod reads and writes M3U, M3U8 and PLS. These are the plain text
-formats internet radio uses and other players can read and export
-these. The Import adds the stations to your library and groups them
-into a playlist named after the file, reusing any stream address you
-already have rather than duplicating it. The Export saves the whole
-library or a single playlist.
+formats internet radio uses and other players can read and export. The
+Import adds the stations to your library and groups them into a
+playlist named with the name of the file. Any stream address you
+already have is reused rather than duplicated. The Export saves the
+whole library or a single playlist into a text file with a format that
+can be read by other apps.
+
+Podcasts are moved as OPML instead, the subscription list every
+podcast app exports. The Import adds any podcast you do not already
+have to the end of your Stations and fetches its episodes. The Export
+saves all your podcasts in a single file. Only the list of podcasts
+moves; what you have listened to stays in RadioPod.
 
 ### Settings
 
 ![The Settings screen](assets/screenshots/radiopod_settings.png)
 
-Settings notes where your data is kept and what that means, including
-the caveat that an unencrypted copy of station names and stream
-addresses stays on the device so Android Auto can browse it before any
-login can happen. There is a button to clear it. The privacy summary
-is the same one as above in the app.
+Settings identifies where your data is kept and what that means. Data
+is kept eiher locally or in your secure and private Solid Pod.  The
+settins includes information bout the privacy of your data noting that
+an unencrypted copy of station names and stream addresses stays on the
+device so Android Auto and Apple Car Play can browse it before any
+login is required. There is a button to clear this data whenever you
+like.
+
+## Platforms
+
+### Linux
+
+![Station list on desktop](assets/screenshots/radiopod_populated_stations.png)
+
+### Android
+
+<!-- markdownlint-disable MD033 -->
+<!-- Inline HTML image tags, so the phone screenshots can be scaled down.
+     Markdown's own image syntax has no width, and at full size these
+     tower over the desktop shot above. -->
+
+<img src="assets/screenshots/radiopod_android_stations.png"
+alt="Station list on Android Phone" width="300">
+
+### iOS
+
+<img src="assets/screenshots/radiopod_ios_stations.png"
+alt="Station list on the iPhone" width="300">
+
+## Android Auto
+
+Android Auto sees RadioPod as a media app through a
+`MediaBrowserService`, provided by the
+[audio_service](https://pub.dev/packages/audio_service) package. The
+browse tree shown in-car is two levels deep, which is what Android's
+media app guidelines ask for:
+
+```text
+RadioPod
+├── <each of your playlists>
+│   └── the stations in it, in playlist order
+└── All Stations
+    └── every saved station, alphabetically
+```
+
+Choosing a station sets the surrounding folder as the queue, so Next
+and Previous on the steering wheel move through the list that was
+actually being browsed. Live radio has no timeline, so RadioPod offers
+Stop rather than Pause and no seek controls.
+
+## Apple CarPlay
+
+Apple CarPlay is supported natively from your connected iPhone. To
+begin tap on the RadioPod button to open the app.
+
+![CarPlay Screen](assets/screenshots/radiopod_ios_carplay_screen.jpg)
+
+You will see the station list and the currently playing station is at
+the top right.
+
+![CarPlay Stations ABC Playing](assets/screenshots/radiopod_ios_carplay_stations_abc.jpg)
+
+![CarPlay Stations](assets/screenshots/radiopod_ios_carplay_stations.jpg)
+
+Here is the playing-now screen.
+
+![CarPlay Playing](assets/screenshots/radiopod_ios_carplay_playing.jpg)
+
+You can also navigate through the playlists.
+
+![CarPlay Playlists](assets/screenshots/radiopod_ios_carplay_playlists.jpg)
+
+![CarPlay Playlist Canberra](assets/screenshots/radiopod_ios_carplay_playlist_canberra.jpg)
+
+<!-- markdownlint-enable MD033 -->
 
 ## Licence
 

@@ -6,7 +6,24 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3
+/// Licensed under the GNU General Public License, Version 3 (the "License").
+///
+/// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -209,6 +226,49 @@ void main() {
     });
   });
 
+  group('importPodcasts', () {
+    const saved = Station(
+      id: 'p1',
+      name: 'Future Tense',
+      url: 'https://feeds.example/ft',
+      isPodcast: true,
+    );
+
+    test('adds new podcasts at the end and skips one already saved', () async {
+      final p = _provider(stations: const [_a, saved]);
+      final (added, error) = await p.importPodcasts(const [
+        (
+          title: 'Future Tense',
+          url: 'https://feeds.example/ft',
+          homepage: null,
+        ),
+        (title: 'Up First', url: 'https://feeds.example/uf', homepage: null),
+        (title: 'Up First', url: 'https://feeds.example/uf', homepage: null),
+      ]);
+
+      expect(error, isNull);
+      expect(added, 1);
+      expect(p.stations.map((s) => s.name), [
+        'Zulu FM',
+        'Future Tense',
+        'Up First',
+      ]);
+      expect(p.stations.last.isPodcast, isTrue);
+    });
+
+    test('podcastFeeds lists only podcasts, in list order', () {
+      final p = _provider(stations: const [_a, saved, _b]);
+
+      expect(p.podcastFeeds, [
+        (
+          title: 'Future Tense',
+          url: 'https://feeds.example/ft',
+          homepage: null,
+        ),
+      ]);
+    });
+  });
+
   group('importEntries', () {
     const entries = <PlaylistEntry>[
       (name: 'Zulu FM', url: 'https://live.example/z'),
@@ -269,6 +329,33 @@ void main() {
 
       p.setStartupPhase(StartupPhase.ready);
       expect(p.busy, isFalse);
+    });
+
+    // 20261007 gjw The screens branch on isStartingUp FIRST and render
+    // nothing, because StartupOverlay is already drawing a spinner over
+    // them. That is only safe while every startup phase is also busy: if
+    // one were not, the screen would fall through to its empty state and
+    // "No stations yet" would glow through the overlay's translucent scrim.
+
+    test('every starting-up phase is also busy', () {
+      final p = _provider();
+
+      for (final phase in StartupPhase.values) {
+        p.setStartupPhase(phase);
+        if (p.isStartingUp) {
+          expect(p.busy, isTrue, reason: '$phase starts up but is not busy');
+        }
+      }
+    });
+
+    test('isStartingUp is false once ready, so screens draw again', () {
+      final p = _provider();
+
+      p.setStartupPhase(StartupPhase.ready);
+      expect(p.isStartingUp, isFalse);
+
+      p.setStartupPhase(StartupPhase.idle);
+      expect(p.isStartingUp, isFalse);
     });
 
     test('setKeySaved notifies only on a real change', () {

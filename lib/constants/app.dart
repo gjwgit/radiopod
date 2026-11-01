@@ -1,10 +1,10 @@
 /// RadioPod - app-wide constants.
 ///
-// Time-stamp: <Saturday 2026-09-20 06:00:00 +1000 Graham Williams>
+// Time-stamp: <Thursday 2026-10-22 09:23:01 +1100 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3 (the "License");
+/// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
 /// License: https://opensource.org/license/gpl-3-0
 //
@@ -19,7 +19,7 @@
 // details.
 //
 // You should have received a copy of the GNU General Public License along with
-// this program.  If not, see <https://opensource.org/license/gpl-3-0>.
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
 ///
 /// Authors: Graham Williams
 
@@ -33,7 +33,7 @@ const appName = 'RadioPod';
 
 /// Application title displayed as the window title.
 
-const String appTitle = 'RadioPod - Listen to Internet Radio';
+const String appTitle = 'RadioPod - Privacy-First Radio and Podcasts';
 
 /// App directory name used by solidpod for storage paths.
 
@@ -47,6 +47,17 @@ const stationsFileName = 'stations.ttl';
 
 const playlistsFileName = 'playlists.ttl';
 
+/// Pod filename for every podcast's casts and the listener's progress
+/// through them, keyed by the podcast's station id.
+
+const castsFileName = 'casts.ttl';
+
+/// Names the app to every server it asks for something: Radio-Browser,
+/// Podcast Index and each podcast's own feed. Radio-Browser's terms of use
+/// require it. Bump the version with the app's.
+
+const userAgent = 'RadioPod/2.3.2 (+https://github.com/gjwgit/radiopod)';
+
 /// Notification channel identity for the Android media notification.
 ///
 /// Also the channel Android Auto surfaces the app under, so it must be
@@ -54,6 +65,37 @@ const playlistsFileName = 'playlists.ttl';
 
 const notificationChannelId = 'com.togaware.radiopod.channel.audio';
 const notificationChannelName = 'Radio playback';
+
+/// How long the sleep timer runs unless the listener picks otherwise.
+
+const sleepTimerDefault = Duration(minutes: 30);
+
+/// How long the sleep timer spends fading the station out before it stops.
+/// Part of the timer's length, not added to it.
+
+const sleepFadeDuration = Duration(seconds: 30);
+
+/// The choices offered when setting a sleep timer.
+///
+/// Short at the start for "I am nearly asleep already", and long enough at
+/// the end to cover an evening. [sleepTimerDefault] must be one of these, so
+/// the sheet can show it already selected.
+
+const sleepTimerChoices = <Duration>[
+  Duration(minutes: 15),
+  Duration(minutes: 30),
+  Duration(minutes: 45),
+  Duration(minutes: 60),
+  Duration(minutes: 90),
+  Duration(minutes: 120),
+];
+
+/// The Android applicationId, as set in android/app/build.gradle.kts.
+///
+/// Needed in Dart to address StationIconProvider, whose authority the
+/// manifest builds from `${applicationId}`. Change one and change the other.
+
+const androidApplicationId = 'com.togaware.radiopod';
 
 /// Root of the Android Auto browse tree, and the ids of its two branches.
 ///

@@ -1,12 +1,12 @@
 /// RadioPod — the primary [MaterialApp] widget.
 ///
-// Time-stamp: <Sunday 2026-09-21 06:00:00 +1000 Graham Williams>
+// Time-stamp: <Friday 2026-10-02 20:47:13 +1000 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
 /// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
-/// License: https://opensource.org/license/gpl-3-0.
+/// License: https://opensource.org/license/gpl-3-0
 //
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free Software
@@ -32,6 +32,8 @@ import 'package:solidui/solidui.dart';
 
 import 'package:radiopod/app_scaffold.dart';
 import 'package:radiopod/constants/app.dart';
+import 'package:radiopod/services/player.dart';
+import 'package:radiopod/widgets/geo_block_listener.dart';
 
 // 20260921 gjw This widget is the root of the application. On startup it will
 // call upon [SolidLogin] to connect to the user's Pod stored within the user's
@@ -46,7 +48,13 @@ class App extends StatelessWidget {
       // 20260921 gjw We can manually turn off the debug banner. It is turned
       // off automatically for a `flutter --release`.
       //
-      debugShowCheckedModeBanner: true,
+      // 20260930 gjw FALSE now, for the App Store screenshots. An
+      // integration_test runs in DEBUG, so the ribbon would be burnt into
+      // every image the screenshots workflow produces, and Apple rejects
+      // screenshots showing it. Release builds are unaffected either way —
+      // the banner never appears there.
+      //
+      debugShowCheckedModeBanner: false,
 
       title: appTitle,
 
@@ -73,12 +81,12 @@ class App extends StatelessWidget {
       // already-cached station must work in the car without a login prompt,
       // and the library only needs the Pod when it is read or written.
       home: SolidLogin(
-        required: false,
+        skipLogin: true,
         appDirectory: appDirectory,
         title: appTitle.replaceAll(' - ', '\n'),
         image: const AssetImage('assets/images/app_image.jpg'),
         logo: const AssetImage('assets/images/app_icon.png'),
-        link: 'https://github.com/gjwgit/radiopod',
+        link: 'https://gjwgit.github.io/radiopod',
         clientId: 'https://gjwgit.github.io/radiopod/client-profile.jsonld',
         redirectUris: kIsWeb
             ? ['${Uri.base.origin}/redirect.html']
@@ -90,8 +98,16 @@ class App extends StatelessWidget {
         // exists for the dialog and the listener outlives individual screens.
         // It reports Pod writes that nothing awaits — saving a station found
         // in Search, say — which would otherwise fail silently.
+        //
+        // 20261014 gjw GeoBlockListener sits here for the same reasons: a
+        // Navigator for its dialog, and a life as long as the player's.
 
-        child: const SolidWriteFailureListener(child: appScaffold),
+        child: SolidWriteFailureListener(
+          child: GeoBlockListener(
+            blocks: Player.handler.geoBlocks,
+            child: appScaffold,
+          ),
+        ),
       ),
     );
   }

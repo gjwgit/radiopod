@@ -1,5 +1,26 @@
 /// Reusable startup busy overlay.
 ///
+/// Copyright (C) 2026, Togaware Pty Ltd
+///
+/// Licensed under the GNU General Public License, Version 3 (the "License").
+///
+/// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
+
 /// Shows a centered progress indicator with a phase-aware message while the app
 /// unlocks the Pod (security key) and then loads data. Without this, startup
 /// for a large data set looks like the app is frozen — and the transient
@@ -14,14 +35,6 @@
 ///   3. Also branch list screens on a unified `busy` getter (loading ||
 ///      isStartingUp) so the empty state never flashes between phases.
 ///   4. Copy this file in; adjust only the StartupPhase import to the app.
-///
-// Time-stamp: <2026-06-19>
-///
-/// Copyright (C) 2025, Software Innovation Institute, ANU.
-///
-/// Licensed under the GNU General Public License, Version 3 (the "License").
-///
-/// License: https://opensource.org/license/gpl-3-0.
 
 library;
 
@@ -45,6 +58,14 @@ String startupPhaseMessage(StartupPhase phase) {
 /// Overlays a busy indicator over [child] while [phase] is unlocking/loading.
 ///
 /// When not starting up, [child] is shown unchanged.
+///
+/// 20261007 gjw THE CHILD MUST NOT DRAW ITS OWN BUSY INDICATOR while the
+/// phase is busy. The scrim below is deliberately translucent, at 0.85, so
+/// the app's chrome stays visible rather than popping in and out — which
+/// means whatever the child draws shows faintly THROUGH it. Both screens
+/// using this also had a `provider.busy` spinner inside, and on launch the
+/// two appeared together, the inner one sitting lower because it centres
+/// below the filter box. They now render nothing while isStartingUp.
 class StartupOverlay extends StatelessWidget {
   const StartupOverlay({super.key, required this.phase, required this.child});
 

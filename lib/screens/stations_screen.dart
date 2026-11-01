@@ -1,12 +1,27 @@
 /// StationsScreen — the saved station library.
 ///
-// Time-stamp: <Sunday 2026-09-21 06:00:00 +1000 Graham Williams>
+// Time-stamp: <Monday 2026-10-19 16:09:05 +1100 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3 (the "License");
+/// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
 /// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -16,16 +31,21 @@ import 'package:markdown_tooltip/markdown_tooltip.dart';
 import 'package:provider/provider.dart';
 
 import 'package:radiopod/models/station.dart';
-import 'package:radiopod/screens/stations_widgets/add_to_playlist_sheet.dart';
+import 'package:radiopod/screens/podcast_screen.dart';
 import 'package:radiopod/screens/stations_widgets/station_empty_state.dart';
 import 'package:radiopod/screens/stations_widgets/station_properties_dialog.dart';
+import 'package:radiopod/screens/stations_widgets/station_pull_refresh.dart';
 import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/services/player.dart';
+import 'package:radiopod/utils/station_filter.dart';
 import 'package:radiopod/widgets/app_snack_bar.dart';
+import 'package:radiopod/widgets/cast_controls.dart';
 import 'package:radiopod/widgets/error_dialog.dart';
 import 'package:radiopod/widgets/now_playing.dart';
+import 'package:radiopod/widgets/now_playing_stop_button.dart';
 import 'package:radiopod/widgets/startup_overlay.dart';
 import 'package:radiopod/widgets/station_tile.dart';
+import 'package:radiopod/widgets/swipe_to_remove.dart';
 
 /// Every saved station, in the order the user put them in, with a filter box
 /// for long libraries.
@@ -60,7 +80,7 @@ class _StationsScreenState extends State<StationsScreen> {
     final query = _filter.text.trim().toLowerCase();
     final visible = [
       for (final s in provider.stations)
-        if (query.isEmpty || s.name.toLowerCase().contains(query)) s,
+        if (stationMatches(s, provider.castsOf(s.id), query)) s,
     ];
 
     return StartupOverlay(
@@ -69,29 +89,83 @@ class _StationsScreenState extends State<StationsScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: TextField(
-              controller: _filter,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.filter_list),
-                hintText: 'Filter your stations',
-                border: const OutlineInputBorder(),
-                isDense: true,
-                suffixIcon: _filter.text.isEmpty
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () => setState(_filter.clear),
-                      ),
-              ),
+            child: Row(
+              children: [
+                // 20261016 gjw While something plays, the empty box says
+                // what: the station and its song, or the podcast and its
+                // cast. It is still the filter — typing replaces the line
+                // as any hint is replaced — so nothing is lost, and the
+                // usual prompt returns when playback stops.
+                Expanded(
+                  child: NowPlayingBuilder(
+                    builder: (context, now) {
+                      final playing = nowPlayingLine(now, provider.stations);
+
+                      return TextField(
+                        controller: _filter,
+                        onChanged: (_) => setState(() {}),
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.filter_list),
+                          hintText:
+                              playing ??
+                              'Filter your subscribed stations and episodes. '
+                                  'Find new ones in Subscribe.',
+                          hintStyle: playing == null
+                              ? null
+                              : TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                          border: const OutlineInputBorder(),
+                          isDense: true,
+                          suffixIcon: _filter.text.isEmpty
+                              ? null
+                              : IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () => setState(_filter.clear),
+                                ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                NowPlayingStopButton(
+                  stations: provider.stations,
+                  first: provider.firstPodcastToPlay,
+                  onFirst: (s) => _play(provider, s, provider.stations),
+                ),
+              ],
             ),
           ),
+          const CastControls(),
           Expanded(
-            child: provider.busy
-                ? const Center(child: CircularProgressIndicator())
-                : visible.isEmpty
-                ? StationEmptyState(filtered: query.isNotEmpty)
-                : _list(provider, visible, reorderable: query.isEmpty),
+            // 20261007 gjw NOTHING HERE WHILE STARTING UP. StartupOverlay is
+            // already drawing a spinner and a message over this, and its
+            // scrim is translucent, so a second indicator showed through it
+            // — lower on screen, because this one centres below the filter
+            // box. That was the double animation on launch.
+            //
+            // Blank rather than the empty state: "No stations yet" glowing
+            // through the scrim would be worse than the extra spinner, and
+            // is exactly what AppProvider.busy folds isStartingUp in to
+            // prevent.
+            //
+            // 20261028 gjw Pulling the list down refreshes it from the Pod
+            // and checks the podcasts; see StationPullRefresh.
+            child: provider.isStartingUp
+                ? const SizedBox.shrink()
+                : StationPullRefresh(
+                    builder: (context, pulling) => provider.busy && !pulling
+                        ? const Center(child: CircularProgressIndicator())
+                        : visible.isEmpty
+                        ? PullableFill(
+                            child: StationEmptyState(
+                              filtered: query.isNotEmpty,
+                            ),
+                          )
+                        : _list(provider, visible, reorderable: query.isEmpty),
+                  ),
           ),
         ],
       ),
@@ -118,33 +192,18 @@ class _StationsScreenState extends State<StationsScreen> {
       builder: (context, now) {
         Widget row(int i) {
           final station = visible[i];
-          final current = now.isCurrent(station.id);
 
-          return StationTile(
+          return SwipeToRemove(
             key: ValueKey(station.id),
-            station: station,
-            current: current,
-            playing: now.playing,
-            connecting: now.connecting,
-            failed: now.failed,
-            track: now.track,
-
-            // Tapping the station on air toggles it; tapping any other row
-            // switches to that station.
-            onTap: () =>
-                current ? _toggle(now) : _play(provider, station, visible),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _menu(provider, station),
-                if (reorderable) _dragHandle(i),
-              ],
-            ),
+            confirm: () => _askDelete(station),
+            onRemove: () => _delete(provider, station),
+            child: _tile(provider, station, visible, now, i, reorderable),
           );
         }
 
         if (!reorderable) {
           return ListView.builder(
+            physics: pullableScrollPhysics,
             itemCount: visible.length,
             itemBuilder: (context, i) => row(i),
           );
@@ -156,12 +215,55 @@ class _StationsScreenState extends State<StationsScreen> {
           // behaviour: with the default handles a long press anywhere on
           // mobile starts a drag, which fights with tapping to play.
           buildDefaultDragHandles: false,
+          physics: pullableScrollPhysics,
           itemCount: visible.length,
           itemBuilder: (context, i) => row(i),
           onReorderItem: (oldIndex, newIndex) =>
               provider.reorderStation(oldIndex, newIndex),
         );
       },
+    );
+  }
+
+  /// One station row, its index [i] in [visible] being what a drag reports.
+
+  Widget _tile(
+    AppProvider provider,
+    Station station,
+    List<Station> visible,
+    NowPlaying now,
+    int i,
+    bool reorderable,
+  ) {
+    final current = now.isCurrent(station.id);
+
+    return StationTile(
+      station: station,
+      current: current,
+      playing: now.playing,
+      connecting: now.connecting,
+      loading: now.loading,
+      paused: now.paused,
+      failed: now.failed,
+      track: now.track,
+      details: station.isPodcast
+          ? podcastDetails(
+              station,
+              toPlay: provider.castsToPlay(station.id),
+              total: provider.castsOf(station.id).length,
+            )
+          : null,
+
+      // Tapping the station on air toggles it; tapping any other row
+      // switches to that station.
+      onTap: () => current ? _toggle(now) : _play(provider, station, visible),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _actions(provider, station),
+          if (reorderable) _dragHandle(i),
+        ],
+      ),
     );
   }
 
@@ -184,26 +286,90 @@ class _StationsScreenState extends State<StationsScreen> {
     ),
   );
 
-  Widget _menu(AppProvider provider, Station station) => MarkdownTooltip(
-    message: '''
+  /// The row's actions: Information, and Delete where there is room.
+  ///
+  /// 20261008 gjw Measured against the SCREEN rather than the row. See
+  /// [rowDeleteMinWidth] for where it changes. 20261028 gjw A narrow screen
+  /// had a menu of Information and Delete; it now has the Information
+  /// button alone, a swipe left being how a phone deletes.
 
-    **Station actions**
+  Widget _actions(AppProvider provider, Station station) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      // 20261025 gjw The information glyph, not a list, which read as a
+      // playlist button. 20261028 gjw ONE button for what a row is and what
+      // can be set about it: a podcast's Episodes page carries its
+      // Properties, and a station's Properties carries its information.
+      if (station.isPodcast)
+        _button(
+          icon: Icons.info_outline,
+          tooltip: '''
 
-    Rename this station, give it an icon, say what should happen when its
-    stream ends, add it to a playlist, or remove it from your library.
+          **Episodes**
 
-    ''',
-    child: PopupMenuButton<String>(
-      onSelected: (value) => switch (value) {
-        'properties' => _editProperties(provider, station),
-        'playlists' => _choosePlaylists(station),
-        _ => _confirmDelete(provider, station),
-      },
-      itemBuilder: (context) => const [
-        PopupMenuItem(value: 'properties', child: Text('Properties…')),
-        PopupMenuItem(value: 'playlists', child: Text('Add to playlist…')),
-        PopupMenuItem(value: 'delete', child: Text('Delete station')),
-      ],
+          What this podcast is about, and its episodes: what each is about,
+          how long it runs and how far you got. Skip any you never want to
+          hear. Rename the podcast or give it an icon from there too.
+
+          ''',
+          onPressed: () => _openCasts(station),
+        )
+      else
+        _button(
+          icon: Icons.info_outline,
+          tooltip: '''
+
+          **Information**
+
+          Everything known about this station, and while it is on air the
+          whole title of what is playing. Rename it here, give it an icon,
+          and say what should happen when its stream ends.
+
+          ''',
+          onPressed: () => editStationProperties(context, station),
+        ),
+      if (rowShowsDelete(MediaQuery.sizeOf(context).width))
+        _button(
+          icon: Icons.delete_outline,
+          tooltip: '''
+
+          **Delete station**
+
+          Remove this station from your library and from every playlist it
+          appears in. You will be asked to confirm. Swiping the row to the
+          left does the same.
+
+          ''',
+          onPressed: () => _confirmDelete(provider, station),
+        ),
+    ],
+  );
+
+  /// One action button.
+  ///
+  /// visualDensity is tightened because the default IconButton is 48 wide,
+  /// which pushes a long station name into an ellipsis.
+
+  Widget _button({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+  }) => MarkdownTooltip(
+    message: tooltip,
+    child: IconButton(
+      icon: Icon(icon),
+      onPressed: onPressed,
+      visualDensity: VisualDensity.compact,
+      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+    ),
+  );
+
+  /// A podcast's page of casts.
+
+  Future<void> _openCasts(Station podcast) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) =>
+          PodcastScreen(podcastId: podcast.id, initialFilter: _filter.text),
     ),
   );
 
@@ -221,42 +387,31 @@ class _StationsScreenState extends State<StationsScreen> {
       await provider.play(station, queue: queue);
     } catch (e) {
       if (!mounted) return;
-      await showErrorDialog(
+      await showPlayError(
         context,
-        title: 'Cannot play ${station.name}',
-        message:
-            'The stream could not be reached.\n\n'
-            'Radio stations change and retire their stream addresses, so a '
-            'station saved a while ago may simply be gone. Try finding it '
-            'again in Search.\n\n$e',
+        station: station,
+        error: e,
+        otherwise: station.isPodcast
+            ? 'The episode could not be fetched from the podcast\'s server.'
+            : 'The stream could not be reached.\n\n'
+                  'Radio stations change and retire their stream addresses, '
+                  'so a station saved a while ago may simply be gone. Try '
+                  'finding it again in Subscribe.',
       );
     }
   }
-
-  /// Rename the station, set its icon, and choose what a stream end means.
-
-  Future<void> _editProperties(AppProvider provider, Station station) async {
-    final updated = await showStationPropertiesDialog(context, station);
-    if (updated == null || !mounted) return;
-
-    await provider.updateStation(updated);
-    if (!mounted) return;
-    showPositiveSnackBar(context, 'Updated ${updated.name}.');
-  }
-
-  Future<void> _choosePlaylists(Station station) => showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (_) => AddToPlaylistSheet(station: station),
-  );
 
   /// Confirm before deleting, because a deleted station also disappears from
   /// every playlist that referenced it.
 
   Future<void> _confirmDelete(AppProvider provider, Station station) async {
+    if (!await _askDelete(station) || !mounted) return;
+    await _delete(provider, station);
+  }
+
+  /// The confirmation, asked by the Delete action and by a swipe left.
+
+  Future<bool> _askDelete(Station station) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -277,10 +432,30 @@ class _StationsScreenState extends State<StationsScreen> {
         ],
       ),
     );
-    if (confirmed != true || !mounted) return;
+    return confirmed == true;
+  }
 
+  Future<void> _delete(AppProvider provider, Station station) async {
     await provider.deleteStation(station.id);
     if (!mounted) return;
     showPositiveSnackBar(context, 'Deleted ${station.name}.');
   }
 }
+
+/// The narrowest screen on which a station row shows a Delete button.
+///
+/// 20261026 gjw It was solidui's narrow/wide threshold (800), so the row
+/// changed with the navigation, but a 600 pixel desktop window then went
+/// without beside plenty of room. 520 is below such a window and above
+/// every phone held upright (360 to 430), which keeps the room for the
+/// name and deletes with a swipe left.
+
+const rowDeleteMinWidth = 520.0;
+
+/// Whether a station row has room to show a Delete button.
+///
+/// 20261008 gjw Pure, and tested, because the alternative is not testable at
+/// all: pumping StationsScreen needs a live Player, so a widget test cannot
+/// reach this decision.
+
+bool rowShowsDelete(double screenWidth) => screenWidth >= rowDeleteMinWidth;

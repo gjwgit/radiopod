@@ -4,7 +4,24 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3
+/// Licensed under the GNU General Public License, Version 3 (the "License").
+///
+/// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -27,6 +44,7 @@ void main() {
       bitrate: 128,
       tags: ['classical', 'news'],
       stationUuid: 'uuid-1',
+      description: 'Classical music, all day.',
     );
 
     test('JSON round-trips every field', () {
@@ -43,6 +61,7 @@ void main() {
       expect(back.bitrate, full.bitrate);
       expect(back.tags, full.tags);
       expect(back.stationUuid, full.stationUuid);
+      expect(back.description, full.description);
     });
 
     test('a minimal station round-trips and omits absent fields', () {
@@ -55,14 +74,14 @@ void main() {
     });
 
     test('subtitle joins only the fields that are known', () {
-      expect(full.subtitle, 'Australia · english · MP3 · 128 kbps');
-      expect(const Station(id: 's', name: 'n', url: 'u').subtitle, isEmpty);
+      expect(full.subtitle, 'Radio · Australia · english · MP3 · 128 kbps');
+      expect(const Station(id: 's', name: 'n', url: 'u').subtitle, 'Radio');
     });
 
     test('subtitle omits a zero bitrate', () {
       const s = Station(id: 's', name: 'n', url: 'u', codec: 'AAC', bitrate: 0);
 
-      expect(s.subtitle, 'AAC');
+      expect(s.subtitle, 'Radio · AAC');
     });
 
     test('copyWith can clear a nullable field', () {

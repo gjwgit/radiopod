@@ -4,9 +4,24 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3 (the "License");
+/// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
 /// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -91,6 +106,28 @@ class Station {
 
   final String? icon;
 
+  /// True when this entry is a podcast rather than a live station.
+  ///
+  /// 20261016 gjw A podcast lives in the same list as the stations, and is
+  /// one, as far as the list, the playlists and the car are concerned: it
+  /// has a name, artwork and a place in the user's order. Its [url] is the
+  /// RSS FEED, never audio. The episodes — casts — are fetched from that
+  /// feed and kept apart, in `casts.ttl`, with the listener's progress.
+
+  final bool isPodcast;
+
+  /// Who makes the podcast, from the feed's `itunes:author`.
+
+  final String? author;
+
+  /// What the podcast is about, from the feed's own channel description.
+  ///
+  /// 20261025 gjw From the FEED, not Podcast Index: the search result's
+  /// description stays in the results (see `podcastAbout`), and the feed is
+  /// fetched at every load anyway, so the text follows the publisher's.
+
+  final String? description;
+
   const Station({
     required this.id,
     required this.name,
@@ -107,17 +144,23 @@ class Station {
     this.reconnectOnEnd = false,
     this.isHls = false,
     this.icon,
+    this.isPodcast = false,
+    this.author,
+    this.description,
   });
 
   // ── Derived properties ────────────────────────────────────────────────────
 
   /// A one-line summary for the second line of a list tile.
   ///
-  /// Only the parts we actually know are joined, so a hand-imported station
-  /// with nothing but a name and URL shows an empty subtitle rather than a
-  /// row of separators.
+  /// It opens with what the row is, Radio or Podcast, so the two read alike
+  /// in a mixed list. Only the other parts we actually know are joined, so a
+  /// hand-imported station with nothing but a name and URL shows just
+  /// "Radio" rather than a row of separators.
 
   String get subtitle => [
+    isPodcast ? 'Podcast' : 'Radio',
+    if (author != null && author!.isNotEmpty) author,
     if (country != null && country!.isNotEmpty) country,
     if (language != null && language!.isNotEmpty) language,
     if (codec != null && codec!.isNotEmpty) codec,
@@ -143,6 +186,9 @@ class Station {
     if (reconnectOnEnd) 'reconnectOnEnd': true,
     if (isHls) 'isHls': true,
     if (icon != null) 'icon': icon,
+    if (isPodcast) 'isPodcast': true,
+    if (author != null) 'author': author,
+    if (description != null) 'description': description,
   };
 
   factory Station.fromJson(Map<String, dynamic> j) => Station(
@@ -161,6 +207,9 @@ class Station {
     reconnectOnEnd: j['reconnectOnEnd'] as bool? ?? false,
     isHls: j['isHls'] as bool? ?? false,
     icon: j['icon'] as String?,
+    isPodcast: j['isPodcast'] as bool? ?? false,
+    author: j['author'] as String?,
+    description: j['description'] as String?,
   );
 
   Station copyWith({
@@ -179,6 +228,9 @@ class Station {
     bool? reconnectOnEnd,
     bool? isHls,
     Object? icon = _sentinel,
+    bool? isPodcast,
+    Object? author = _sentinel,
+    Object? description = _sentinel,
   }) => Station(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -197,6 +249,11 @@ class Station {
     reconnectOnEnd: reconnectOnEnd ?? this.reconnectOnEnd,
     isHls: isHls ?? this.isHls,
     icon: icon == _sentinel ? this.icon : icon as String?,
+    isPodcast: isPodcast ?? this.isPodcast,
+    author: author == _sentinel ? this.author : author as String?,
+    description: description == _sentinel
+        ? this.description
+        : description as String?,
   );
 }
 

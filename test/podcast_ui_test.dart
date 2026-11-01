@@ -1,0 +1,375 @@
+/// Tests for how podcasts and their casts are shown and described.
+///
+// Time-stamp: <Friday 2026-10-16 06:00:00 +1100 Graham Williams>
+///
+/// Copyright (C) 2026, Togaware Pty Ltd
+///
+/// Licensed under the GNU General Public License, Version 3 (the "License").
+///
+/// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
+
+library;
+
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+
+import 'package:audio_service/audio_service.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:radiopod/constants/app.dart';
+import 'package:radiopod/models/cast.dart';
+import 'package:radiopod/models/station.dart';
+import 'package:radiopod/screens/podcast_widgets/cast_tile.dart';
+import 'package:radiopod/services/browse_tree.dart';
+import 'package:radiopod/services/cast_playback.dart';
+import 'package:radiopod/utils/cast_text.dart';
+import 'package:radiopod/widgets/cast_controls.dart';
+import 'package:radiopod/widgets/station_tile.dart';
+
+const _podcast = Station(
+  id: 'p1',
+  name: 'Future Tense',
+  url: 'https://x.example/feed.xml',
+  isPodcast: true,
+  author: 'ABC Australia',
+);
+
+final _cast = Cast(
+  guid: 'g1',
+  title: 'The danger of generational labelling',
+  published: DateTime.utc(2026, 1, 15, 22, 30),
+  audioUrl: 'https://x.example/1.mp3',
+  duration: const Duration(minutes: 29, seconds: 6),
+  description: 'Terms like Gen Z and Boomer have no basis in science.',
+);
+
+Future<void> _pump(WidgetTester tester, Widget child) =>
+    tester.pumpWidget(MaterialApp(home: Scaffold(body: child)));
+
+double _opacity(WidgetTester tester) =>
+    tester.widget<Opacity>(find.byType(Opacity).first).opacity;
+
+void main() {
+  group('podcast rows', () {
+    test('the app says how many casts are left to hear', () {
+      expect(
+        podcastDetails(_podcast, toPlay: 5, total: 120),
+        'Podcast · 5 to play · ABC Australia',
+      );
+      expect(
+        podcastDetails(_podcast, toPlay: 0, total: 3),
+        'Podcast · all heard · ABC Australia',
+      );
+      expect(
+        podcastDetails(_podcast, toPlay: 0, total: 0),
+        'Podcast · no episodes yet · ABC Australia',
+      );
+    });
+
+    test('the car gets a shorter line, and the row is not live', () {
+      final item = stationMediaItem(
+        _podcast,
+        browseAllStationsId,
+        details: podcastCarDetails(5),
+      );
+
+      expect(item.artist, 'Podcast · 5 to play');
+      expect(item.isLive, isFalse);
+      expect(podcastCarDetails(0), 'Podcast · all heard');
+    });
+
+    test('browseChildren asks for podcast details row by row', () {
+      const radio = Station(id: 's1', name: 'R', url: 'https://x.example/r');
+      final items = browseChildren(
+        browseAllStationsId,
+        const [radio, _podcast],
+        const [],
+        detailsOf: (s) => s.isPodcast ? 'Podcast · 2 to play' : null,
+      );
+
+      expect(items.first.isLive, isTrue);
+      expect(items.last.artist, 'Podcast · 2 to play');
+    });
+
+    testWidgets('a podcast falls back to the podcasts glyph', (tester) async {
+      await _pump(tester, const StationTile(station: _podcast));
+
+      expect(find.byIcon(Icons.podcasts), findsOneWidget);
+    });
+  });
+
+  group('cast text', () {
+    test('lengths', () {
+      expect(castLength(const Duration(seconds: 45)), '45 s');
+      expect(castLength(const Duration(minutes: 29, seconds: 6)), '29 min');
+      expect(castLength(const Duration(minutes: 64)), '1 h 4 min');
+      expect(castLength(const Duration(hours: 2)), '2 h');
+    });
+
+    test('summary says how far the listener got', () {
+      final half = _cast.withState(position: const Duration(minutes: 9));
+
+      expect(castSummary(half), endsWith('29 min · 20 min left'));
+      expect(castSummary(_cast.withState(played: true)), endsWith('Played'));
+      expect(castSummary(_cast.withState(disabled: true)), endsWith('Skipped'));
+    });
+
+    test('clock time', () {
+      expect(clockTime(const Duration(minutes: 4, seconds: 5)), '4:05');
+      expect(
+        clockTime(const Duration(hours: 1, minutes: 2, seconds: 3)),
+        '1:02:03',
+      );
+    });
+  });
+
+  group('cast session', () {
+    test('the cast item keeps the podcast id so rows still find it', () {
+      final base = stationMediaItem(_podcast, browseAllStationsId);
+      final item = castSessionItem(base, _podcast, _cast);
+
+      expect(item.id, base.id);
+      expect(item.extras!['stationId'], 'p1');
+      expect(item.extras!['castGuid'], 'g1');
+      expect(item.extras!['track'], _cast.title);
+      expect(item.title, _cast.title);
+      expect(item.artist, 'Future Tense');
+      expect(item.duration, _cast.duration);
+      expect(item.isLive, isFalse);
+    });
+
+    test('controls: pause not stop, skips only with a queue to walk', () {
+      final alone = castControls(playing: true, hasQueue: false);
+
+      expect(alone.controls, [
+        MediaControl.rewind,
+        MediaControl.pause,
+        MediaControl.fastForward,
+      ]);
+      expect(alone.compact, [0, 1, 2]);
+
+      final middle = castControls(playing: false, hasQueue: true);
+      expect(middle.controls.last, MediaControl.skipToNext);
+      expect(middle.controls.first, MediaControl.skipToPrevious);
+      expect(middle.controls, contains(MediaControl.play));
+      // The compact view is always back, play/pause, forward.
+      expect(middle.compact.map((i) => middle.controls[i]), [
+        MediaControl.rewind,
+        MediaControl.play,
+        MediaControl.fastForward,
+      ]);
+    });
+
+    test('a resumed cast starts five seconds back, never before 0:00', () {
+      expect(
+        resumeFrom(const Duration(minutes: 12, seconds: 30)),
+        const Duration(minutes: 12, seconds: 25),
+      );
+      expect(resumeFrom(const Duration(seconds: 3)), Duration.zero);
+      expect(resumeFrom(Duration.zero), Duration.zero);
+    });
+
+    test('a seek is kept within the cast', () {
+      const length = Duration(minutes: 30);
+
+      expect(clampSeek(const Duration(seconds: -5), length), Duration.zero);
+      expect(
+        clampSeek(const Duration(minutes: 31), length),
+        length - const Duration(seconds: 1),
+      );
+      expect(
+        clampSeek(const Duration(minutes: 31), null),
+        const Duration(minutes: 31),
+      );
+    });
+
+    // 20261018 gjw Daily Mass Readings: the feed said 5:48, the ad-injecting
+    // host sent 6:18, and Forward at 5:57 clamped to 5:47 — backwards.
+
+    test('the measured length wins over the feed\'s', () {
+      const stated = Duration(minutes: 5, seconds: 48);
+      const measured = Duration(minutes: 6, seconds: 18);
+
+      expect(castPlayLength(measured: measured, stated: stated), measured);
+      expect(castPlayLength(stated: stated), stated);
+      expect(castPlayLength(measured: Duration.zero, stated: stated), stated);
+
+      final forward = clampSeek(
+        const Duration(minutes: 6, seconds: 27),
+        castPlayLength(measured: measured, stated: stated),
+      );
+      expect(forward, measured - const Duration(seconds: 1));
+    });
+
+    test('a stated length is corrected only when it is out', () {
+      const stated = Duration(minutes: 5, seconds: 48);
+
+      expect(
+        lengthNeedsCorrecting(
+          measured: const Duration(minutes: 6, seconds: 18),
+          stated: stated,
+        ),
+        isTrue,
+      );
+      expect(
+        lengthNeedsCorrecting(
+          measured: stated + const Duration(seconds: 1),
+          stated: stated,
+        ),
+        isFalse,
+      );
+      expect(lengthNeedsCorrecting(measured: stated), isTrue);
+      expect(lengthNeedsCorrecting(measured: Duration.zero), isFalse);
+    });
+  });
+
+  group('CastTile', () {
+    Widget tile(Cast c, {bool current = false}) => CastTile(
+      cast: c,
+      current: current,
+      onTap: () {},
+      onEnabled: (_) {},
+      onPlayed: (_) {},
+      onInfo: () {},
+    );
+
+    testWidgets('a cast still to hear is drawn in full', (tester) async {
+      await _pump(tester, tile(_cast));
+
+      expect(_opacity(tester), 1);
+      expect(find.text(_cast.title), findsOneWidget);
+      expect(find.byIcon(Icons.play_arrow), findsOneWidget);
+      expect(find.byType(Switch), findsNothing);
+      expect(find.byType(PopupMenuButton<bool>), findsNothing);
+    });
+
+    testWidgets('a played cast stays listed, greyed', (tester) async {
+      await _pump(tester, tile(_cast.withState(played: true)));
+
+      expect(find.text(_cast.title), findsOneWidget);
+      expect(_opacity(tester), lessThan(1));
+      expect(find.byIcon(Icons.check), findsOneWidget);
+    });
+
+    testWidgets('a skipped cast is greyed with a barred circle', (
+      tester,
+    ) async {
+      await _pump(tester, tile(_cast.withState(disabled: true)));
+
+      expect(_opacity(tester), lessThan(1));
+      expect(find.byIcon(Icons.block), findsOneWidget);
+    });
+
+    testWidgets('the cast on air is never greyed', (tester) async {
+      await _pump(tester, tile(_cast.withState(played: true), current: true));
+
+      expect(_opacity(tester), 1);
+    });
+
+    /// Tap [icon] twice, quickly enough to count as a double tap.
+
+    Future<void> doubleTap(WidgetTester tester, IconData icon) async {
+      await tester.tap(find.byIcon(icon));
+      await tester.pump(kDoubleTapMinTime);
+      await tester.tap(find.byIcon(icon));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a double tap on the ring marks it played, or not', (
+      tester,
+    ) async {
+      bool? played;
+      var tapped = 0;
+      Widget row(Cast c) => CastTile(
+        cast: c,
+        onTap: () => tapped++,
+        onEnabled: (_) {},
+        onPlayed: (p) => played = p,
+        onInfo: () {},
+      );
+
+      await _pump(tester, row(_cast));
+      await doubleTap(tester, Icons.play_arrow);
+      expect(played, isTrue);
+      expect(tapped, 0, reason: 'a double tap does not also play');
+
+      await _pump(tester, row(_cast.withState(played: true)));
+      await doubleTap(tester, Icons.check);
+      expect(played, isFalse);
+    });
+
+    testWidgets('a single tap on the ring still plays', (tester) async {
+      var tapped = 0;
+      await _pump(
+        tester,
+        CastTile(
+          cast: _cast,
+          onTap: () => tapped++,
+          onEnabled: (_) {},
+          onPlayed: (_) {},
+          onInfo: () {},
+        ),
+      );
+      await tester.tap(find.byIcon(Icons.play_arrow));
+      await tester.pump(kDoubleTapTimeout);
+
+      expect(tapped, 1);
+    });
+
+    testWidgets('a double tap on Info skips it, or brings it back', (
+      tester,
+    ) async {
+      bool? enabled;
+      var asked = false;
+      Widget row(Cast c) => CastTile(
+        cast: c,
+        onTap: () {},
+        onEnabled: (on) => enabled = on,
+        onPlayed: (_) {},
+        onInfo: () => asked = true,
+      );
+
+      await _pump(tester, row(_cast));
+      await doubleTap(tester, Icons.info_outline);
+      expect(enabled, isFalse);
+      expect(asked, isFalse, reason: 'a double tap does not open the text');
+
+      await _pump(tester, row(_cast.withState(disabled: true)));
+      await doubleTap(tester, Icons.info_outline);
+      expect(enabled, isTrue);
+    });
+
+    testWidgets('Info asks for the whole text', (tester) async {
+      var asked = false;
+      await _pump(
+        tester,
+        CastTile(
+          cast: _cast,
+          onTap: () {},
+          onEnabled: (_) {},
+          onPlayed: (_) {},
+          onInfo: () => asked = true,
+        ),
+      );
+      await tester.tap(find.byIcon(Icons.info_outline));
+      await tester.pump(kDoubleTapTimeout);
+
+      expect(asked, isTrue);
+    });
+  });
+}

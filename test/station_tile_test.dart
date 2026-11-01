@@ -4,7 +4,24 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3
+/// Licensed under the GNU General Public License, Version 3 (the "License").
+///
+/// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -40,12 +57,12 @@ void main() {
     expect(find.text('Alpha FM'), findsOneWidget);
   });
 
-  testWidgets('shows a subtitle only when there is metadata', (tester) async {
+  testWidgets('says Radio, then whatever metadata there is', (tester) async {
     await _pump(tester, const StationTile(station: plain));
-    expect(find.text('Australia · MP3 · 128 kbps'), findsNothing);
+    expect(find.text('Radio'), findsOneWidget);
 
     await _pump(tester, const StationTile(station: detailed));
-    expect(find.text('Australia · MP3 · 128 kbps'), findsOneWidget);
+    expect(find.text('Radio · Australia · MP3 · 128 kbps'), findsOneWidget);
   });
 
   testWidgets('falls back to a radio icon with no favicon', (tester) async {
@@ -87,42 +104,68 @@ void main() {
       ),
     );
 
-    expect(find.text('Pink Floyd - Wish You Were Here'), findsOneWidget);
-    expect(find.text('Australia · MP3 · 128 kbps'), findsNothing);
+    expect(
+      find.text('Playing | Pink Floyd - Wish You Were Here'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Radio · Australia · MP3 · 128 kbps'),
+      findsNothing,
+    );
   });
 
-  testWidgets('the row on air offers Stop, not the logo', (tester) async {
+  testWidgets('the row on air keeps its logo and says Playing', (tester) async {
     await _pump(
       tester,
-      const StationTile(station: plain, current: true, playing: true),
+      const StationTile(station: detailed, current: true, playing: true),
     );
 
-    expect(find.byIcon(Icons.stop_circle), findsOneWidget);
-    expect(find.byIcon(Icons.radio), findsNothing);
+    expect(find.byIcon(Icons.radio), findsOneWidget);
+    expect(find.byIcon(Icons.stop_circle), findsNothing);
+    expect(
+      find.text('Playing | Radio · Australia · MP3 · 128 kbps'),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('a stopped row gets its logo back and says so', (tester) async {
-    // Only a row that is doing something gives up its artwork. Stopped there
-    // is nothing to interrupt, so a Play button would cost the icon for no
-    // gain — tapping the row starts it again, and the 'Stopped' line still
-    // says which station it was.
-
+  testWidgets('a stopped row keeps its logo and says so', (tester) async {
     await _pump(tester, const StationTile(station: plain, current: true));
 
     expect(find.byIcon(Icons.radio), findsOneWidget);
-    expect(find.byIcon(Icons.play_circle), findsNothing);
-    expect(find.byIcon(Icons.stop_circle), findsNothing);
-    expect(find.text('Stopped'), findsOneWidget);
+    expect(find.text('Stopped | Radio'), findsOneWidget);
   });
 
-  testWidgets('a connecting row shows progress', (tester) async {
-    await _pump(
-      tester,
-      const StationTile(station: plain, current: true, connecting: true),
-    );
+  testWidgets('each transport state has its own label', (tester) async {
+    const cases = {
+      'Paused | Radio': StationTile(
+        station: plain,
+        current: true,
+        paused: true,
+      ),
+      'Connecting | Radio': StationTile(
+        station: plain,
+        current: true,
+        connecting: true,
+      ),
+      'Loading | Radio': StationTile(
+        station: plain,
+        current: true,
+        playing: true,
+        loading: true,
+      ),
+      'Unavailable | Could not connect to this station.': StationTile(
+        station: plain,
+        current: true,
+        failed: true,
+      ),
+    };
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    expect(find.text('Connecting…'), findsOneWidget);
+    for (final MapEntry(key: label, value: tile) in cases.entries) {
+      await _pump(tester, tile);
+      expect(find.text(label), findsOneWidget, reason: label);
+      expect(find.byIcon(Icons.radio), findsOneWidget, reason: label);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    }
   });
 
   testWidgets('rows that are not on air keep their logo and details', (
@@ -131,7 +174,8 @@ void main() {
     await _pump(tester, const StationTile(station: detailed));
 
     expect(find.byIcon(Icons.radio), findsOneWidget);
-    expect(find.text('Australia · MP3 · 128 kbps'), findsOneWidget);
+    expect(find.text('Radio · Australia · MP3 · 128 kbps'), findsOneWidget);
+    expect(find.textContaining('|'), findsNothing);
   });
 
   testWidgets('marks the station on air in bold', (tester) async {

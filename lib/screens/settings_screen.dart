@@ -1,12 +1,27 @@
 /// SettingsScreen — where your data lives, and the privacy explanation.
 ///
-// Time-stamp: <Sunday 2026-09-21 06:00:00 +1000 Graham Williams>
+// Time-stamp: <Wednesday 2026-09-30 09:25:39 +1000 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3 (the "License");
+/// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
 /// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -15,9 +30,11 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
 
+import 'package:radiopod/screens/settings_widgets/after_cast_section.dart';
 import 'package:radiopod/screens/settings_widgets/captions_section.dart';
 import 'package:radiopod/screens/settings_widgets/library_storage_section.dart';
 import 'package:radiopod/screens/settings_widgets/login_diagnostics_section.dart';
+import 'package:radiopod/screens/settings_widgets/sleep_timer_section.dart';
 import 'package:radiopod/services/app_provider.dart';
 import 'package:radiopod/services/captions/caption_service.dart';
 import 'package:radiopod/services/captions/speech_model.dart';
@@ -54,17 +71,18 @@ class SettingsScreen extends StatelessWidget {
           _paragraph(
             cs,
             '${CaptionService.instance.supported ? 'Apart from the speech models for live captions, described below, ' : ''}'
-            'RadioPod contacts exactly one third party, and only when you '
-            'use Search: the community-run Radio-Browser database at '
-            'all.api.radio-browser.info. It is sent your search text and the '
+            'RadioPod contacts two directories, and only when you search '
+            'in Subscribe: the community-run Radio-Browser database of stations at '
+            'all.api.radio-browser.info, and the open Podcast Index at '
+            'api.podcastindex.org. Each is sent your search text and the '
             'name of this app, and nothing else — no WebID, no Pod address, '
-            'no station library.',
+            'no library.',
           ),
           const Gap(12),
           _paragraph(
             cs,
             'Radio-Browser offers an endpoint for apps to report which '
-            'station a listener picked, which feeds its popularity ranking. '
+            'station a listener picked. This data feeds its popularity ranking. '
             'RadioPod does not call it. Nothing about what you listen to '
             'leaves this device.',
           ),
@@ -73,8 +91,11 @@ class SettingsScreen extends StatelessWidget {
             cs,
             "Playing a station connects directly to that station's stream, "
             'so the broadcaster sees a connection from your network, exactly '
-            'as it would from any radio player or web browser. RadioPod adds '
-            'nothing to that request.',
+            'as it would from any radio player or web browser. A podcast '
+            'works the same way: its list of episodes and the episodes '
+            'themselves come straight from its publisher. RadioPod adds '
+            'nothing to those requests, and never reports which episodes you '
+            'have heard; that is kept with your library, on your Pod.',
           ),
 
           // Captions add two connections, both only at the listener's
@@ -99,12 +120,20 @@ class SettingsScreen extends StatelessWidget {
           const Gap(8),
           _paragraph(
             cs,
-            '${provider.stations.length} stations in '
-            '${provider.playlists.length} playlists.',
+            '${provider.stations.where((s) => !s.isPodcast).length} '
+            'stations and '
+            '${provider.stations.where((s) => s.isPodcast).length} podcasts '
+            'in ${provider.playlists.length} playlists.',
           ),
 
           // ── Live captions ───────────────────────────────────────────
           const CaptionsSection(),
+
+          // ── Sleep timer ─────────────────────────────────────────────
+          const SleepTimerSection(),
+
+          // ── When an episode finishes ────────────────────────────────
+          const AfterCastSection(),
 
           // ── Login diagnostics ───────────────────────────────────────
           //

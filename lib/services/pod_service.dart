@@ -4,9 +4,24 @@
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
-/// Licensed under the GNU General Public License, Version 3 (the "License");
+/// Licensed under the GNU General Public License, Version 3 (the "License").
 ///
 /// License: https://opensource.org/license/gpl-3-0
+//
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later
+// version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// this program. If not, see <https://opensource.org/license/gpl-3-0>.
+///
+/// Authors: Graham Williams
 
 library;
 
@@ -37,12 +52,14 @@ class PodService {
 
   // ── Turtle helpers ────────────────────────────────────────────────────────
 
-  static String _buildTtl(String fileName, String json) =>
+  @visibleForTesting
+  static String buildTtl(String fileName, String json) =>
       '$_prefixes\n'
       'radiopod:${fileName.replaceAll('.', '_')} a radiopod:DataFile ;\n'
       '  radiopod:data """$json""" .\n';
 
-  static String? _extractJson(String ttl) {
+  @visibleForTesting
+  static String? extractJson(String ttl) {
     final match = RegExp(
       r'radiopod:data\s+"""(.*?)"""',
       dotAll: true,
@@ -61,7 +78,7 @@ class PodService {
 
   static Future<String?> save(String fileName, String json) async {
     try {
-      final ttl = _buildTtl(fileName, json);
+      final ttl = buildTtl(fileName, json);
       await SolidPendingWrites.track(writePod(fileName, ttl, overwrite: true));
 
       return null;
@@ -84,7 +101,7 @@ class PodService {
       final ttl = await readPod(fileName);
       if (ttl.isEmpty) return null;
 
-      return _extractJson(ttl);
+      return extractJson(ttl);
     } catch (e) {
       debugPrint('[PodService] load error ($fileName): $e');
 
