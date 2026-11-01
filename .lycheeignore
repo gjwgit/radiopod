@@ -145,6 +145,11 @@ http://live-radio01.mediahubaustralia.com/PBW/mp3/
 https://mediaserviceslive.akamaized.net/hls/live/newsradio.m3u8
 file:///home/me/feed.xml
 
+# 20261102 radiopod speech model folder (no index page) and a test placeholder
+
+https://dev.empwr.au/radiopod/sherpa-onnx/
+https://example/cnr1.mp3
+
 # 20260924 Locations that do not accept connection from githb
 
 https://snapcraft.io/

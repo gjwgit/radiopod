@@ -185,11 +185,14 @@ MediaItem stationMediaItem(
       : track ??
             details ??
             (station.subtitle.isEmpty ? null : station.subtitle),
-  album: caption != null ? [station.name, ?track].join(' · ') : appName,
+  album: caption != null ? [station.name, track].nonNulls.join(' · ') : appName,
   artUri: sessionArtUri(station),
   playable: true,
   isLive: !station.isPodcast,
-  extras: {'stationId': station.id, 'track': ?track, 'caption': ?caption},
+  // Not null-aware elements: the metrics unused-code check cannot parse
+  // them, and then misses the sessionArtUri call above.
+  extras: {'stationId': station.id, 'track': track, 'caption': caption}
+    ..removeWhere((_, v) => v == null),
 );
 
 /// Artwork for a station: the picture the user chose if there is one,

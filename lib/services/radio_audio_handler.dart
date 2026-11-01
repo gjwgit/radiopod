@@ -53,6 +53,7 @@ import 'package:radiopod/utils/platform_io.dart'
 part 'radio_audio_handler_casts.dart';
 part 'radio_audio_handler_focus.dart';
 part 'radio_audio_handler_stream_end.dart';
+part 'radio_audio_handler_track.dart';
 
 /// The single audio handler, shared by the Flutter UI, the system
 /// notification, the lock screen, headset buttons and Android Auto.
@@ -642,36 +643,6 @@ class RadioAudioHandler extends BaseAudioHandler {
     await super.stop();
   }
 
-  /// Republish the current media item with the track [icy] announces.
-  ///
-  /// NOT AVAILABLE ON EVERY PLATFORM. just_audio_media_kit reports
-  /// `icyMetadata: null` unconditionally, so on Linux and Windows desktop
-  /// this never fires and the subtitle stays on the station's own details.
-  /// Plenty of streams on the supported platforms send nothing either, or
-  /// send their own station name rather than a song, so the UI must always
-  /// read as correct with no track at all.
-
-  void _broadcastTrack(IcyMetadata? icy) => _setTrack(icy?.info?.title);
-
-  /// Publish [title] as the song on air, ignoring a repeat of what is already
-  /// showing so the media session is not churned on every poll.
-
-  void _setTrack(String? title) {
-    final station = _currentStation;
-
-    // A cast's title is its track; anything a podcast host embeds as ICY
-    // metadata is not wanted over it.
-
-    if (station == null || _currentCast != null) return;
-
-    final track = _cleanTrack(title);
-    if (track == _currentTrack) return;
-
-    _currentTrack = track;
-    mediaItem.add(_nowItem());
-    _publishQueue();
-  }
-
   /// Show [caption] in place of the station name, or restore the station
   /// name when it is null.
   ///
@@ -694,6 +665,30 @@ class RadioAudioHandler extends BaseAudioHandler {
     // Captions are not offered on Android, the one place the two must agree.
 
     mediaItem.add(_nowItem());
+  }
+
+  /// Start (or restart) reading the song on air for [station].
+  ///
+  /// Only runs where the player itself reports nothing — GNU/Linux and
+  /// Windows, where just_audio_media_kit hardcodes `icyMetadata: null`.
+  /// Everywhere else [_broadcastTrack] is already being fed by the player on
+  /// the connection it has open, and polling would be pure waste.
+
+  void _watchTrack(Station station) {
+    _trackSubscription?.cancel();
+    _trackSubscription = null;
+    if (!needsIcyPolling || !icyPollingEnabled || station.isPodcast) return;
+
+    _trackSubscription = IcyReader.watch(station.url).listen(
+      (title) {
+        // Ignore a late result for a station the user has already left.
+
+        if (_currentStation?.id == station.id) _setTrack(title);
+      },
+      onError: (Object e) {
+        debugPrint('[RadioAudioHandler] track reader error: $e');
+      },
+    );
   }
 
   /// Publish the queue, with the station now playing carrying EXACTLY what
@@ -746,47 +741,6 @@ class RadioAudioHandler extends BaseAudioHandler {
   static String _queueSignature(List<MediaItem> items) => items
       .map((i) => '${i.id}\u0000${i.artist}\u0000${i.artUri}')
       .join('\u0001');
-
-  /// Start (or restart) reading the song on air for [station].
-  ///
-  /// Only runs where the player itself reports nothing — GNU/Linux and
-  /// Windows, where just_audio_media_kit hardcodes `icyMetadata: null`.
-  /// Everywhere else [_broadcastTrack] is already being fed by the player on
-  /// the connection it has open, and polling would be pure waste.
-
-  void _watchTrack(Station station) {
-    _trackSubscription?.cancel();
-    _trackSubscription = null;
-    if (!needsIcyPolling || !icyPollingEnabled || station.isPodcast) return;
-
-    _trackSubscription = IcyReader.watch(station.url).listen(
-      (title) {
-        // Ignore a late result for a station the user has already left.
-
-        if (_currentStation?.id == station.id) _setTrack(title);
-      },
-      onError: (Object e) {
-        debugPrint('[RadioAudioHandler] track reader error: $e');
-      },
-    );
-  }
-
-  /// Tidy an ICY title, mapping anything useless to null.
-  ///
-  /// Stations pad titles with whitespace, and a good number send the station
-  /// name or a placeholder when nothing is playing. Echoing the station name
-  /// back under itself looks broken, so that case falls through to the
-  /// station details instead.
-
-  String? _cleanTrack(String? title) {
-    final t = title?.trim();
-    if (t == null || t.isEmpty) return null;
-    if (t.toLowerCase() == _currentStation?.name.trim().toLowerCase()) {
-      return null;
-    }
-
-    return t;
-  }
 
   /// Next and Previous: through the station queue, a podcast included.
   ///
