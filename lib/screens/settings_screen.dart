@@ -31,10 +31,13 @@ import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
 
 import 'package:radiopod/screens/settings_widgets/after_cast_section.dart';
+import 'package:radiopod/screens/settings_widgets/captions_section.dart';
 import 'package:radiopod/screens/settings_widgets/library_storage_section.dart';
 import 'package:radiopod/screens/settings_widgets/login_diagnostics_section.dart';
 import 'package:radiopod/screens/settings_widgets/sleep_timer_section.dart';
 import 'package:radiopod/services/app_provider.dart';
+import 'package:radiopod/services/captions/caption_service.dart';
+import 'package:radiopod/services/captions/speech_model.dart';
 
 /// Says plainly where RadioPod's data goes, and offers the levers the user
 /// has over it.
@@ -67,6 +70,7 @@ class SettingsScreen extends StatelessWidget {
           const Gap(8),
           _paragraph(
             cs,
+            '${CaptionService.instance.supported ? 'Apart from the speech models for live captions, described below, ' : ''}'
             'RadioPod contacts two directories, and only when you search '
             'in Subscribe: the community-run Radio-Browser database of stations at '
             'all.api.radio-browser.info, and the open Podcast Index at '
@@ -94,6 +98,22 @@ class SettingsScreen extends StatelessWidget {
             'have heard; that is kept with your library, on your Pod.',
           ),
 
+          // Captions add two connections, both only at the listener's
+          // request, so the claim above has to own up to them.
+          if (CaptionService.instance.supported) ...[
+            const Gap(12),
+            _paragraph(
+              cs,
+              'Live captions, if you switch them on, fetch the speech model a '
+              'station needs once — the English one from '
+              '${englishSpeechModel.host}, the Chinese and English one from '
+              '${bilingualSpeechModel.host} — and then open a second '
+              'connection to the station for as long as they are on. '
+              'Recognition runs on this device: neither the audio nor the '
+              'words heard are sent anywhere.',
+            ),
+          ],
+
           // ── Library size ────────────────────────────────────────────
           const Gap(32),
           Text('Your library', style: Theme.of(context).textTheme.titleLarge),
@@ -105,6 +125,9 @@ class SettingsScreen extends StatelessWidget {
             '${provider.stations.where((s) => s.isPodcast).length} podcasts '
             'in ${provider.playlists.length} playlists.',
           ),
+
+          // ── Live captions ───────────────────────────────────────────
+          const CaptionsSection(),
 
           // ── Sleep timer ─────────────────────────────────────────────
           const SleepTimerSection(),

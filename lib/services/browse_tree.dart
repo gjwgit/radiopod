@@ -160,6 +160,12 @@ List<MediaItem> browseChildren(
 /// playing right now is more use to a listener than the station's codec and
 /// bitrate; the station details stand in whenever it is not. The track is
 /// also carried in extras so the UI can tell the two apart.
+///
+/// [caption] is live speech-to-text, and when present it TAKES THE TITLE,
+/// the line the lock screen draws largest, so the words scroll past there
+/// like lyrics. The station and programme then share the album line, which
+/// is where a listener glancing down expects to find what they are hearing.
+/// The artist is left empty so iOS does not print the same thing twice.
 
 ///
 /// [details], when given, stands in for the station's own details. A podcast
@@ -170,16 +176,23 @@ MediaItem stationMediaItem(
   String parentId, {
   String? track,
   String? details,
+  String? caption,
 }) => MediaItem(
   id: stationMediaId(parentId, station.id),
-  title: station.name,
-  artist:
-      track ?? details ?? (station.subtitle.isEmpty ? null : station.subtitle),
-  album: appName,
+  title: caption ?? station.name,
+  artist: caption != null
+      ? null
+      : track ??
+            details ??
+            (station.subtitle.isEmpty ? null : station.subtitle),
+  album: caption != null ? [station.name, track].nonNulls.join(' · ') : appName,
   artUri: sessionArtUri(station),
   playable: true,
   isLive: !station.isPodcast,
-  extras: {'stationId': station.id, 'track': ?track},
+  // Not null-aware elements: the metrics unused-code check cannot parse
+  // them, and then misses the sessionArtUri call above.
+  extras: {'stationId': station.id, 'track': track, 'caption': caption}
+    ..removeWhere((_, v) => v == null),
 );
 
 /// Artwork for a station: the picture the user chose if there is one,

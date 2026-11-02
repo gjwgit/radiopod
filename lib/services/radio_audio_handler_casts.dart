@@ -95,7 +95,12 @@ extension CastHandling on RadioAudioHandler {
 
   MediaItem _nowItem() {
     final station = _currentStation!;
-    final item = _sessionItem(station, _queueParentId, track: _currentTrack);
+    final item = _sessionItem(
+      station,
+      _queueParentId,
+      track: _currentTrack,
+      caption: _currentCaption,
+    );
     final cast = _currentCast;
 
     return cast == null ? item : castSessionItem(item, station, cast);

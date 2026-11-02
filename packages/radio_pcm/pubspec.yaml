@@ -1,0 +1,26 @@
+name: radio_pcm
+description: "Decode an internet radio stream to 16 kHz mono PCM, for on-device speech recognition in RadioPod."
+version: 0.0.1
+publish_to: 'none'
+
+environment:
+  sdk: ^3.9.0
+  flutter: '>=3.24.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+# The decoder is AudioToolbox and AVFoundation, which iOS and macOS share, so
+# one darwin source tree serves both. Other platforms have no implementation
+# yet and report themselves as unsupported through RadioPcm.isSupported.
+
+flutter:
+  plugin:
+    platforms:
+      ios:
+        pluginClass: RadioPcmPlugin
+        sharedDarwinSource: true
+      macos:
+        pluginClass: RadioPcmPlugin
+        sharedDarwinSource: true

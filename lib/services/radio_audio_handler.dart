@@ -53,6 +53,7 @@ import 'package:radiopod/utils/platform_io.dart'
 part 'radio_audio_handler_casts.dart';
 part 'radio_audio_handler_focus.dart';
 part 'radio_audio_handler_stream_end.dart';
+part 'radio_audio_handler_track.dart';
 
 /// The single audio handler, shared by the Flutter UI, the system
 /// notification, the lock screen, headset buttons and Android Auto.
@@ -171,6 +172,19 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   Station? _currentStation;
   String? _currentTrack;
+
+  /// The words being spoken right now, when captions are on.
+  ///
+  /// While set, the caption takes the title of the published media item and
+  /// the station moves down to the album line — see [stationMediaItem].
+
+  String? _currentCaption;
+
+  /// The station on air, for anything that needs more than the media item's
+  /// id — captions need the stream address, to open a connection of their
+  /// own. Null until a station is started.
+
+  final currentStation = BehaviorSubject<Station?>.seeded(null);
 
   /// The cast on air when [_currentStation] is a podcast, else null. Its
   /// listener state is the store's; this copy supplies title and length.
@@ -358,6 +372,8 @@ class RadioAudioHandler extends BaseAudioHandler {
 
     _currentStation = station;
     _currentTrack = null;
+    _currentCaption = null;
+    currentStation.add(station);
     _currentCast = cast;
     _castEnding = false;
     _pausedForOther = false;
@@ -627,34 +643,52 @@ class RadioAudioHandler extends BaseAudioHandler {
     await super.stop();
   }
 
-  /// Republish the current media item with the track [icy] announces.
+  /// Show [caption] in place of the station name, or restore the station
+  /// name when it is null.
   ///
-  /// NOT AVAILABLE ON EVERY PLATFORM. just_audio_media_kit reports
-  /// `icyMetadata: null` unconditionally, so on Linux and Windows desktop
-  /// this never fires and the subtitle stays on the station's own details.
-  /// Plenty of streams on the supported platforms send nothing either, or
-  /// send their own station name rather than a song, so the UI must always
-  /// read as correct with no track at all.
+  /// Called by CaptionService as the recogniser hears each word. Repeats are
+  /// ignored for the same reason as in [_setTrack].
 
-  void _broadcastTrack(IcyMetadata? icy) => _setTrack(icy?.info?.title);
+  void setCaption(String? caption) {
+    // Captions follow a station's stream; a cast never has one to follow.
 
-  /// Publish [title] as the song on air, ignoring a repeat of what is already
-  /// showing so the media session is not churned on every poll.
+    if (_currentStation == null || _currentCast != null) return;
 
-  void _setTrack(String? title) {
-    final station = _currentStation;
+    final c = caption?.trim();
+    final next = (c == null || c.isEmpty) ? null : c;
+    if (next == _currentCaption) return;
 
-    // A cast's title is its track; anything a podcast host embeds as ICY
-    // metadata is not wanted over it.
+    _currentCaption = next;
 
-    if (station == null || _currentCast != null) return;
+    // The session only, not the queue: a caption changes with every word,
+    // and republishing the queue that often would churn the car's list.
+    // Captions are not offered on Android, the one place the two must agree.
 
-    final track = _cleanTrack(title);
-    if (track == _currentTrack) return;
-
-    _currentTrack = track;
     mediaItem.add(_nowItem());
-    _publishQueue();
+  }
+
+  /// Start (or restart) reading the song on air for [station].
+  ///
+  /// Only runs where the player itself reports nothing — GNU/Linux and
+  /// Windows, where just_audio_media_kit hardcodes `icyMetadata: null`.
+  /// Everywhere else [_broadcastTrack] is already being fed by the player on
+  /// the connection it has open, and polling would be pure waste.
+
+  void _watchTrack(Station station) {
+    _trackSubscription?.cancel();
+    _trackSubscription = null;
+    if (!needsIcyPolling || !icyPollingEnabled || station.isPodcast) return;
+
+    _trackSubscription = IcyReader.watch(station.url).listen(
+      (title) {
+        // Ignore a late result for a station the user has already left.
+
+        if (_currentStation?.id == station.id) _setTrack(title);
+      },
+      onError: (Object e) {
+        debugPrint('[RadioAudioHandler] track reader error: $e');
+      },
+    );
   }
 
   /// Publish the queue, with the station now playing carrying EXACTLY what
@@ -707,47 +741,6 @@ class RadioAudioHandler extends BaseAudioHandler {
   static String _queueSignature(List<MediaItem> items) => items
       .map((i) => '${i.id}\u0000${i.artist}\u0000${i.artUri}')
       .join('\u0001');
-
-  /// Start (or restart) reading the song on air for [station].
-  ///
-  /// Only runs where the player itself reports nothing — GNU/Linux and
-  /// Windows, where just_audio_media_kit hardcodes `icyMetadata: null`.
-  /// Everywhere else [_broadcastTrack] is already being fed by the player on
-  /// the connection it has open, and polling would be pure waste.
-
-  void _watchTrack(Station station) {
-    _trackSubscription?.cancel();
-    _trackSubscription = null;
-    if (!needsIcyPolling || !icyPollingEnabled || station.isPodcast) return;
-
-    _trackSubscription = IcyReader.watch(station.url).listen(
-      (title) {
-        // Ignore a late result for a station the user has already left.
-
-        if (_currentStation?.id == station.id) _setTrack(title);
-      },
-      onError: (Object e) {
-        debugPrint('[RadioAudioHandler] track reader error: $e');
-      },
-    );
-  }
-
-  /// Tidy an ICY title, mapping anything useless to null.
-  ///
-  /// Stations pad titles with whitespace, and a good number send the station
-  /// name or a placeholder when nothing is playing. Echoing the station name
-  /// back under itself looks broken, so that case falls through to the
-  /// station details instead.
-
-  String? _cleanTrack(String? title) {
-    final t = title?.trim();
-    if (t == null || t.isEmpty) return null;
-    if (t.toLowerCase() == _currentStation?.name.trim().toLowerCase()) {
-      return null;
-    }
-
-    return t;
-  }
 
   /// Next and Previous: through the station queue, a podcast included.
   ///
@@ -932,8 +925,18 @@ class RadioAudioHandler extends BaseAudioHandler {
 /// The app's own station list is unaffected; it loads logos through
 /// Image.network and still shows them.
 
-MediaItem _sessionItem(Station station, String parentId, {String? track}) {
-  final item = stationMediaItem(station, parentId, track: track);
+MediaItem _sessionItem(
+  Station station,
+  String parentId, {
+  String? track,
+  String? caption,
+}) {
+  final item = stationMediaItem(
+    station,
+    parentId,
+    track: track,
+    caption: caption,
+  );
 
   // 20261006 gjw Nothing more to do about WHICH image: stationMediaItem now
   // picks a chosen icon over the station logo for every surface, so this is
