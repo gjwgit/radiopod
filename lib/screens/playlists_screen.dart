@@ -35,6 +35,7 @@ import 'package:radiopod/models/playlist.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/playlists_widgets/playlist_name_dialog.dart';
 import 'package:radiopod/screens/playlists_widgets/playlists_bar.dart';
+import 'package:radiopod/screens/playlists_widgets/share_playlist_screen.dart';
 import 'package:radiopod/screens/podcast_screen.dart';
 import 'package:radiopod/screens/stations_widgets/station_properties_dialog.dart';
 import 'package:radiopod/services/app_provider.dart';
@@ -231,7 +232,13 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
       key: ValueKey(playlist.id),
       leading: const Icon(Icons.queue_music),
       title: Text(playlist.name),
-      subtitle: Text('$n station${n == 1 ? '' : 's'}'),
+      // A shared playlist says whose it is: its stations follow the owner's
+      // copy each time the library loads.
+      subtitle: Text(
+        '$n station${n == 1 ? '' : 's'}'
+        '${playlist.isShared ? ' · shared by ${playlist.sharedBy ?? 'another user'}' : ''}',
+        overflow: TextOverflow.ellipsis,
+      ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -240,8 +247,9 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
 
             **Playlist actions**
 
-            Play this playlist from the top, rename it, or delete it. The
-            stations in it stay in your library.
+            Play this playlist from the top, share it with another Solid
+            user, rename it, or delete it. The stations in it stay in your
+            library.
 
             ''',
             // An empty tooltip turns off the menu's own plain "Show menu".
@@ -249,6 +257,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
               tooltip: '',
               onSelected: (value) => switch (value) {
                 'play' => _playAll(context, provider, queue),
+                'share' => sharePlaylist(context, provider, playlist),
                 'rename' => _rename(context, provider, playlist),
                 _ => _confirmDelete(context, provider, playlist),
               },
@@ -258,6 +267,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
                   enabled: n > 0,
                   child: const Text('Play playlist'),
                 ),
+                const PopupMenuItem(value: 'share', child: Text('Share…')),
                 const PopupMenuItem(value: 'rename', child: Text('Rename…')),
                 const PopupMenuItem(
                   value: 'delete',

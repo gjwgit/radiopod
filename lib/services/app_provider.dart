@@ -30,7 +30,8 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:solidpod/solidpod.dart' show isUserLoggedIn;
+import 'package:solidpod/solidpod.dart'
+    show PermissionLogLiteral, isUserLoggedIn, sharedResources;
 import 'package:uuid/uuid.dart';
 
 import 'package:radiopod/constants/app.dart';
@@ -51,6 +52,7 @@ import 'package:radiopod/utils/playlist_file.dart';
 
 part 'app_provider_casts.dart';
 part 'app_provider_playlists.dart';
+part 'app_provider_shared.dart';
 
 const _uuid = Uuid();
 
@@ -478,7 +480,22 @@ class AppProvider extends ChangeNotifier {
   /// flips the source back to pod, and every load throws "You must first set
   /// the security key!" again — the loop's other half.
 
+  /// 20261102 A live session after an expired one is a new login, made from
+  /// the profile menu, and starts afresh. [markSessionExpired] claims and
+  /// declines the key prompt only because a dead session cannot verify a key;
+  /// left in place, those flags pinned the library to the device for the
+  /// rest of the run, so the user had logged in yet Share still asked them
+  /// to log in. A declined key is NOT cleared this way: the scaffold that
+  /// Cancel rebuilds is still logged in, and clearing it would bring back
+  /// the prompt loop described above.
+
   void setLoggedIn(bool loggedIn) {
+    if (loggedIn && _sessionExpired) {
+      _sessionExpired = false;
+      _keyPromptShown = false;
+      _keyPromptDeclined = false;
+    }
+
     _source = loggedIn && !_keyPromptDeclined
         ? LibrarySource.pod
         : LibrarySource.local;
@@ -562,8 +579,14 @@ class AppProvider extends ChangeNotifier {
       // New casts arrive without the listener asking. Not awaited: the
       // list is drawn from the stored casts at once, and the counts update
       // as each feed answers.
+      //
+      // Playlists shared with the user come in first, so a shared podcast
+      // gets its episodes in the same refresh, and so the two never write
+      // the library at the same time.
 
-      if (!_testMode) unawaited(refreshAllPodcasts());
+      if (!_testMode) {
+        unawaited(syncSharedPlaylists().then((_) => refreshAllPodcasts()));
+      }
     } catch (e) {
       _error = _source == LibrarySource.pod
           ? 'Could not load your stations from the Pod.'

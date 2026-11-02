@@ -27,6 +27,8 @@ library;
 
 import 'package:flutter/material.dart';
 
+import 'package:solidui/solidui.dart' show SolidInviteOthersConfig;
+
 /// Application name displayed in the UI.
 
 const appName = 'RadioPod';
@@ -51,6 +53,60 @@ const playlistsFileName = 'playlists.ttl';
 /// through them, keyed by the podcast's station id.
 
 const castsFileName = 'casts.ttl';
+
+/// Pod filename for the copy of one playlist that is shared with others,
+/// named by the playlist's id so a rename does not break the share.
+///
+/// The playlist itself lives in [playlistsFileName] with every other one, and
+/// holds only station ids. Sharing that file would hand over every playlist,
+/// and the ids would mean nothing in the recipient's library, so a playlist is
+/// shared as its own file holding the stations themselves.
+
+String sharedPlaylistFileName(String playlistId) =>
+    '$sharedPlaylistFilePrefix$playlistId.ttl';
+
+/// How the name of every shared playlist file begins, which is how the
+/// recipient tells them apart from anything else in their permission log.
+
+const sharedPlaylistFilePrefix = 'playlist_';
+
+/// Pod filename recording, for each playlist shared WITH the user, the grant
+/// it was last taken in from, so one the user has deleted stays deleted
+/// until the owner shares it again.
+
+const sharedPlaylistsFileName = 'shared_playlists.ttl';
+
+/// Where RadioPod can be found, for the invitation sent to someone whose Pod
+/// has not been set up for RadioPod yet.
+
+const appUrl = 'https://radiopod.solidcommunity.au';
+
+/// The invitation offered when a playlist is shared with someone whose Pod
+/// has not been set up for RadioPod: they need to log in once before a
+/// playlist can be shared with them.
+
+const inviteOthersConfig = SolidInviteOthersConfig(
+  applicationName: appName,
+  appUrl: appUrl,
+  appDescription:
+      'listen to radio and podcasts, with your stations and playlists '
+      'stored privately on your own Solid Pod',
+  messageTemplate: '''
+You might like to try the {appName} app, available online here:
+
+{appUrl}
+
+Signing into {appName} will set up your Pod so that playlists can be shared with you by other Solid users.''',
+  subject: 'Try the RadioPod app on your Solid Pod',
+  tooltip: '''
+
+  **Invite others**
+
+  Tap to invite someone to try RadioPod. You can copy the invitation to
+  the clipboard or share it through any messaging app on your device.
+
+  ''',
+);
 
 /// Names the app to every server it asks for something: Radio-Browser,
 /// Podcast Index and each podcast's own feed. Radio-Browser's terms of use
