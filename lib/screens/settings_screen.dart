@@ -52,72 +52,90 @@ class SettingsScreen extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final provider = context.watch<AppProvider>();
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Where the library lives ─────────────────────────────────
+    // Made to fill the viewport so the content stays at the top. Something
+    // above this screen centres a child that does not fill the height, so
+    // when the settings are shorter than the window they were centred
+    // vertically. Giving the column a minimum height of the viewport leaves
+    // nothing to centre, as on the Import/Export screen.
 
-          const LibraryStorageSection(),
-
-          // ── Privacy ─────────────────────────────────────────────────
-          const Gap(32),
-          Text('Privacy', style: Theme.of(context).textTheme.titleLarge),
-          const Gap(8),
-          _paragraph(
-            cs,
-            'RadioPod contacts two directories, and only when you search '
-            'in Subscribe: the community-run Radio-Browser database of stations at '
-            'all.api.radio-browser.info, and the open Podcast Index at '
-            'api.podcastindex.org. Each is sent your search text and the '
-            'name of this app, and nothing else — no WebID, no Pod address, '
-            'no library.',
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: constraints.maxHeight.isFinite
+                ? constraints.maxHeight - 48
+                : 0,
           ),
-          const Gap(12),
-          _paragraph(
-            cs,
-            'Radio-Browser offers an endpoint for apps to report which '
-            'station a listener picked. This data feeds its popularity ranking. '
-            'RadioPod does not call it. Nothing about what you listen to '
-            'leaves this device.',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Where the library lives ─────────────────────────────────
+
+              const LibraryStorageSection(),
+
+              // ── Privacy ─────────────────────────────────────────────────
+              const Gap(32),
+              Text('Privacy', style: Theme.of(context).textTheme.titleLarge),
+              const Gap(8),
+              _paragraph(
+                cs,
+                'RadioPod contacts two directories, and only when you search '
+                'in Subscribe: the community-run Radio-Browser database of stations at '
+                'all.api.radio-browser.info, and the open Podcast Index at '
+                'api.podcastindex.org. Each is sent your search text and the '
+                'name of this app, and nothing else — no WebID, no Pod address, '
+                'no library.',
+              ),
+              const Gap(12),
+              _paragraph(
+                cs,
+                'Radio-Browser offers an endpoint for apps to report which '
+                'station a listener picked. This data feeds its popularity ranking. '
+                'RadioPod does not call it. Nothing about what you listen to '
+                'leaves this device.',
+              ),
+              const Gap(12),
+              _paragraph(
+                cs,
+                "Playing a station connects directly to that station's stream, "
+                'so the broadcaster sees a connection from your network, exactly '
+                'as it would from any radio player or web browser. A podcast '
+                'works the same way: its list of episodes and the episodes '
+                'themselves come straight from its publisher. RadioPod adds '
+                'nothing to those requests, and never reports which episodes you '
+                'have heard; that is kept with your library, on your Pod.',
+              ),
+
+              // ── Library size ────────────────────────────────────────────
+              const Gap(32),
+              Text(
+                'Your library',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const Gap(8),
+              _paragraph(
+                cs,
+                '${provider.stations.where((s) => !s.isPodcast).length} '
+                'stations and '
+                '${provider.stations.where((s) => s.isPodcast).length} podcasts '
+                'in ${provider.playlists.length} playlists.',
+              ),
+
+              // ── Sleep timer ─────────────────────────────────────────────
+              const SleepTimerSection(),
+
+              // ── When an episode finishes ────────────────────────────────
+              const AfterCastSection(),
+
+              // ── Login diagnostics ───────────────────────────────────────
+              //
+              // 20260929 gjw Shows itself only when a login has actually been
+              // attempted, so it is invisible to anyone who has no trouble.
+              const LoginDiagnosticsSection(),
+            ],
           ),
-          const Gap(12),
-          _paragraph(
-            cs,
-            "Playing a station connects directly to that station's stream, "
-            'so the broadcaster sees a connection from your network, exactly '
-            'as it would from any radio player or web browser. A podcast '
-            'works the same way: its list of episodes and the episodes '
-            'themselves come straight from its publisher. RadioPod adds '
-            'nothing to those requests, and never reports which episodes you '
-            'have heard; that is kept with your library, on your Pod.',
-          ),
-
-          // ── Library size ────────────────────────────────────────────
-          const Gap(32),
-          Text('Your library', style: Theme.of(context).textTheme.titleLarge),
-          const Gap(8),
-          _paragraph(
-            cs,
-            '${provider.stations.where((s) => !s.isPodcast).length} '
-            'stations and '
-            '${provider.stations.where((s) => s.isPodcast).length} podcasts '
-            'in ${provider.playlists.length} playlists.',
-          ),
-
-          // ── Sleep timer ─────────────────────────────────────────────
-          const SleepTimerSection(),
-
-          // ── When an episode finishes ────────────────────────────────
-          const AfterCastSection(),
-
-          // ── Login diagnostics ───────────────────────────────────────
-          //
-          // 20260929 gjw Shows itself only when a login has actually been
-          // attempted, so it is invisible to anyone who has no trouble.
-          const LoginDiagnosticsSection(),
-        ],
+        ),
       ),
     );
   }
