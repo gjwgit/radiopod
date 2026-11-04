@@ -127,12 +127,30 @@ void main() {
       expect(provider.keyPromptShown, isTrue);
     });
 
-    test('a later setLoggedIn cannot flip it back to the Pod', () {
+    test('a later setLoggedIn(false) keeps the device library', () {
       final provider = AppProvider()..markSessionExpired();
+
+      // What startup itself calls straight after marking the session expired.
+
+      provider.setLoggedIn(false);
+
+      expect(provider.sessionExpired, isTrue);
+      expect(provider.source, LibrarySource.local);
+    });
+
+    test('logging in again returns to the Pod and may ask for the key', () {
+      final provider = AppProvider()..markSessionExpired();
+
+      // setLoggedIn(true) after an expiry means isUserLoggedIn() found a
+      // live session, which only a fresh login from the profile menu gives.
+      // Staying local here left Share asking a logged-in user to log in.
 
       provider.setLoggedIn(true);
 
-      expect(provider.source, LibrarySource.local);
+      expect(provider.sessionExpired, isFalse);
+      expect(provider.keyPromptDeclined, isFalse);
+      expect(provider.source, LibrarySource.pod);
+      expect(provider.claimKeyPrompt(), isTrue);
     });
 
     test('marking twice is harmless', () {

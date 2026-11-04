@@ -37,11 +37,34 @@ class Playlist {
   final String name;
   final List<String> stationIds;
 
+  /// For a playlist someone else shared: the URL of the owner's shared copy
+  /// on their Pod. Null for the user's own playlists.
+  ///
+  /// The link is what lets a later load refresh the stations from the
+  /// owner's copy rather than import the same playlist a second time.
+
+  final String? sharedFrom;
+
+  /// The WebID of the owner who shared it, shown under the playlist's name.
+
+  final String? sharedBy;
+
+  /// When the owner shared it, as their permission log records the grant.
+
+  final String? sharedAt;
+
   const Playlist({
     required this.id,
     required this.name,
     this.stationIds = const [],
+    this.sharedFrom,
+    this.sharedBy,
+    this.sharedAt,
   });
+
+  /// True for a playlist shared with the user by someone else.
+
+  bool get isShared => sharedFrom != null;
 
   // ── Serialisation ─────────────────────────────────────────────────────────
 
@@ -49,18 +72,31 @@ class Playlist {
     'id': id,
     'name': name,
     'stationIds': stationIds,
+    if (sharedFrom != null) 'sharedFrom': sharedFrom,
+    if (sharedBy != null) 'sharedBy': sharedBy,
+    if (sharedAt != null) 'sharedAt': sharedAt,
   };
 
   factory Playlist.fromJson(Map<String, dynamic> j) => Playlist(
     id: j['id'] as String,
     name: j['name'] as String,
     stationIds: (j['stationIds'] as List?)?.cast<String>() ?? const [],
+    sharedFrom: j['sharedFrom'] as String?,
+    sharedBy: j['sharedBy'] as String?,
+    sharedAt: j['sharedAt'] as String?,
   );
 
-  Playlist copyWith({String? id, String? name, List<String>? stationIds}) =>
-      Playlist(
-        id: id ?? this.id,
-        name: name ?? this.name,
-        stationIds: stationIds ?? this.stationIds,
-      );
+  Playlist copyWith({
+    String? id,
+    String? name,
+    List<String>? stationIds,
+    String? sharedAt,
+  }) => Playlist(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    stationIds: stationIds ?? this.stationIds,
+    sharedFrom: sharedFrom,
+    sharedBy: sharedBy,
+    sharedAt: sharedAt ?? this.sharedAt,
+  );
 }

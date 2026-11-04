@@ -108,4 +108,23 @@ class PodService {
       return null;
     }
   }
+
+  /// Load the JSON stored at [url] on someone else's Pod, a file they have
+  /// shared with this user.
+  ///
+  /// Null when it cannot be read, as for [load]: access may have been
+  /// revoked since, or the owner's server may not answer.
+
+  static Future<String?> loadExternal(String url) async {
+    try {
+      final ttl = await readExternalPod(url);
+      if (ttl.isEmpty) return null;
+
+      return extractJson(ttl);
+    } catch (e) {
+      debugPrint('[PodService] external load error ($url): $e');
+
+      return null;
+    }
+  }
 }

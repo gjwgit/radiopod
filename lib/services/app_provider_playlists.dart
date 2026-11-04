@@ -59,6 +59,37 @@ extension PlaylistLibrary on AppProvider {
     return _commit();
   }
 
+  /// Write the copy of [playlist] that is shared with others, returning the
+  /// file name it was written to and an error message, or null on success.
+  ///
+  /// The copy holds the playlist's name and the stations themselves, in play
+  /// order, since the recipient's library has none of this library's station
+  /// ids. It is written afresh each time the playlist is shared, so sharing
+  /// again brings a recipient up to date with any later changes. Like every
+  /// other RadioPod file it is encrypted; granting access then shares its key.
+  ///
+  /// Only a library on the Pod can be shared: a logged-out library lives on
+  /// this device and there is nobody to grant access on its behalf.
+
+  Future<({String fileName, String? error})> saveSharedPlaylist(
+    Playlist playlist,
+  ) async {
+    final fileName = sharedPlaylistFileName(playlist.id);
+    if (_source != LibrarySource.pod) {
+      return (fileName: fileName, error: 'Log in to share a playlist.');
+    }
+
+    final error = await PodService.save(
+      fileName,
+      jsonEncode({
+        'name': playlist.name,
+        'stations': [for (final s in stationsOf(playlist)) s.toJson()],
+      }),
+    );
+
+    return (fileName: fileName, error: error);
+  }
+
   /// Add [stationId] to [playlistId], ignoring a station already in it.
 
   Future<String?> addToPlaylist(String playlistId, String stationId) {
