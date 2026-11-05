@@ -12,7 +12,7 @@ repository. The choice is yours:
 + **Web**
   [solidcommunity](https://radiopod.solidcommunity.au/);
 + **Android**
-  Google Play Store - coming soon or
+  [Google Play Store](https://play.google.com/store/apps/details?id=com.togaware.radiopod) or
   [apk](https://solidcommunity.au/installers/radiopod.apk);
 + **iOS**
   Apple App Store - coming soon;
