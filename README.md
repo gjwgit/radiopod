@@ -68,6 +68,7 @@ many more apps using the Solid ecosystem.
 You can install the released version of the app from different
 repositories including:
 
++ Android [Play Store](https://play.google.com/store/apps/details?id=com.togaware.radiopod)
 + Linux [Snap Store](https://snapcraft.io/radiopod).
 
 See the [Install
