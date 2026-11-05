@@ -13,9 +13,10 @@
 [![GitHub Issues](https://img.shields.io/github/issues/gjwgit/radiopod)](https://github.com/gjwgit/radiopod/issues)
 
 Privacy-first: if you decide to move your app data to the cloud to
-share it across all your devices then your data is encrypted for
-secure and private storage in your Pod on a Solid server of your
-choice. You choose, not us.
+share it across all your devices or to share it with other users of
+your choosing then your data is encrypted for secure and private
+storage in your Pod on a Solid server of your choice. You choose, not
+us.
 
 [RadioPod](https://gjwgit.github.io/radiopod/) plays internet radio
 and podcasts.  It is a simple privacy-first alternative to the many
