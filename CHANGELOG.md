@@ -20,8 +20,13 @@ then please show some ❤️ and tap on the star at
 This app is implemented by [Graham
 Williams](https://togaware.com/Graham.Williams.html).
 
+## 2.4 Refresh Android release
+
++ Prepare next android release. First with podcasts. [2.4.0 20261106 gjw]
+
 ## 2.3 Migrate to using copier for templates
 
++ Updated templates and documentation. [2.3.3 20261106 gjw]
 + Earbuds put away after sleep stay silent [2.3.2 20261031 gjw]
 + Install Guide store links, no aab or ipa downloads [2.3.1 20261031 gjw]
 + Using copier [2.3.0 20261030 gjw]
