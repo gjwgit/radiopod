@@ -12,16 +12,10 @@
 [![Github Last Updated](https://img.shields.io/github/last-commit/gjwgit/radiopod?label=last%20updated)](https://github.com/gjwgit/radiopod/commits/dev/)
 [![GitHub Issues](https://img.shields.io/github/issues/gjwgit/radiopod)](https://github.com/gjwgit/radiopod/issues)
 
-Privacy-first: if you decide to move your app data to the cloud to
-share it across all your devices or to share it with other users of
-your choosing then your data is encrypted for secure and private
-storage in your Pod on a Solid server of your choice. You choose, not
-us.
-
 [RadioPod](https://gjwgit.github.io/radiopod/) plays internet radio
 and podcasts.  It is a simple privacy-first alternative to the many
-internet radio and podcast apps available. Find stations in the
-community-run [Radio-Browser](https://www.radio-browser.info)
+internet radio and podcast apps available. You can find stations in
+the community-run [Radio-Browser](https://www.radio-browser.info)
 database, follow podcasts from the open [Podcast
 Index](https://podcastindex.org), group them into playlists, and
 listen on your computer, on your phone, or in the car through Apple
@@ -39,6 +33,12 @@ Playlists can be imported and exported using the M3U or PLS open
 formats that every other radio player reads and writes, and podcasts
 using OPML, which every podcast app reads and writes.
 
+Privacy-first: if you decide to move your app data to the cloud to
+share it across all your devices or to share it with other users of
+your choosing then your data is encrypted for secure and private
+storage in your Pod on a Solid server of your choice. You choose, not
+us.
+
 Solid Pods are a new approach to handling your personal data on the
 World Wide Web and is the latest innovation from the inventor of the
 WWW, Sir Tim Berners-Lee. Obtain a Pod for yourself on any Solid
@@ -47,9 +47,9 @@ this app in local-only mode.** If you would like to register for a new
 Pod on a Solid server, choose a server and tap the **Register** button
 on the **Login** screen (tap Not Logged In in the footer or in the top
 left menu drawer). You will be prompted for an email address
-(username), a password, and a pod name. On logging in to your Pod for
-the first time you will be asked for a security key to protect your
-data on the server.
+(username), a password, and a pod name. On logging in to your Pod from
+your app for the first time you will be asked for a security key to
+protect your data on the server.
 
 The app is supported by [Togaware](https://togaware.com) and
 implemented by [Graham
