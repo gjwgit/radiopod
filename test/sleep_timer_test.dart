@@ -342,6 +342,55 @@ void main() {
       });
     });
 
+    // A timer turned on by hand, stopped or paused as it fades, starts again
+    // for the full length on the next Play: "a little longer".
+
+    test('a stop mid-fade then a start restarts a timer set by hand', () {
+      withFakeClock((async, timer, fired) {
+        timer.toggle();
+        async.elapse(const Duration(minutes: 29, seconds: 50));
+        timer.onPlaybackStopped();
+
+        // Armed, not ticking: the button stays lit and nothing fades.
+        expect(timer.isRunning, isFalse);
+        expect(timer.isOn, isTrue);
+        expect(timer.minutesLeft.value, 30);
+        expect(events.last, 1.0);
+
+        async.elapse(const Duration(hours: 1));
+        expect(fired, isEmpty);
+
+        timer.onPlaybackStarted();
+
+        expect(timer.minutesLeft.value, 30);
+        expect(fired, isEmpty);
+      });
+    });
+
+    test('a stop with no timer running starts none on the next play', () {
+      withFakeClock((async, timer, fired) {
+        timer.onPlaybackStopped();
+        timer.onPlaybackStarted();
+
+        expect(timer.isRunning, isFalse);
+      });
+    });
+
+    test('turning the timer off while stopped keeps it off', () {
+      withFakeClock((async, timer, fired) {
+        timer.toggle();
+        timer.onPlaybackStopped();
+
+        expect(timer.toggle(), isFalse);
+        expect(timer.isOn, isFalse);
+        expect(timer.minutesLeft.value, isNull);
+
+        timer.onPlaybackStarted();
+
+        expect(timer.isRunning, isFalse);
+      });
+    });
+
     // Half asleep, an earbud tap brings the cast back and should still stop
     // it later, for as long as last time. The app in the morning should not.
 

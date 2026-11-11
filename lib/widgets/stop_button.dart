@@ -50,14 +50,20 @@ class StopButton extends StatelessWidget {
     required this.active,
     required this.onStop,
     this.onStart,
+    this.paused = false,
     this.stationName,
     this.onPodcast,
     this.podcastName,
   });
 
-  /// Whether a station is playing, connecting, buffering or paused.
+  /// Whether a station is playing, connecting or buffering.
 
   final bool active;
+
+  /// Whether the station is paused, so [onStart] resumes it rather than
+  /// starting it afresh.
+
+  final bool paused;
 
   final VoidCallback onStop;
 
@@ -103,6 +109,14 @@ class StopButton extends StatelessWidget {
 
     Stop ${stationName == null ? 'the station on air' : '*$stationName*'}.
     Tap again to start it once more.
+$_doubleTap
+    '''
+          : onStart != null && paused
+          ? '''
+
+    **Play**
+
+    Carry on with $_station from where it paused.
 $_doubleTap
     '''
           : onStart != null

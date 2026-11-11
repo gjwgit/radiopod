@@ -64,11 +64,15 @@ class NowPlayingStopButton extends StatelessWidget {
 
     return NowPlayingBuilder(
       builder: (context, now) => StopButton(
-        active: now.playing || now.connecting || now.loading || now.paused,
+        // 20261112 gjw A pause is not active. Earbuds put back in their case
+        // pause the player, and the button stayed a Stop square that could
+        // not bring the sound back.
+        active: now.playing || now.connecting || now.loading,
+        paused: now.paused,
         onStop: Player.handler.stop,
 
         // The media item outlives a Stop, so the station is still known and
-        // play() re-opens it.
+        // play() re-opens it, or resumes it after a pause.
         onStart: now.stationId == null ? null : Player.handler.play,
         stationName: stations
             .where((s) => now.isCurrent(s.id))

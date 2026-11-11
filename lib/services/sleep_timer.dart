@@ -79,6 +79,13 @@ class SleepTimer {
   Duration? _lastDuration;
   bool _fired = false;
 
+  /// Whether the timer was counting down when the listener last stopped or
+  /// paused, so the next start begins it again from the top. Until then it
+  /// is ARMED: on, as far as the app bar is concerned, but not ticking, so
+  /// nothing fades or fires while playback is paused.
+
+  bool _restartOnPlay = false;
+
   /// Whether the fade has lowered the volume, so it is restored only once.
 
   bool _faded = false;
@@ -102,7 +109,7 @@ class SleepTimer {
   /// timer then needs no tap at all. Switching stations is NOT a start from
   /// silence, so a timer the listener turned off stays off while they hunt
   /// for something to hear. A timer already running is left alone rather
-  /// than restarted, so a pause and resume does not add time.
+  /// than restarted.
 
   ///
   /// 20261026 gjw A HEADSET TAP after the timer stopped playback starts it
@@ -110,21 +117,33 @@ class SleepTimer {
   /// an earbud to hear a little more and still wants it to stop. Only a tap
   /// does this; the next start from the app in the morning does not.
 
+  ///
+  /// 20261112 gjw A timer that was counting down when the listener stopped
+  /// or paused starts again for [defaultDuration]: as the fade begins, a
+  /// Stop and a Play is the way to say "a little longer".
+
   void onPlaybackStarted({bool headset = false}) {
     final again = _fired && headset ? _lastDuration : null;
+    final restart = _restartOnPlay;
     _fired = false;
+    _restartOnPlay = false;
     if (again != null) {
       start(again);
-    } else if (startOnPlay && !isRunning) {
+    } else if ((startOnPlay || restart) && !isRunning) {
       start(defaultDuration);
     }
   }
 
-  /// Playback has been stopped, by the listener, the car, the end of the
-  /// queue or this timer's own firing. Not called for a Pause, nor for the
-  /// silence between one station and the next.
+  /// Playback has been stopped or paused, by the listener, the car, the end
+  /// of the queue or this timer's own firing. Not called for the silence
+  /// between one station and the next, nor a pause for another app's sound.
 
-  void onPlaybackStopped() => cancel();
+  void onPlaybackStopped() {
+    final running = isRunning;
+    cancel();
+    _restartOnPlay = running;
+    _publish();
+  }
 
   /// Turn the timer on for [defaultDuration], or off if it is already on.
   ///
@@ -134,7 +153,8 @@ class SleepTimer {
   /// a single tap. Returns true when a timer was started.
 
   bool toggle() {
-    if (isRunning) {
+    if (isOn) {
+      _restartOnPlay = false;
       cancel();
 
       return false;
@@ -158,11 +178,17 @@ class SleepTimer {
 
   bool get isRunning => _endsAt != null;
 
+  /// Whether the timer is on: counting down, or armed to start again when
+  /// playback does.
+
+  bool get isOn => isRunning || _restartOnPlay;
+
   /// Exactly how long is left, for a caller that wants more than minutes.
+  /// While armed, the full [defaultDuration] it will run for from Play.
 
   Duration? get remaining {
     final endsAt = _endsAt;
-    if (endsAt == null) return null;
+    if (endsAt == null) return _restartOnPlay ? defaultDuration : null;
     final left = endsAt.difference(_now());
 
     return left.isNegative ? Duration.zero : left;
@@ -174,6 +200,7 @@ class SleepTimer {
   /// stray value can never silence a station the moment it is chosen.
 
   void start(Duration duration) {
+    _restartOnPlay = false;
     cancel();
     if (duration <= Duration.zero) return;
 

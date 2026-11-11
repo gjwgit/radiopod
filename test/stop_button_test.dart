@@ -66,6 +66,28 @@ void main() {
     expect(_message(tester), contains('Start *Jazz FM* again'));
   });
 
+  // Earbuds back in their case pause the player; the button must offer the
+  // sound back rather than a Stop.
+
+  testWidgets('a paused station offers Play, which resumes', (tester) async {
+    var started = 0;
+    await _pump(
+      tester,
+      StopButton(
+        active: false,
+        paused: true,
+        onStop: () {},
+        onStart: () => started++,
+        stationName: 'Jazz FM',
+      ),
+    );
+
+    expect(find.byIcon(Icons.stop), findsNothing);
+    await tester.tap(find.byIcon(Icons.play_arrow));
+    expect(started, 1);
+    expect(_message(tester), contains('Carry on with *Jazz FM*'));
+  });
+
   testWidgets('disabled before anything has played', (tester) async {
     await _pump(tester, StopButton(active: false, onStop: () {}));
 

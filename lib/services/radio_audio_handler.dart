@@ -152,9 +152,10 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   AfterCast afterCast = AfterCast.older;
 
-  /// Called when [stop] has silenced the player. Not called by a Pause, nor
-  /// by the silence [playStation] makes between stations. Player.init points
-  /// it at the sleep timer, which a stop resets.
+  /// Called when [stop] or the listener's [pause] has silenced the player.
+  /// Not called by a pause for another app's sound, nor by the silence
+  /// [playStation] makes between stations. Player.init points it at the
+  /// sleep timer, which a stop resets.
 
   void Function()? onStopped;
 
@@ -523,6 +524,7 @@ class RadioAudioHandler extends BaseAudioHandler {
   @override
   Future<void> pause() async {
     await _player.pause();
+    if (!_pausedForOther) onStopped?.call();
     await _saveCastPlace();
   }
 
