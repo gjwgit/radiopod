@@ -26,13 +26,17 @@ ssh ${HOST} 'if [ ! -d ${FLDR} ]; then mkdir ${FLDR}; chown gjw:gjw ${FLDR}; fi'
 
 mkdir -p ARCHIVE
 
-# From the recent 'Build Installers' workflows, identify the 'Bump
-# version' pushes to the repository and get the latest one as the one
-# we want to download the artefacts.
+# 20261112 gjw Everything is taken from the LATEST 'Build Installers'
+# run, whatever its commit message, skipping only the runs that built
+# nothing (a push not asking for installers is skipped). A target that
+# run did not build is skipped below, never taken from an earlier run:
+# a failed snap once shipped the previous version's snap beside the new
+# deb.
 
-bumpId=$(gh run list --limit 100 --json databaseId,displayTitle,workflowName \
-	     | jq -r '.[] | select(.workflowName | startswith("Build Installers")) | select(.displayTitle | startswith("Bump version") or startswith("Build installers")) | .databaseId' \
-	     | head -n 1)
+latestRun=$(gh run list --limit 100 --json databaseId,displayTitle,workflowName,conclusion \
+		| jq -c '[.[] | select(.workflowName | startswith("Build Installers")) | select(.conclusion != "skipped")] | first // empty')
+
+bumpId=$(jq -r '.databaseId // empty' <<< "${latestRun}")
 
 echo "Github action id: $bumpId"
 
@@ -41,21 +45,15 @@ if [[ -z "${bumpId}" ]]; then
     exit 1
 fi
 
-commitMsg=$(gh run list --limit 100 --json databaseId,displayTitle,workflowName \
-	     | jq -r '.[] | select(.workflowName | startswith("Build Installers")) | select(.displayTitle | startswith("Bump version") or startswith("Build installers")) | .displayTitle' \
-	     | head -n 1)
+commitMsg=$(jq -r '.displayTitle' <<< "${latestRun}")
 
 echo "Commit: \"$commitMsg\""
 
 # 20261103 gjw The id of the artifact named with the first of the given
-# suffixes that the bump run built. When the run built none of them,
-# perhaps because that build failed, the most recently made of any of
-# them. GitHub lists artifacts by id, which does not follow the order
-# they were made, so taking the first listed could take an older
-# build's artifact when two builds ran at once.
+# suffixes that the run built, or nothing when it built none of them.
 
 artifact() {
-    local suffix id cond
+    local suffix id
     for suffix in "$@"; do
 	id=$(gh api -H "Accept: application/vnd.github+json" "/repos/${REP}/${APP}/actions/runs/${bumpId}/artifacts?per_page=100" \
 		 --jq ".artifacts[] | select(.name | endswith(\"${suffix}\")) | .id" 2>/dev/null | head -n 1)
@@ -64,12 +62,6 @@ artifact() {
 	    return
 	fi
     done
-    cond=$(printf 'endswith("%s") or ' "$@")
-    id=$(gh api -H "Accept: application/vnd.github+json" "/repos/${REP}/${APP}/actions/artifacts?per_page=100" \
-	     --jq "[.artifacts[] | select(.expired | not) | select(.name | ${cond% or })] | sort_by(.created_at) | last | .id // empty" 2>/dev/null)
-    if [[ "${id}" =~ ^[0-9]+$ ]]; then
-	echo "${id}"
-    fi
 }
 
 status=$(gh run view ${bumpId} --json status --jq '.status')
@@ -119,17 +111,10 @@ if [[ "${status}" == "completed" ]]; then
 
     TARGET="${APP}_amd64.deb"
 
-    # 20260123 gjw Note that this obtains the latest available
-    # linxu-deb artifact, which is not necessarily the one from the
-    # latest bumpId if it failed to be build for the latest bumpId.
-    #
-    # 20261103 gjw It is the bump run's own when that run built one,
-    # as `artifact` explains.
-
     artifactId=$(artifact -linux-deb)
 
     if [[ -z "${artifactId}" ]]; then
-	echo "No artifact found."
+	echo "Not built by this run: skipped."
     else
 	echo "artifact id: $artifactId"
 	gh api -H "Accept: application/vnd.github+json" repos/${REP}/${APP}/actions/artifacts/${artifactId}/zip > artifact.zip
@@ -154,7 +139,7 @@ if [[ "${status}" == "completed" ]]; then
 
     artifactId=$(artifact -linux-snap)
     if [[ -z "${artifactId}" ]]; then
-	echo "No artifact found."
+	echo "Not built by this run: skipped."
     else
 	echo "artifact id: $artifactId"
 	gh api -H "Accept: application/vnd.github+json" repos/${REP}/${APP}/actions/artifacts/${artifactId}/zip > artifact.zip
@@ -180,7 +165,7 @@ if [[ "${status}" == "completed" ]]; then
 
     artifactId=$(artifact -linux-flatpak)
     if [[ -z "${artifactId}" ]]; then
-	echo "No artifact found."
+	echo "Not built by this run: skipped."
     else
 	echo "artifact id: $artifactId"
 	gh api -H "Accept: application/vnd.github+json" repos/${REP}/${APP}/actions/artifacts/${artifactId}/zip > artifact.zip
@@ -210,7 +195,7 @@ if [[ "${status}" == "completed" ]]; then
 	artifactId=$(artifact -android-${ext})
 
 	if [[ -z "${artifactId}" ]]; then
-	    echo "No artifact found."
+	    echo "Not built by this run: skipped."
 	else
 	    echo "artifact id: $artifactId"
 	    gh api -H "Accept: application/vnd.github+json" repos/${REP}/${APP}/actions/artifacts/${artifactId}/zip > artifact.zip
@@ -243,7 +228,7 @@ if [[ "${status}" == "completed" ]]; then
     artifactId=$(artifact -linux-zip)
 
     if [[ -z "${artifactId}" ]]; then
-	echo "No artifact found."
+	echo "Not built by this run: skipped."
     else
 	echo "artifact id: $artifactId"
 	gh api -H "Accept: application/vnd.github+json" repos/${REP}/${APP}/actions/artifacts/${artifactId}/zip > artifact.zip
@@ -265,10 +250,7 @@ if [[ "${status}" == "completed" ]]; then
     # and otherwise the ad-hoc builds, so an app without the Developer ID
     # secrets still has a macOS download under the default name.
     #
-    # Both are taken from the bump run, notarized over ad hoc, or else
-    # whichever was made most recently. Artefacts outlive their run, so
-    # preferring any notarized artefact over any ad-hoc one would let an
-    # old notarized build shadow every newer ad-hoc build.
+    # Both are taken from the run, notarized over ad hoc.
 
     for ext in dmg zip; do
 
@@ -279,7 +261,7 @@ if [[ "${status}" == "completed" ]]; then
 	artifactId=$(artifact -notarized-macos-${ext} -adhoc-macos-${ext})
 
 	if [[ -z "${artifactId}" ]]; then
-	    echo "No artifact found."
+	    echo "Not built by this run: skipped."
 	else
 	    echo "artifact id: $artifactId"
 	    gh api -H "Accept: application/vnd.github+json" repos/${REP}/${APP}/actions/artifacts/${artifactId}/zip > artifact.zip
@@ -310,7 +292,7 @@ if [[ "${status}" == "completed" ]]; then
     artifactId=$(artifact -adhoc-macos-dmg)
 
     if [[ -z "${artifactId}" ]]; then
-	echo "No artifact found."
+	echo "Not built by this run: skipped."
     else
         echo "artifact id: $artifactId"
         gh api -H "Accept: application/vnd.github+json" \
@@ -334,7 +316,7 @@ if [[ "${status}" == "completed" ]]; then
     artifactId=$(artifact -adhoc-macos-zip)
 
     if [[ -z "${artifactId}" ]]; then
-	echo "No artifact found."
+	echo "Not built by this run: skipped."
     else
 	echo "artifact id: $artifactId"
 	gh api -H "Accept: application/vnd.github+json" repos/${REP}/${APP}/actions/artifacts/${artifactId}/zip > artifact.zip
@@ -364,7 +346,7 @@ if [[ "${status}" == "completed" ]]; then
     artifactId=$(artifact -macos-unsigned-zip)
 
     if [[ -z "${artifactId}" ]]; then
-	echo "No artifact found."
+	echo "Not built by this run: skipped."
     else
 	echo "artifact id: $artifactId"
 	gh api -H "Accept: application/vnd.github+json" repos/${REP}/${APP}/actions/artifacts/${artifactId}/zip > artifact.zip
@@ -386,7 +368,7 @@ if [[ "${status}" == "completed" ]]; then
     artifactId=$(artifact -macos-unsigned-dmg)
 
     if [[ -z "${artifactId}" ]]; then
-	echo "No artifact found."
+	echo "Not built by this run: skipped."
     else
 	echo "artifact id: $artifactId"
 	gh api -H "Accept: application/vnd.github+json" repos/${REP}/${APP}/actions/artifacts/${artifactId}/zip > artifact.zip
@@ -408,7 +390,7 @@ if [[ "${status}" == "completed" ]]; then
     artifactId=$(artifact -macos-staging-dmg)
 
     if [[ -z "${artifactId}" ]]; then
-	echo "No artifact found."
+	echo "Not built by this run: skipped."
     else
 	echo "artifact id: $artifactId"
 	gh api -H "Accept: application/vnd.github+json" repos/${REP}/${APP}/actions/artifacts/${artifactId}/zip > artifact.zip
@@ -430,7 +412,7 @@ if [[ "${status}" == "completed" ]]; then
     artifactId=$(artifact -macos-dev-dmg)
 
     if [[ -z "${artifactId}" ]]; then
-	echo "No artifact found."
+	echo "Not built by this run: skipped."
     else
 	echo "artifact id: $artifactId"
 	gh api -H "Accept: application/vnd.github+json" repos/${REP}/${APP}/actions/artifacts/${artifactId}/zip > artifact.zip
@@ -454,7 +436,7 @@ if [[ "${status}" == "completed" ]]; then
     artifactId=$(artifact -ipa)
 
     if [[ -z "${artifactId}" ]]; then
-	echo "No artifact found."
+	echo "Not built by this run: skipped."
     else
 	echo "artifact id: $artifactId"
 	gh api -H "Accept: application/vnd.github+json" repos/${REP}/${APP}/actions/artifacts/${artifactId}/zip > artifact.zip
@@ -473,7 +455,7 @@ if [[ "${status}" == "completed" ]]; then
     artifactId=$(artifact -windows-inno)
 
     if [[ -z "${artifactId}" ]]; then
-	echo "No artifact found."
+	echo "Not built by this run: skipped."
     else
 	echo "artifact id: $artifactId"
 	gh api -H "Accept: application/vnd.github+json" repos/${REP}/${APP}/actions/artifacts/${artifactId}/zip > artifact.zip
@@ -504,7 +486,7 @@ if [[ "${status}" == "completed" ]]; then
     artifactId=$(artifact -windows-zip)
 
     if [[ -z "${artifactId}" ]]; then
-	echo "No artifact found."
+	echo "Not built by this run: skipped."
     else
 	echo "artifact id: $artifactId"
 	gh api -H "Accept: application/vnd.github+json" repos/${REP}/${APP}/actions/artifacts/${artifactId}/zip > artifact.zip
