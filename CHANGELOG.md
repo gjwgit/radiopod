@@ -22,6 +22,8 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.4 Refresh Android release
 
++ Narrower error and expired Pod login popups [2.4.3 20261115 gjw]
+
 + Earbuds put in their case leave a Play button, not Stop [2.4.2 20261112 gjw]
 
 + Sleep timer restarts in full after a stop or pause [2.4.1 20261112 gjw]

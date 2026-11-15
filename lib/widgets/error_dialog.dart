@@ -58,7 +58,13 @@ Future<void> showErrorDialog(
           Expanded(child: Text(title)),
         ],
       ),
-      content: Text(message),
+      // 20261115 gjw Keep lines under about 80 characters so the message is
+      // comfortable to read on a wide window, rather than one long line.
+
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: Text(message),
+      ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
