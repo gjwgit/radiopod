@@ -22,13 +22,11 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.4 Refresh Android release
 
++ Swipe right for a station's playlists; pinned manager names [2.4.4 20261116 gjw]
 + Narrower error and expired Pod login popups [2.4.3 20261115 gjw]
-
 + Earbuds put in their case leave a Play button, not Stop [2.4.2 20261112 gjw]
-
 + Sleep timer restarts in full after a stop or pause [2.4.1 20261112 gjw]
-
-+ Prepare next android release. First with podcasts. [2.4.0 20261106 gjw]
++ Prepare next android release. [2.4.0 20261106 gjw]
 
 ## 2.3 Migrate to using copier for templates
 

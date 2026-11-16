@@ -33,6 +33,7 @@ import 'package:provider/provider.dart';
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/podcast_screen.dart';
 import 'package:radiopod/screens/stations_widgets/station_empty_state.dart';
+import 'package:radiopod/screens/stations_widgets/station_playlists_dialog.dart';
 import 'package:radiopod/screens/stations_widgets/station_properties_dialog.dart';
 import 'package:radiopod/screens/stations_widgets/station_pull_refresh.dart';
 import 'package:radiopod/services/app_provider.dart';
@@ -197,6 +198,7 @@ class _StationsScreenState extends State<StationsScreen> {
             key: ValueKey(station.id),
             confirm: () => _askDelete(station),
             onRemove: () => _delete(provider, station),
+            onSwipeRight: () => showStationPlaylists(context, station),
             child: _tile(provider, station, visible, now, i, reorderable),
           );
         }

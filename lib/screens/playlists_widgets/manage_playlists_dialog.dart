@@ -27,6 +27,7 @@ library;
 
 import 'dart:math';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'package:markdown_tooltip/markdown_tooltip.dart';
@@ -66,12 +67,41 @@ class ManagePlaylistsDialog extends StatefulWidget {
 class _ManagePlaylistsDialogState extends State<ManagePlaylistsDialog> {
   late final _filter = TextEditingController(text: widget.initialFilter);
 
+  // 20261116 gjw The station names and the ticks are two lists, so the names
+  // can stay put while the ticks scroll sideways. Each follows the other up
+  // and down.
+
+  final _names = ScrollController();
+  final _ticks = ScrollController();
+  final _across = ScrollController();
+
   static const _column = 76.0;
+  static const _header = 48.0;
+  static const _rowHeight = 48.0;
+
+  // Room below the lists for the sideways scrollbar, so it does not cover
+  // the last row. Both lists keep it, to stay the same height.
+
+  static const _bar = 14.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _names.addListener(() => _follow(_names, _ticks));
+    _ticks.addListener(() => _follow(_ticks, _names));
+  }
 
   @override
   void dispose() {
     _filter.dispose();
+    _names.dispose();
+    _ticks.dispose();
+    _across.dispose();
     super.dispose();
+  }
+
+  void _follow(ScrollController from, ScrollController to) {
+    if (to.hasClients && to.offset != from.offset) to.jumpTo(from.offset);
   }
 
   @override
@@ -144,8 +174,8 @@ class _ManagePlaylistsDialogState extends State<ManagePlaylistsDialog> {
   );
 
   /// The header of playlist names stays put while the stations scroll
-  /// under it. With more playlists than fit, the whole grid scrolls
-  /// sideways.
+  /// under it. With more playlists than fit, the playlists scroll sideways
+  /// and the station names stay put beside them.
 
   Widget _grid(
     AppProvider provider,
@@ -154,34 +184,101 @@ class _ManagePlaylistsDialogState extends State<ManagePlaylistsDialog> {
   ) => LayoutBuilder(
     builder: (context, box) {
       final name = box.maxWidth < 500 ? 140.0 : 260.0;
-      final width = max(box.maxWidth, name + playlists.length * _column);
+      final width = max(box.maxWidth - name, playlists.length * _column);
+      final quiet = ScrollConfiguration.of(context).copyWith(scrollbars: false);
 
-      return SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: width,
-          height: box.maxHeight,
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  SizedBox(width: name),
-                  for (final p in playlists) _heading(p),
-                ],
-              ),
-              const Divider(height: 1),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: stations.length,
-                  itemBuilder: (context, i) =>
-                      _row(provider, playlists, stations[i], name),
+      return Row(
+        children: [
+          SizedBox(
+            width: name,
+            child: Column(
+              children: [
+                const SizedBox(height: _header),
+                const Divider(height: 1),
+                Expanded(
+                  // One scrollbar is enough, and it belongs to the ticks.
+                  child: ScrollConfiguration(
+                    behavior: quiet,
+                    child: ListView.builder(
+                      controller: _names,
+                      itemExtent: _rowHeight,
+                      itemCount: stations.length,
+                      itemBuilder: (context, i) => _name(stations[i]),
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: _bar),
+              ],
+            ),
           ),
-        ),
+          Expanded(
+            child: _playlistColumns(
+              provider,
+              playlists,
+              stations,
+              width,
+              box.maxHeight,
+              quiet,
+            ),
+          ),
+        ],
       );
     },
+  );
+
+  /// The playlist columns, scrolled sideways under their headings.
+  ///
+  /// 20261116 gjw On desktop a mouse does not drag a scroll view and the
+  /// scrollbar only shows while scrolling, so columns past the edge could
+  /// not be reached at all. The sideways scrollbar is now always shown and a
+  /// mouse can drag the columns. The up and down scrollbar is drawn here,
+  /// at the visible edge, rather than by the list, whose own right edge is
+  /// off screen when there are many playlists.
+
+  Widget _playlistColumns(
+    AppProvider provider,
+    List<Playlist> playlists,
+    List<Station> stations,
+    double width,
+    double height,
+    ScrollBehavior quiet,
+  ) => Scrollbar(
+    controller: _ticks,
+    notificationPredicate: (n) =>
+        n.depth == 1 && n.metrics.axis == Axis.vertical,
+    child: Scrollbar(
+      controller: _across,
+      thumbVisibility: true,
+      child: ScrollConfiguration(
+        behavior: quiet.copyWith(
+          dragDevices: {...quiet.dragDevices, PointerDeviceKind.mouse},
+        ),
+        child: SingleChildScrollView(
+          controller: _across,
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: width,
+            height: height,
+            child: Column(
+              children: [
+                Row(children: [for (final p in playlists) _heading(p)]),
+                const Divider(height: 1),
+                Expanded(
+                  child: ListView.builder(
+                    controller: _ticks,
+                    itemExtent: _rowHeight,
+                    itemCount: stations.length,
+                    itemBuilder: (context, i) =>
+                        _row(provider, playlists, stations[i]),
+                  ),
+                ),
+                const SizedBox(height: _bar),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
   );
 
   Widget _heading(Playlist p) => MarkdownTooltip(
@@ -194,38 +291,31 @@ class _ManagePlaylistsDialogState extends State<ManagePlaylistsDialog> {
     The station stays in your library either way.
 
     ''',
-    child: SizedBox(
+    child: Container(
       width: _column,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-        child: Text(
-          p.name,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.labelMedium,
-        ),
+      height: _header,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Text(
+        p.name,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.labelMedium,
       ),
     ),
   );
 
-  Widget _row(
-    AppProvider provider,
-    List<Playlist> playlists,
-    Station s,
-    double name,
-  ) => Row(
+  Widget _name(Station s) => Row(
     children: [
-      SizedBox(
-        width: name,
-        child: Row(
-          children: [
-            Icon(s.isPodcast ? Icons.podcasts : Icons.radio, size: 18),
-            const SizedBox(width: 8),
-            Expanded(child: Text(s.name, overflow: TextOverflow.ellipsis)),
-          ],
-        ),
-      ),
+      Icon(s.isPodcast ? Icons.podcasts : Icons.radio, size: 18),
+      const SizedBox(width: 8),
+      Expanded(child: Text(s.name, overflow: TextOverflow.ellipsis)),
+    ],
+  );
+
+  Widget _row(AppProvider provider, List<Playlist> playlists, Station s) => Row(
+    children: [
       for (final p in playlists)
         SizedBox(
           width: _column,

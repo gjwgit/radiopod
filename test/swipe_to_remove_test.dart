@@ -34,6 +34,7 @@ import 'package:radiopod/widgets/swipe_to_remove.dart';
 Future<List<String>> _pump(
   WidgetTester tester, {
   Future<bool> Function()? confirm,
+  VoidCallback? onSwipeRight,
 }) async {
   final rows = ['a', 'b'];
   final removed = <String>[];
@@ -48,6 +49,7 @@ Future<List<String>> _pump(
                 SwipeToRemove(
                   key: ValueKey(r),
                   confirm: confirm,
+                  onSwipeRight: onSwipeRight,
                   onRemove: () => setState(() {
                     rows.remove(r);
                     removed.add(r);
@@ -82,6 +84,26 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(removed, isEmpty);
+  });
+
+  testWidgets('a swipe right runs onSwipeRight and keeps the row', (
+    tester,
+  ) async {
+    var swiped = 0;
+    final removed = await _pump(tester, onSwipeRight: () => swiped++);
+
+    await tester.fling(find.text('row a'), const Offset(600, 0), 1000);
+    await tester.pumpAndSettle();
+
+    expect(swiped, 1);
+    expect(removed, isEmpty);
+    expect(find.text('row a'), findsOneWidget);
+
+    // A swipe left still removes.
+
+    await tester.fling(find.text('row a'), const Offset(-600, 0), 1000);
+    await tester.pumpAndSettle();
+    expect(removed, ['a']);
   });
 
   testWidgets('a refused confirmation keeps the row', (tester) async {

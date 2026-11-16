@@ -25,6 +25,7 @@
 
 library;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -99,6 +100,39 @@ void main() {
 
     expect(find.text('Classic'), findsNothing);
     expect(find.text('Future Tense'), findsOneWidget);
+  });
+
+  testWidgets('the stations stay put while the playlists scroll sideways', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 720);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final provider = AppProvider()
+      ..loadForTest(
+        const [_radio, _podcast],
+        [for (var i = 0; i < 8; i++) Playlist(id: 'p$i', name: 'List $i')],
+      );
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: provider,
+        child: const MaterialApp(home: ManagePlaylistsDialog()),
+      ),
+    );
+
+    final station = tester.getTopLeft(find.text('Classic'));
+    final heading = tester.getTopLeft(find.text('List 0'));
+    // A mouse, as on desktop, where a drag scrolls only if allowed to.
+
+    await tester.drag(
+      find.text('List 0'),
+      const Offset(-200, 0),
+      kind: PointerDeviceKind.mouse,
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.getTopLeft(find.text('Classic')), station);
+    expect(tester.getTopLeft(find.text('List 0')).dx, lessThan(heading.dx));
   });
 
   testWidgets('the filter and Manage playlists fit a phone', (tester) async {

@@ -1,6 +1,6 @@
 /// SwipeToRemove — swipe a station row to the left to remove it.
 ///
-// Time-stamp: <Friday 2026-10-23 10:00:00 +1100 Graham Williams>
+// Time-stamp: <Monday 2026-11-16 10:00:00 +1100 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -40,6 +40,9 @@ import 'package:flutter/material.dart';
 /// key there. It must also leave the list as soon as [onRemove] runs, or
 /// Dismissible asserts that a dismissed row is still in the tree;
 /// AppProvider notifies its listeners before it saves, so it does.
+///
+/// 20261116 gjw With [onSwipeRight] a swipe to the RIGHT runs it and the row
+/// springs back: Stations opens the station's playlists that way.
 
 class SwipeToRemove extends StatelessWidget {
   const SwipeToRemove({
@@ -47,32 +50,64 @@ class SwipeToRemove extends StatelessWidget {
     required this.child,
     required this.onRemove,
     this.confirm,
+    this.onSwipeRight,
   });
 
   final Widget child;
   final VoidCallback onRemove;
   final Future<bool> Function()? confirm;
+  final VoidCallback? onSwipeRight;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final remove = _background(
+      Alignment.centerRight,
+      Icons.delete_outline,
+      scheme.errorContainer,
+      scheme.onErrorContainer,
+    );
 
     return Dismissible(
       key: key!,
-      direction: DismissDirection.endToStart,
-      confirmDismiss: confirm == null ? null : (_) => confirm!(),
+      direction: onSwipeRight == null
+          ? DismissDirection.endToStart
+          : DismissDirection.horizontal,
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          onSwipeRight!();
+          return false;
+        }
+
+        return confirm == null || await confirm!();
+      },
       onDismissed: (_) => onRemove(),
-      background: ColoredBox(
-        color: scheme.errorContainer,
-        child: Align(
-          alignment: Alignment.centerRight,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Icon(Icons.delete_outline, color: scheme.onErrorContainer),
-          ),
-        ),
-      ),
+      background: onSwipeRight == null
+          ? remove
+          : _background(
+              Alignment.centerLeft,
+              Icons.playlist_add,
+              scheme.primaryContainer,
+              scheme.onPrimaryContainer,
+            ),
+      secondaryBackground: onSwipeRight == null ? null : remove,
       child: child,
     );
   }
+
+  Widget _background(
+    Alignment alignment,
+    IconData icon,
+    Color color,
+    Color onColor,
+  ) => ColoredBox(
+    color: color,
+    child: Align(
+      alignment: alignment,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Icon(icon, color: onColor),
+      ),
+    ),
+  );
 }

@@ -1,6 +1,6 @@
 /// RadioPod — application scaffold configuration.
 ///
-// Time-stamp: <Wednesday 2026-10-21 08:20:43 +1100 Graham Williams>
+// Time-stamp: <Monday 2026-11-16 08:16:59 +1100 Graham Williams>
 ///
 /// Copyright (C) 2026, Togaware Pty Ltd
 ///
@@ -195,9 +195,13 @@ class _AppScaffoldState extends State<AppScaffold> {
           context,
           title: 'Your Pod session has expired',
           message:
-              'RadioPod is using the copy of your stations held on this '
-              'device. Your Pod has not been touched.\n\n'
-              'Log in again from the profile menu to reconnect it.',
+              'You are not currently connected to your Solid Pod where your '
+              'station lists are stored for access across your devices and '
+              'for sharing with other users.\n\n'
+              'RadioPod will use the copy of the list of your stations '
+              'held on this device and any updates will not be updated '
+              'to your Pod at this time.\n\n'
+              'Log in again from the profile menu to reconnect to your Pod.',
         );
 
         if (!mounted) return;
@@ -412,8 +416,9 @@ class _AppScaffoldState extends State<AppScaffold> {
                 'the order you want. That order is saved, and is the order '
                 'the car and an export see. Dragging is unavailable while '
                 'the filter box has something in it. Swipe a station to the '
-                'left to delete it. Pull the list down to refresh it from '
-                'your Pod and check your podcasts for new episodes.\n\n'
+                'left to delete it, or to the right to choose the playlists '
+                'it is in. Pull the list down to refresh it from your Pod '
+                'and check your podcasts for new episodes.\n\n'
                 'The filter matches names, and for a podcast its description '
                 'and the titles and show notes of its episodes, so a topic '
                 'finds the podcast that covered it.',
