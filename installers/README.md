@@ -111,8 +111,8 @@ Then set up your local installation (only required once):
 ln -s ${HOME}/.local/share/radiopod/radiopod ${HOME}/.local/bin/
 wget https://raw.githubusercontent.com/gjwgit/radiopod/dev/installers/app.desktop -O ${HOME}/.local/share/applications/radiopod.desktop
 sed -i "s/USER/$(whoami)/g" ${HOME}/.local/share/applications/radiopod.desktop
-mkdir -p ${HOME}/.local/share/icons/hicolor/256x256/apps/
-wget https://github.com/gjwgit/radiopod/raw/dev/installers/app.png -O ${HOME}/.local/share/icons/hicolor/256x256/apps/radiopod.png
+mkdir -p ${HOME}/.local/share/icons/hicolor/512x512/apps/
+wget https://github.com/gjwgit/radiopod/raw/dev/assets/images/app_icon_square.png -O ${HOME}/.local/share/icons/hicolor/512x512/apps/radiopod.png
 ```
 
 To install for any user on the computer:
@@ -121,7 +121,7 @@ To install for any user on the computer:
 sudo unzip radiopod-linux.zip -d /opt/radiopod
 sudo ln -s /opt/radiopod/radiopod /usr/local/bin/
 wget https://raw.githubusercontent.com/gjwgit/radiopod/dev/installers/app.desktop -O ${HOME}/usr/local/share/applications/radiopod.desktop
-wget https://github.com/gjwgit/radiopod/raw/dev/installers/app.png -O ${HOME}/use/local/share/icons/radiopod.png
+wget https://github.com/gjwgit/radiopod/raw/dev/assets/images/app_icon_square.png -O ${HOME}/use/local/share/icons/radiopod.png
 ```
 
 Once installed you can run the app from the GNOME desktop through

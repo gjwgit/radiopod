@@ -365,8 +365,8 @@ square.convert('RGB').resize((S, S), Image.LANCZOS).save(
 print('wrote app_icon_ios.png      (opaque, iOS rejects alpha)')
 
 # ── Output 4: the Snap Store listing icon ──────────────────────────────────
-# snap/gui/icon.png is what the Snap Store shows beside the listing and what
-# the desktop entry points at. Generated here rather than copied by hand so
+# assets/images/app_icon_square.png is what the Snap Store shows beside the
+# listing, and what the flatpak and deb install. Generated here rather than copied by hand so
 # it cannot fall behind the artwork, which is how it came to still be
 # carrying the old squircle.
 #
@@ -376,13 +376,12 @@ print('wrote app_icon_ios.png      (opaque, iOS rejects alpha)')
 
 SNAP_ICON = 512
 snap_icon = icon.resize((SNAP_ICON, SNAP_ICON), Image.LANCZOS)
-snap_dir = pathlib.Path(__file__).resolve().parent.parent / 'snap' / 'gui'
-snap_path = snap_dir / 'icon.png'
+snap_path = pathlib.Path(ASSETS) / 'app_icon_square.png'
 snap_icon.save(snap_path, optimize=True)
 
 size_kb = snap_path.stat().st_size / 1024
 assert size_kb < 256, f'snap icon is {size_kb:.0f}kB, over the 256kB limit'
 print(
-    f'wrote snap/gui/icon.png     '
+    f'wrote app_icon_square.png  '
     f'({SNAP_ICON}x{SNAP_ICON}, {size_kb:.0f}kB, for the Snap Store)'
 )
