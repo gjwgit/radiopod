@@ -217,6 +217,27 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   final _childSubjects = <String, BehaviorSubject<Map<String, dynamic>>>{};
 
+  /// Completed by the first [setLibrary].
+  ///
+  /// 20261119 gjw THE CAR ASKED BEFORE THE LIBRARY WAS IN. The handler is
+  /// live, and Android Auto browsing it, from the moment AudioService.init
+  /// returns, but Player.init still has preferences, the casts and the icons
+  /// to load before it hands over the library. That gap grew with podcasts
+  /// (every episode's notes are decoded first), and a car asking inside it
+  /// was told All Stations was empty. The nudge from setLibrary does not
+  /// reliably make Auto ask again, so the station list stayed empty in the
+  /// car while the phone showed it in full. Browsing now waits for it.
+
+  final _libraryLoaded = Completer<void>();
+
+  /// Wait for the first library, but never for ever: a Player.init that
+  /// failed must still let the car see an empty tree rather than hang.
+
+  Future<void> _libraryReady() => _libraryLoaded.future.timeout(
+    const Duration(seconds: 10),
+    onTimeout: () {},
+  );
+
   RadioAudioHandler() {
     _player.playbackEventStream.listen(
       _broadcastState,
@@ -294,6 +315,7 @@ class RadioAudioHandler extends BaseAudioHandler {
   void setLibrary(List<Station> stations, List<Playlist> playlists) {
     _stations = stations;
     _playlists = playlists;
+    if (!_libraryLoaded.isCompleted) _libraryLoaded.complete();
 
     // Nudge every subscribed folder. The value is the subscription options
     // map, which we do not use; it is the notification itself that matters.
@@ -805,6 +827,7 @@ class RadioAudioHandler extends BaseAudioHandler {
   ]) async {
     final parts = splitStationMediaId(mediaId);
     if (parts == null) return;
+    await _libraryReady();
 
     final station = _stations.where((s) => s.id == parts.stationId).firstOrNull;
     if (station == null) return;
@@ -828,12 +851,16 @@ class RadioAudioHandler extends BaseAudioHandler {
   Future<List<MediaItem>> getChildren(
     String parentMediaId, [
     Map<String, dynamic>? options,
-  ]) async => browseChildren(
-    parentMediaId,
-    _stations,
-    _playlists,
-    detailsOf: _podcastDetails,
-  );
+  ]) async {
+    await _libraryReady();
+
+    return browseChildren(
+      parentMediaId,
+      _stations,
+      _playlists,
+      detailsOf: _podcastDetails,
+    );
+  }
 
   @override
   ValueStream<Map<String, dynamic>> subscribeToChildren(String parentMediaId) =>
@@ -850,6 +877,7 @@ class RadioAudioHandler extends BaseAudioHandler {
   Future<MediaItem?> getMediaItem(String mediaId) async {
     final parts = splitStationMediaId(mediaId);
     if (parts == null) return null;
+    await _libraryReady();
     final station = _stations.where((s) => s.id == parts.stationId).firstOrNull;
 
     return station == null
