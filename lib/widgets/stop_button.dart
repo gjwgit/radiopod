@@ -25,9 +25,8 @@
 
 library;
 
-import 'package:flutter/material.dart';
-
 import 'package:markdown_tooltip/markdown_tooltip.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A Stop button that becomes Play once stopped, so the same tap brings the
 /// station back.

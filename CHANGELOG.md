@@ -20,6 +20,10 @@ then please show some ❤️ and tap on the star at
 This app is implemented by [Graham
 Williams](https://togaware.com/Graham.Williams.html).
 
+## 2.5 Material UI
+
++ On material_ui with solidui 2.0.0 [2.5.0 20261121 gjw]
+
 ## 2.4 Refresh Android release
 
 + Builds again, on flutter/material until solidui moves [2.4.7 20261121 gjw]

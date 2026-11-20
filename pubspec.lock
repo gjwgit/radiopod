@@ -201,6 +201,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.0"
+  cupertino_ui:
+    dependency: transitive
+    description:
+      name: cupertino_ui
+      sha256: c3eaf7f5bdfee36deb0b14a4cbf7602f1b6b8d8b8576b81f38fc08c25881c94c
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.7"
   dart_jsonwebtoken:
     dependency: transitive
     description:
@@ -351,10 +359,10 @@ packages:
     dependency: transitive
     description:
       name: flutter_form_builder
-      sha256: "1233251b4bc1d5deb245745d2a89dcebf4cdd382e1ec3f21f1c6703b700e574f"
+      sha256: "2a345c33b6264065c68e7de10e3c1b8aae9831ebd0678c8ae34978e4ceb5cfd7"
       url: "https://pub.dev"
     source: hosted
-    version: "10.3.0+2"
+    version: "11.0.0"
   flutter_launcher_icons:
     dependency: "direct dev"
     description:
@@ -664,10 +672,10 @@ packages:
     dependency: "direct main"
     description:
       name: markdown_tooltip
-      sha256: a2a47673d24c921be25fc04341bf3a865a1b6c5c6356dff0bee3f1fa122757ca
+      sha256: afa153370f2250f1a4ebb8f3b08541f5222f4cda85a6e6fbb99f0fcc8d5ace72
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.10"
+    version: "1.0.0"
   matcher:
     dependency: transitive
     description:
@@ -684,6 +692,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.13.0"
+  material_ui:
+    dependency: "direct main"
+    description:
+      name: material_ui
+      sha256: a6b19012df437a356cbc01f8ea22a105e07194c47c9a6009da0032a0ce35c4ab
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.11.1"
   media_kit:
     dependency: transitive
     description:
@@ -1197,18 +1213,18 @@ packages:
     dependency: "direct main"
     description:
       name: solidpod
-      sha256: dbd7644a8542d8ae91ee200de99690fd8612e19377a261e6f77724b3f271e3a1
+      sha256: e606ccb7d748cd3f081baa1bc6440c3ea7b442e0034dbcd9fb15a35d0fba7e19
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.2"
+    version: "2.0.0"
   solidui:
     dependency: "direct main"
     description:
       name: solidui
-      sha256: ddf2e2d8483895a1a7d785dc4de1db091bed6bca28323812e0d064c67bdc9720
+      sha256: "8be6835954a2c5dc43c770e77009aa9b4dfcd0baf03c5a6351cc6f24fedb6116"
       url: "https://pub.dev"
     source: hosted
-    version: "1.5.15"
+    version: "2.0.0"
   source_span:
     dependency: transitive
     description:
@@ -1429,10 +1445,10 @@ packages:
     dependency: transitive
     description:
       name: version_widget
-      sha256: "2e87ce5f42e50764b00d4417e4f4a68e02f6e3ccaf4d2e93b7cbb511c98f9676"
+      sha256: b81b401a41ce5a44d27ddf8f6cd9d10b0fe07b388d6cee9e5d705edd37cf660d
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "2.0.0"
   vm_service:
     dependency: transitive
     description:

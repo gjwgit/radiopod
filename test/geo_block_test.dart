@@ -12,9 +12,8 @@ library;
 
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:radiopod/services/geo_block.dart';
 import 'package:radiopod/widgets/geo_block_listener.dart';

@@ -25,9 +25,8 @@
 
 library;
 
-import 'package:flutter/material.dart';
-
 import 'package:audio_service/audio_service.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:rxdart/rxdart.dart';
 
 import 'package:radiopod/models/station.dart';

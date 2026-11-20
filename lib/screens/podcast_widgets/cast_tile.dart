@@ -25,9 +25,8 @@
 
 library;
 
-import 'package:flutter/material.dart';
-
 import 'package:markdown_tooltip/markdown_tooltip.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:radiopod/models/cast.dart';
 import 'package:radiopod/utils/cast_text.dart';

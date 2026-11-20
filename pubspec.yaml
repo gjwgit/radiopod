@@ -1,7 +1,7 @@
 name: radiopod
 description: "Radio Pod - Internet Radio with Secure and Private Storage"
 publish_to: 'none'
-version: 2.4.7+104
+version: 2.5.0+105
 
 environment:
   sdk: ^3.13.4
@@ -46,7 +46,8 @@ dependencies:
   file_picker: ^13.3.0
   gap: ^3.0.1
   http: ^1.6.0
-  markdown_tooltip: ^0.0.10
+  markdown_tooltip: ^1.0.0
+  material_ui: ^1.11.0
 
   # 20260929 gjw Declared directly, though solidpod already pulls it in, so
   # OidcEventLog can subscribe to OidcPlatform.nativeBrowserEvents(). That is
@@ -74,8 +75,8 @@ dependencies:
 
   rxdart: ^0.28.0
   shared_preferences: ^2.5.5
-  solidpod: ^1.1.2
-  solidui: ^1.5.15
+  solidpod: ^2.0.0
+  solidui: ^2.0.0
 
   # 20260925 gjw Declared directly, though solidui already pulls it in, so
   # the station properties dialog can open a station's homepage and hand its

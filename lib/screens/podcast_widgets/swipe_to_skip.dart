@@ -25,7 +25,7 @@
 
 library;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// An episode row that a swipe to the LEFT skips and a swipe to the RIGHT
 /// unskips: the same as a double tap on the row's information button.
