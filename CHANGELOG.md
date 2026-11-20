@@ -22,6 +22,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.4 Refresh Android release
 
++ Desktop window fills on scaled Wayland, Flutter 3.50 [2.4.6 20261120 gjw]
 + Car station list no longer empty at connect [2.4.5 20261119 gjw]
 + Swipe right for a station's playlists [2.4.4 20261116 gjw]
 + Narrower error and expired Pod login popups [2.4.3 20261115 gjw]

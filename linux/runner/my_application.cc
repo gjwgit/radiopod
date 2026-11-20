@@ -70,8 +70,11 @@ static void my_application_activate(GApplication* application) {
   // switches in debug and profile builds, so an env-based override works under
   // `flutter run` but is silently ignored in the release build that gets
   // packaged into the deb.
+  //
+  // 20261120 gjw Disabled: under Flutter 3.50.1 Impeller draws the spinner
+  // smoothly, so the Skia fallback is no longer needed.
 
-  fl_dart_project_set_enable_impeller(project, FALSE);
+  // fl_dart_project_set_enable_impeller(project, FALSE);
 
   FlView* view = fl_view_new(project);
   GdkRGBA background_color;
@@ -156,6 +159,14 @@ MyApplication* my_application_new() {
   // corresponding .desktop file. This ensures better integration by allowing
   // the application to be recognized beyond its binary name.
   g_set_prgname(APPLICATION_ID);
+
+  // 20261120 gjw Prefer XWayland. Under Flutter 3.50 the Wayland embedder
+  // keeps a stale buffer scale when the window is resized or decorated after
+  // the engine starts, so on a scaled display the frame is drawn at half size
+  // in the top-left corner with the rest black (flutter/flutter#196476).
+  // Remove once that is fixed upstream. Wayland stays as the fallback where no
+  // X server is available.
+  gdk_set_allowed_backends("x11,wayland");
 
   return MY_APPLICATION(g_object_new(my_application_get_type(),
                                      "application-id", APPLICATION_ID, "flags",

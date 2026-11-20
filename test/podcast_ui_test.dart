@@ -26,10 +26,10 @@
 library;
 
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:radiopod/constants/app.dart';
 import 'package:radiopod/models/cast.dart';

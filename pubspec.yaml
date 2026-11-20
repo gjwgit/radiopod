@@ -1,7 +1,7 @@
 name: radiopod
 description: "Radio Pod - Internet Radio with Secure and Private Storage"
 publish_to: 'none'
-version: 2.4.5+102
+version: 2.4.6+103
 
 environment:
   sdk: ^3.13.4
@@ -93,6 +93,7 @@ dependencies:
 
   xml: ^7.1.0
 
+  material_ui: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

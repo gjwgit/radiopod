@@ -25,9 +25,8 @@
 
 library;
 
-import 'package:flutter/material.dart';
-
 import 'package:gap/gap.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Explains where results come from, which is the honest thing to show on a
 /// screen that has not yet sent anything anywhere.
