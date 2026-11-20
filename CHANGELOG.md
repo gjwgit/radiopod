@@ -22,6 +22,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.5 Material UI
 
++ Android toolchain for Flutter 3.50, newer preferences [2.5.1 20261121 gjw]
 + On material_ui with solidui 2.0.0 [2.5.0 20261121 gjw]
 
 ## 2.4 Refresh Android release
