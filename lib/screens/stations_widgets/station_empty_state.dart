@@ -25,8 +25,9 @@
 
 library;
 
+import 'package:flutter/material.dart';
+
 import 'package:gap/gap.dart';
-import 'package:material_ui/material_ui.dart';
 
 /// An empty state that says what to do next rather than just that the list is
 /// empty. The two routes into a library are Search and an imported playlist

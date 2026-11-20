@@ -28,8 +28,7 @@ library;
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/services/station_logo_cache.dart';

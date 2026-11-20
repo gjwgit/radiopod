@@ -25,7 +25,7 @@
 
 library;
 
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 /// A row that is removed by swiping it to the left: deleted from the library
 /// on Stations, as its Delete button does, and taken out of the playlist on

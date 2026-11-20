@@ -28,9 +28,9 @@ library;
 import 'dart:math';
 
 import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
 
 import 'package:markdown_tooltip/markdown_tooltip.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import 'package:radiopod/models/playlist.dart';

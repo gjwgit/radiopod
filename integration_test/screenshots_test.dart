@@ -13,10 +13,10 @@
 library;
 
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
+import 'package:flutter/material.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 import 'package:radiopod/main.dart' as app;
 import 'package:radiopod/models/playlist.dart';

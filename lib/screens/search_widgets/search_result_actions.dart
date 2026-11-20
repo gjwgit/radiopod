@@ -25,8 +25,9 @@
 
 library;
 
+import 'package:flutter/material.dart';
+
 import 'package:markdown_tooltip/markdown_tooltip.dart';
-import 'package:material_ui/material_ui.dart';
 
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/search_widgets/search_result_dialog.dart';

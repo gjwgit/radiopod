@@ -25,7 +25,7 @@
 
 library;
 
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 class ImportActionCard extends StatelessWidget {
   final IconData icon;

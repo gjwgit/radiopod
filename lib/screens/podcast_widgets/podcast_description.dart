@@ -25,8 +25,9 @@
 
 library;
 
+import 'package:flutter/material.dart';
+
 import 'package:markdown_tooltip/markdown_tooltip.dart';
-import 'package:material_ui/material_ui.dart';
 
 /// The podcast's own description, from its feed: four lines, and the rest
 /// with a tap.

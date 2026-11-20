@@ -27,7 +27,7 @@ library;
 
 import 'dart:async';
 
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 import 'package:radiopod/services/geo_block.dart';
 import 'package:radiopod/widgets/error_dialog.dart';

@@ -27,8 +27,9 @@ library;
 
 import 'dart:io';
 
+import 'package:flutter/material.dart';
+
 import 'package:gap/gap.dart';
-import 'package:material_ui/material_ui.dart';
 
 import 'package:radiopod/services/station_logo_cache.dart';
 import 'package:radiopod/utils/station_icon.dart';

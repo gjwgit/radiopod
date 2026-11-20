@@ -25,7 +25,7 @@
 
 library;
 
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 /// Ask for a playlist name, returning it trimmed, or null if cancelled.
 ///

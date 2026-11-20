@@ -25,8 +25,9 @@
 
 library;
 
+import 'package:flutter/material.dart';
+
 import 'package:gap/gap.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import 'package:radiopod/screens/settings_widgets/after_cast_section.dart';

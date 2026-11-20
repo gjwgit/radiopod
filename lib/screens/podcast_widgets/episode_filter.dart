@@ -25,8 +25,9 @@
 
 library;
 
+import 'package:flutter/material.dart';
+
 import 'package:markdown_tooltip/markdown_tooltip.dart';
-import 'package:material_ui/material_ui.dart';
 
 /// A filter over the episodes' titles and show notes, drawn like the
 /// Stations filter. [onChanged] is called on every edit, and on Clear.
