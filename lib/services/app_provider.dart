@@ -191,6 +191,11 @@ class AppProvider extends ChangeNotifier {
 
   DateTime? _castsSyncedAt;
 
+  /// The read-merge-write of `casts.ttl` under way, so two never overlap;
+  /// see `_reconcileCasts`.
+
+  Future<String?>? _castPodRun;
+
   /// The refresh of every podcast under way, if one is. See
   /// [PodcastLibrary.refreshAllPodcasts].
 

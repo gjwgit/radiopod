@@ -308,14 +308,8 @@ extension PodcastLibrary on AppProvider {
     if (!force && last != null && now.difference(last).inSeconds < 30) return;
     _castsSyncedAt = now;
 
-    try {
-      await _loadCasts();
-      _notify();
-      await _pushToPlayer();
-      await _saveCastsToPod();
-    } catch (e) {
-      debugPrint('[AppProvider] cast sync failed: $e');
-    }
+    final error = await _reconcileCasts();
+    if (error != null) debugPrint('[AppProvider] cast sync failed: $error');
   }
 
   /// Fetch the Pod's progress before an episode starts, so it starts where
@@ -325,10 +319,15 @@ extension PodcastLibrary on AppProvider {
   /// then started the episode from the top: it had not read the Pod since
   /// the phone wrote. Waits at most three seconds, so a slow or absent
   /// network delays the play only that long; the sync carries on behind.
+  ///
+  /// 20261123 gjw Eight seconds, up from three. An encrypted read can take
+  /// longer than three, and an episode started before the Pod answered
+  /// began from this device's stale place, and its progress then replaced
+  /// the other device's.
 
   Future<void> _syncBeforePlay() async {
     try {
-      await syncCasts(force: true).timeout(const Duration(seconds: 3));
+      await syncCasts(force: true).timeout(const Duration(seconds: 8));
     } on TimeoutException {
       debugPrint('[AppProvider] playing before the Pod answered');
     }
@@ -372,21 +371,73 @@ extension PodcastLibrary on AppProvider {
   }
 
   /// Write `casts.ttl` when the casts have changed and a Pod is in use.
-  ///
-  /// Only podcasts in the library are written. The device may hold casts of
-  /// a podcast saved while logged out on a borrowed phone; what someone else
-  /// listened to does not belong in this Pod.
 
   Future<String?> _saveCastsToPod() async {
     if (_testMode || !_castsDirty || _source != LibrarySource.pod) {
       return null;
     }
 
-    final error = await PodService.save(
-      castsFileName,
-      encodeCasts(_podcastsOnly(CastStore.all)),
-    );
-    if (error == null) _castsDirty = false;
+    return _reconcileCasts();
+  }
+
+  /// Read `casts.ttl`, merge it with the store cast by cast, keep the merge,
+  /// and write it back if the Pod lacks any of it. One at a time.
+  ///
+  /// 20261123 gjw ALWAYS READ BEFORE WRITING. The write used to send this
+  /// device's whole cast list unread, so the desktop, saving its own
+  /// progress every minute, wrote its stale copy of an episode over the one
+  /// the phone had just half heard or finished. The phone kept its own
+  /// copy, but the desktop then read its own write back: episodes heard
+  /// came round again, and one half heard started from the top.
+  ///
+  /// A read that fails writes nothing, for the same reason.
+  ///
+  /// Only podcasts in the library are written. The device may hold casts of
+  /// a podcast saved while logged out on a borrowed phone; what someone else
+  /// listened to does not belong in this Pod.
+
+  Future<String?> _reconcileCasts() {
+    if (_testMode || _source != LibrarySource.pod) return Future.value();
+    final run = (_castPodRun ?? Future<String?>.value())
+        .catchError((Object _) => null)
+        .then((_) => _reconcileCastsNow());
+    _castPodRun = run;
+
+    return run;
+  }
+
+  Future<String?> _reconcileCastsNow() async {
+    final Map<String, List<Cast>> pod;
+    try {
+      pod = decodeCasts(await PodService.loadOrThrow(castsFileName));
+    } catch (e) {
+      return 'Could not read your episodes from the Pod. $e';
+    }
+
+    // No await between reading the store and replacing it, so progress the
+    // player records meanwhile is not lost.
+
+    final before = encodeCasts(CastStore.all);
+    final merged = mergeCastMaps(pod, CastStore.all);
+    await CastStore.replaceAll(merged);
+    if (encodeCasts(merged) != before) {
+      _notify();
+      await _pushToPlayer();
+    }
+
+    final mine = encodeCasts(_podcastsOnly(CastStore.all));
+    if (mine == encodeCasts(_podcastsOnly(pod))) {
+      _castsDirty = false;
+
+      return null;
+    }
+
+    // Cleared BEFORE the write, so a change made while it is under way is
+    // still marked for the next one.
+
+    _castsDirty = false;
+    final error = await PodService.save(castsFileName, mine);
+    if (error != null) _castsDirty = true;
 
     return error;
   }

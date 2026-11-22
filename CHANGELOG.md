@@ -22,6 +22,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.5 Material UI
 
++ Episode progress no longer lost syncing between devices [2.5.3 20261123 gjw]
 + Stations list keeps the station on air in view [2.5.2 20261123 gjw]
 + Android toolchain for Flutter 3.50, newer preferences [2.5.1 20261121 gjw]
 + On material_ui with solidui 2.0.0 [2.5.0 20261121 gjw]

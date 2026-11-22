@@ -178,6 +178,12 @@ class RadioAudioHandler extends BaseAudioHandler {
 
   Cast? _currentCast;
 
+  /// When this device last set the place in [_currentCast]: the stamp it
+  /// was opened with, then each save. A stored stamp newer than this came
+  /// from elsewhere, in practice another device by way of the Pod.
+
+  DateTime? _castSavedAt;
+
   /// Saves the cast's place every [castSaveEvery] while it plays.
 
   Timer? _castSaveTimer;
@@ -382,6 +388,7 @@ class RadioAudioHandler extends BaseAudioHandler {
     _currentStation = station;
     _currentTrack = null;
     _currentCast = cast;
+    _castSavedAt = cast?.updatedAt;
     _castEnding = false;
     _pausedForOther = false;
     _focusPoll?.cancel();
@@ -511,7 +518,9 @@ class RadioAudioHandler extends BaseAudioHandler {
     // come in mid-word. See [castResumeBack].
 
     if (_currentCast != null && !_player.playing) {
-      await _player.seek(resumeFrom(_player.position));
+      final moved = _castMovedElsewhere();
+      await _player.seek(resumeFrom(moved?.position ?? _player.position));
+      if (moved != null) _takeCastPlace(moved);
     }
     await _player.play();
   }

@@ -107,6 +107,12 @@ extension CastHandling on RadioAudioHandler {
   /// cast is saved at the start, so playing it again starts it again.
   /// Nothing is saved while the cast is still opening: the player has not
   /// reached the saved place yet, and saving its zero would lose it.
+  ///
+  /// 20261123 gjw Nor while paused, once the cast has changed elsewhere
+  /// since this device last saved it. A cast paused on the desktop and then
+  /// heard on, or finished, on the phone was otherwise saved again at the
+  /// desktop's old place, stamped now, when the desktop switched episode or
+  /// stopped, and the phone's progress was lost.
 
   Future<void> _saveCastPlace() async {
     final station = _currentStation;
@@ -117,18 +123,59 @@ extension CastHandling on RadioAudioHandler {
     if (state == ProcessingState.idle || state == ProcessingState.loading) {
       return;
     }
+    if (!_player.playing && _castMovedElsewhere(anyChange: true) != null) {
+      return;
+    }
 
     final position = _player.position;
 
     final finished = isFinished(position, _castLength);
+    final at = DateTime.now().toUtc();
     await CastStore.update(
       station.id,
       cast.guid,
       (c) => c.withState(
         played: finished ? true : null,
         position: finished ? Duration.zero : position,
+        at: at,
       ),
     );
+    _castSavedAt = at;
+  }
+
+  /// The store's copy of the cast on air.
+
+  Cast? _storedCast() {
+    final station = _currentStation;
+    final guid = _currentCast?.guid;
+    if (station == null || guid == null) return null;
+
+    return CastStore.of(station.id).where((c) => c.guid == guid).firstOrNull;
+  }
+
+  /// The cast on air as another device left it, when that device has heard
+  /// more of it since this one last saved and has not finished it: Play on
+  /// a paused cast then resumes there, not at this device's old place.
+
+  ///
+  /// With [anyChange], any change since, finished or not.
+
+  Cast? _castMovedElsewhere({bool anyChange = false}) {
+    final stored = _storedCast();
+    final at = stored?.updatedAt;
+    final mine = _castSavedAt;
+    if (stored == null || at == null) return null;
+    if (stored.played && !anyChange) return null;
+    if (mine != null && !at.isAfter(mine)) return null;
+
+    return stored;
+  }
+
+  /// Carry on from [moved] as if it had been opened there.
+
+  void _takeCastPlace(Cast moved) {
+    _currentCast = moved;
+    _castSavedAt = moved.updatedAt;
   }
 
   void _startCastSaving() {

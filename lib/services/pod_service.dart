@@ -108,4 +108,21 @@ class PodService {
       return null;
     }
   }
+
+  /// [load], but a read that FAILED throws rather than looking like a file
+  /// not written yet. Null only when the file does not exist.
+  ///
+  /// 20261123 gjw For reading before a write that merges: treating a failed
+  /// read as empty would write this device's copy over everything the other
+  /// devices had saved.
+
+  static Future<String?> loadOrThrow(String fileName) async {
+    try {
+      final ttl = await readPod(fileName);
+
+      return ttl.isEmpty ? null : extractJson(ttl);
+    } on ResourceNotExistException {
+      return null;
+    }
+  }
 }
