@@ -31,6 +31,7 @@ import 'package:provider/provider.dart';
 
 import 'package:radiopod/models/station.dart';
 import 'package:radiopod/screens/podcast_screen.dart';
+import 'package:radiopod/screens/stations_widgets/on_air_follower.dart';
 import 'package:radiopod/screens/stations_widgets/station_empty_state.dart';
 import 'package:radiopod/screens/stations_widgets/station_playlists_dialog.dart';
 import 'package:radiopod/screens/stations_widgets/station_properties_dialog.dart';
@@ -67,10 +68,12 @@ class StationsScreen extends StatefulWidget {
 
 class _StationsScreenState extends State<StationsScreen> {
   final _filter = TextEditingController();
+  final _follower = OnAirFollower();
 
   @override
   void dispose() {
     _filter.dispose();
+    _follower.dispose();
     super.dispose();
   }
 
@@ -164,7 +167,12 @@ class _StationsScreenState extends State<StationsScreen> {
                               filtered: query.isNotEmpty,
                             ),
                           )
-                        : _list(provider, visible, reorderable: query.isEmpty),
+                        : _list(
+                            provider,
+                            visible,
+                            query: query,
+                            reorderable: query.isEmpty,
+                          ),
                   ),
           ),
         ],
@@ -182,14 +190,24 @@ class _StationsScreenState extends State<StationsScreen> {
   /// station in the gap. Rather than guess and silently scramble the order,
   /// the handles simply are not there while filtering, and the Stations menu
   /// tooltip says so.
+  ///
+  /// 20261123 gjw The row on air is kept in view; see [OnAirFollower].
 
   Widget _list(
     AppProvider provider,
     List<Station> visible, {
+    required String query,
     required bool reorderable,
   }) {
     return NowPlayingBuilder(
       builder: (context, now) {
+        _follower.follow(
+          stationId: now.stationId,
+          index: visible.indexWhere((s) => now.isCurrent(s.id)),
+          count: visible.length,
+          query: query,
+        );
+
         Widget row(int i) {
           final station = visible[i];
 
@@ -198,12 +216,17 @@ class _StationsScreenState extends State<StationsScreen> {
             confirm: () => _askDelete(station),
             onRemove: () => _delete(provider, station),
             onSwipeRight: () => showStationPlaylists(context, station),
-            child: _tile(provider, station, visible, now, i, reorderable),
+            child: OnAirMarker(
+              follower: _follower,
+              active: now.isCurrent(station.id),
+              child: _tile(provider, station, visible, now, i, reorderable),
+            ),
           );
         }
 
         if (!reorderable) {
           return ListView.builder(
+            controller: _follower.controller,
             physics: pullableScrollPhysics,
             itemCount: visible.length,
             itemBuilder: (context, i) => row(i),
@@ -216,6 +239,7 @@ class _StationsScreenState extends State<StationsScreen> {
           // behaviour: with the default handles a long press anywhere on
           // mobile starts a drag, which fights with tapping to play.
           buildDefaultDragHandles: false,
+          scrollController: _follower.controller,
           physics: pullableScrollPhysics,
           itemCount: visible.length,
           itemBuilder: (context, i) => row(i),
