@@ -341,6 +341,35 @@ class RadioAudioHandler extends BaseAudioHandler {
     _lastCastCounts = _castCounts();
   }
 
+  /// The station [id] has been deleted: stop it if it is on air, forget it
+  /// as the session's station, and take it out of the queue.
+  ///
+  /// 20261123 gjw Stopping alone was not enough. The media item outlives a
+  /// Stop so that Play can re-open the station, and so Play brought the
+  /// deleted station straight back.
+
+  Future<void> forgetStation(String id) async {
+    if (_currentStation?.id == id) {
+      if (!_stopped) await stop();
+      _trackSubscription?.cancel();
+      _trackSubscription = null;
+      _currentStation = null;
+      _currentCast = null;
+      _currentTrack = null;
+      mediaItem.add(null);
+    }
+
+    _queueStations = [
+      for (final s in _queueStations)
+        if (s.id != id) s,
+    ];
+    final current = _currentStation;
+    _queueIndex = current == null
+        ? -1
+        : _queueStations.indexWhere((s) => s.id == current.id);
+    _publishQueue();
+  }
+
   // ── Playback ──────────────────────────────────────────────────────────────
 
   /// Start [station], with Next and Previous moving through [queue].
@@ -501,7 +530,11 @@ class RadioAudioHandler extends BaseAudioHandler {
   @override
   Future<void> play() async {
     final station = _currentStation;
-    if (_stopped && station != null) {
+
+    // Nothing to play: nothing started yet, or its station deleted.
+
+    if (station == null) return;
+    if (_stopped) {
       await playStation(
         station,
         queue: _queueStations,

@@ -375,8 +375,13 @@ class AppProvider extends ChangeNotifier {
   }
 
   /// Delete a station and remove it from every playlist that referenced it.
+  ///
+  /// 20261123 gjw The station on air is stopped first and forgotten by the
+  /// player: playing on, it had no row to stop it from, Play brought it
+  /// back, and Next and Previous still walked a queue that held it.
 
-  Future<String?> deleteStation(String id) {
+  Future<String?> deleteStation(String id) async {
+    if (!_testMode) await Player.handler.forgetStation(id);
     _stations = _stations.where((s) => s.id != id).toList();
     _playlists = [
       for (final p in _playlists)
