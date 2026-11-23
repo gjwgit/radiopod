@@ -31,8 +31,9 @@ import 'package:material_ui/material_ui.dart';
 ///
 /// It scrolls only when there is something new to show: a different station
 /// or podcast on air (Next from the car, the notification or the end of a
-/// cast), a different filter, or a list freshly built (the page opened, or
-/// back from the busy spinner). Between those the list is the listener's to
+/// cast), playback starting (Play, even on the station already current), a
+/// different filter, or a list freshly built (the page opened, or back from
+/// the busy spinner). Between those the list is the listener's to
 /// scroll, and a new song on the same station moves nothing. A row already in
 /// view does not move at all; one out of view is brought just inside the
 /// nearer edge.
@@ -51,6 +52,10 @@ class OnAirFollower {
 
   String? _shown;
 
+  /// Whether playback was starting or under way at the last build.
+
+  bool _wasActive = false;
+
   /// The context of the row on air, while it is built.
 
   BuildContext? _row;
@@ -58,18 +63,22 @@ class OnAirFollower {
   void dispose() => controller.dispose();
 
   /// Called as the list builds, with the row on air at [index] of [count]
-  /// visible rows (-1 if none) and the filter [query] in force.
+  /// visible rows (-1 if none), whether playback is [active] (connecting,
+  /// loading or playing), and the filter [query] in force.
 
   void follow({
     required String? stationId,
     required int index,
     required int count,
+    required bool active,
     required String query,
   }) {
     // No clients while building means the list is new, so its scroll offset
-    // is back at the top and the row must be found again.
+    // is back at the top and the row must be found again. Playback starting
+    // shows it again too: Play after a stop keeps the same station current.
 
-    if (!controller.hasClients) _shown = null;
+    if (!controller.hasClients || active && !_wasActive) _shown = null;
+    _wasActive = active;
     final want = stationId == null || index < 0 ? null : '$stationId\n$query';
     if (want == _shown) return;
     _shown = want;

@@ -205,6 +205,7 @@ class _StationsScreenState extends State<StationsScreen> {
           stationId: now.stationId,
           index: visible.indexWhere((s) => now.isCurrent(s.id)),
           count: visible.length,
+          active: now.playing || now.connecting || now.loading,
           query: query,
         );
 
