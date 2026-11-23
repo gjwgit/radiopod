@@ -225,3 +225,24 @@ String _stationCount(int n) => '$n station${n == 1 ? '' : 's'}';
 
 String podcastCarDetails(int toPlay) =>
     toPlay == 0 ? 'Podcast · all heard' : 'Podcast · $toPlay to play';
+
+/// What goes before the name of the station on air in a browse folder.
+
+const onAirMark = '▶ ';
+
+/// [items], a browse folder's rows, with the row of the station [onAir]
+/// marked by [onAirMark]. Unchanged when nothing is on air.
+///
+/// 20261123 gjw Android Auto marks what plays only in its queue view; a
+/// driver stepping through stations with the wheel looks at the folder,
+/// which said nothing. Only the folder's rows are marked: the queue must
+/// carry exactly what the session publishes (CLAUDE.md §3).
+
+List<MediaItem> markOnAir(List<MediaItem> items, String? onAir) => onAir == null
+    ? items
+    : [
+        for (final i in items)
+          splitStationMediaId(i.id)?.stationId == onAir
+              ? i.copyWith(title: '$onAirMark${i.title}')
+              : i,
+      ];

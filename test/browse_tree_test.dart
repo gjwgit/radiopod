@@ -279,4 +279,32 @@ void main() {
       expect(stationMediaItem(station, browseAllStationsId).artUri, isNull);
     });
   });
+
+  group('markOnAir', () {
+    final rows = browseChildren(browseAllStationsId, _stations, _playlists);
+
+    test('marks only the station on air', () {
+      final marked = markOnAir(rows, 's2');
+
+      expect(marked.map((i) => i.title), [
+        'Zulu FM',
+        '${onAirMark}Alpha FM',
+        'Bravo FM',
+      ]);
+      expect(marked.map((i) => i.id), rows.map((i) => i.id));
+    });
+
+    test('leaves the rows alone when nothing is on air', () {
+      expect(markOnAir(rows, null), same(rows));
+    });
+
+    test('leaves the folders of the root alone', () {
+      final root = browseChildren(browseRootId, _stations, _playlists);
+
+      expect(
+        markOnAir(root, 's1').map((i) => i.title),
+        root.map((i) => i.title),
+      );
+    });
+  });
 }

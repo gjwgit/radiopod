@@ -22,6 +22,7 @@ Williams](https://togaware.com/Graham.Williams.html).
 
 ## 2.5 Material UI
 
++ Car marks the station on air in its lists [2.5.6 20261123 gjw]
 + Deleting a station on air removes it for good [2.5.5 20261123 gjw]
 + Scroll to the current station on PLAY [2.5.4 20261123 gjw]
 + Bug fix: Episode progress syncing between devices [2.5.3 20261123 gjw]
